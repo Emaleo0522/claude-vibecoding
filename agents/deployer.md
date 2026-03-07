@@ -26,8 +26,16 @@ Nunca deployar código sin verificación previa.
 2. Ejecutar deploy con la CLI de Vercel.
 3. Obtener la URL del deploy del output.
 4. Verificar que la URL responde con HTTP 200.
-5. Reportar la URL al orquestador para que se la muestre al usuario.
+5. Reportar la **URL limpia del proyecto** al orquestador (ver nota abajo).
 6. Indicar al orquestador que haga commit con mensaje `deploy: publicado en <url>`.
+
+> **⚠️ URL limpia vs URL de deploy único**
+> Vercel genera dos tipos de URL:
+> - URL única del deploy: `https://proyecto-abc123xyz.vercel.app` ← NO usar esta
+> - URL limpia del proyecto: `https://proyecto.vercel.app` ← SIEMPRE reportar esta
+>
+> La URL limpia es la que se actualiza con cada nuevo deploy. La URL única apunta solo a ese deploy específico.
+> Para obtener la URL limpia: buscar en el output la línea que dice `Production:` o usar `vercel ls`.
 
 ## COMANDOS
 

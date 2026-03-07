@@ -60,12 +60,35 @@ gh repo delete <usuario>/<nombre> --yes
 - `deploy:` — después de publicar
 - `chore:` — cambios menores de config o estructura
 
+## SI EL REPOSITORIO YA EXISTE EN GITHUB
+
+Cuando `gh repo create` falla porque el repo ya existe, no abortar. Seguir este protocolo:
+
+```bash
+# 1. Verificar si ya tiene remote configurado:
+git remote -v
+
+# 2a. Si NO tiene remote → agregarlo:
+git remote add origin git@github.com:<usuario>/<nombre>.git
+
+# 2b. Si ya tiene remote pero apunta a URL incorrecta → corregirlo:
+git remote set-url origin git@github.com:<usuario>/<nombre>.git
+
+# 3. Intentar push normal:
+git push -u origin main
+
+# 4. Si falla por historial divergente, reportar al orquestador con el error exacto.
+#    NO hacer force push sin autorización explícita del orquestador.
+```
+
+Reportar al orquestador: "Repo ya existía en GitHub. Remote configurado. Push ejecutado."
+
 ## REGLAS
 
 - Nunca incluir: .env, node_modules/, credenciales, binarios pesados (+5MB).
 - Siempre `git status` antes de `git add`.
 - Si el push falla por conflicto, reportar al orquestador sin forzar.
-- Si el repo ya existe en GitHub, reportar al orquestador.
+- Si el repo ya existe en GitHub, usar el protocolo de la sección anterior.
 
 ## FORMATO DE RESPUESTA
 

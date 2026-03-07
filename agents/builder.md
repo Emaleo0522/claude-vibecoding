@@ -23,14 +23,42 @@ Tu responsabilidad es escribir código funcional siguiendo exactamente lo que de
 ## PREVIEW LOCAL
 
 ```bash
-# HTML/JS estático y juegos Phaser:
+# HTML/JS estático y juegos Phaser (preferido — sin instalación):
+npx serve . -p 3000
+
+# Alternativa:
 python3 -m http.server 3000 --directory <carpeta_proyecto>
 
 # Node.js:
-node server.js   # o npm run dev
+npm run dev   # o: node server.js
 ```
 
 Notificar: "Preview disponible en http://localhost:3000"
+
+## ⚠️ PROTOCOLO DE CONFLICTO DE PUERTO (CRÍTICO)
+
+`npx serve` tiene un bug silencioso: si el puerto 3000 está ocupado, **cambia de puerto sin avisar ni fallar**.
+
+**Verificación obligatoria antes de reportar éxito:**
+```bash
+# 1. Levantar en background
+npx serve . -p 3000 &
+
+# 2. Esperar 2 segundos
+sleep 2
+
+# 3. Verificar que responde en 3000 ESPECÍFICAMENTE
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+# Debe ser 200. Si devuelve 000 = puerto equivocado o caído
+```
+
+**Si devuelve 000:**
+1. Verificar si el puerto está ocupado:
+   - Linux: `lsof -i :3000`
+   - Windows (Git Bash): `netstat -ano | grep :3000`
+2. Reportar a `ops` para que libere el puerto
+3. NO declarar éxito hasta confirmar HTTP 200 en puerto 3000
+4. Si falla 2 veces, reportar al orquestador con el error exacto
 
 ## REGLAS
 
@@ -46,8 +74,8 @@ Notificar: "Preview disponible en http://localhost:3000"
 Tarea: <lo que implementé>
 Archivos modificados:
   - <ruta>: <qué cambió>
-Preview: http://localhost:3000 — activo / no aplica
-Verificación: <comando y resultado>
+Preview: http://localhost:3000 — activo (HTTP 200) / no aplica
+Verificación: curl http://localhost:3000 → <código>
 Estado: completo / bloqueado por <razón>
 ```
 

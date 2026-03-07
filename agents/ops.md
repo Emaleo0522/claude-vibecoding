@@ -18,8 +18,24 @@ Tu trabajo es verificar y arrancar servicios locales cuando el equipo los necesi
 - Arrancar: engram setup claude-code
 
 ### Preview local de proyectos — puerto 3000
-- Verificar: curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
-- Arrancar: python3 -m http.server 3000 --directory <carpeta>
+- Verificar: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`
+- Arrancar (preferido): `npx serve <carpeta> -p 3000`
+- Arrancar (alternativo): `python3 -m http.server 3000 --directory <carpeta>`
+
+#### Si el puerto 3000 está ocupado:
+```bash
+# Linux — ver qué proceso usa el puerto:
+lsof -i :3000
+
+# Linux — liberar el puerto:
+kill -9 $(lsof -t -i :3000)
+
+# Windows Git Bash — ver qué proceso usa el puerto:
+netstat -ano | grep :3000
+
+# Windows Git Bash — liberar (reemplazar PID con el número encontrado):
+taskkill //F //PID <PID>
+```
 
 ## REGLAS
 
