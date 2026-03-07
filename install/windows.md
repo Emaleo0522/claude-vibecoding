@@ -81,7 +81,7 @@ mkdir -p ~/.claude/agents/skills
 
 # Copiar los agentes
 cp agents/*.md ~/.claude/agents/
-cp agents/skills/engram_policy.md ~/.claude/agents/skills/
+cp agents/skills/*.md ~/.claude/agents/skills/
 
 # Verificar
 ls ~/.claude/agents/
@@ -134,7 +134,41 @@ Agregarlo como MCP en Claude Desktop:
 
 ---
 
-## Paso 10: Verificar la instalación
+## Paso 10: Configurar Playwright MCP (testing en browser real)
+
+Playwright le permite a Claude abrir el navegador y probar tus apps directamente,
+incluyendo webs, apps y juegos Phaser.
+
+Agregarlo como MCP en Claude Desktop:
+1. Ir a **Settings → Developer → Edit Config**
+2. Agregar en `mcpServers` (junto a Context7):
+   ```json
+   "playwright": {
+     "command": "npx",
+     "args": ["-y", "@playwright/mcp@latest"]
+   }
+   ```
+3. El bloque `mcpServers` completo debería quedar así:
+   ```json
+   "mcpServers": {
+     "context7": {
+       "command": "npx",
+       "args": ["-y", "@upstash/context7-mcp"]
+     },
+     "playwright": {
+       "command": "npx",
+       "args": ["-y", "@playwright/mcp@latest"]
+     }
+   }
+   ```
+4. Guardar y reiniciar Claude Desktop
+
+> **Nota**: Playwright descarga Chromium la primera vez que Claude lo usa (~150MB).
+> Esto ocurre automáticamente, no requiere acción de tu parte.
+
+---
+
+## Paso 11: Verificar la instalación
 
 En Git Bash:
 ```bash

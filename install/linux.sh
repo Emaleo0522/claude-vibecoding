@@ -103,7 +103,7 @@ CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
 cp "$REPO_ROOT/agents/"*.md "$CLAUDE_AGENTS/"
-cp "$REPO_ROOT/agents/skills/engram_policy.md" "$CLAUDE_AGENTS/skills/"
+cp "$REPO_ROOT/agents/skills/"*.md "$CLAUDE_AGENTS/skills/"
 
 AGENT_COUNT=$(ls "$CLAUDE_AGENTS/"*.md 2>/dev/null | wc -l)
 info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
@@ -151,6 +151,12 @@ s["mcpServers"]["context7"] = {
     "args": ["-y", "@upstash/context7-mcp"]
 }
 
+# Playwright MCP server (browser testing para QA)
+s["mcpServers"]["playwright"] = {
+    "command": "npx",
+    "args": ["-y", "@playwright/mcp@latest"]
+}
+
 # Engram marketplace + plugin
 s.setdefault("extraKnownMarketplaces", {})
 s["extraKnownMarketplaces"]["engram"] = {
@@ -163,7 +169,7 @@ with open(settings_path, "w") as f:
     json.dump(s, f, indent=2)
 PYEOF
 
-info "Claude Code: Engram y Context7 configurados en $CLAUDE_SETTINGS"
+info "Claude Code: Engram, Context7 y Playwright configurados en $CLAUDE_SETTINGS"
 
 # ── 12. Autenticar gh CLI ─────────────────────────────────
 echo ""
