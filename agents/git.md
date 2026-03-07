@@ -15,12 +15,21 @@ No decidís qué commitear ni cuándo — eso lo decide el ORQUESTADOR.
 ## OPERACIONES DISPONIBLES
 
 ### `create-repo`
+
+> ⚠️ **Usar HTTPS con token, NO SSH.** En Windows sin SSH configurado, el push SSH falla con "Permission denied (publickey)".
+
 ```bash
 cd <directorio>
-git init && git add <archivos> && git commit -m "<mensaje>"
+git init && git branch -M main
+git add <archivos> && git commit -m "<mensaje>"
 gh repo create <usuario>/<nombre> --<public|private> --description "<desc>"
-git remote add origin git@github.com:<usuario>/<nombre>.git
+
+# Configurar remote HTTPS con token (no SSH):
+git remote add origin "https://$(gh auth token)@github.com/<usuario>/<nombre>.git"
 git push -u origin main
+
+# Limpiar el token de la URL (no dejar credenciales en el remote):
+git remote set-url origin "https://github.com/<usuario>/<nombre>.git"
 ```
 
 ### `commit`
@@ -33,19 +42,29 @@ git commit -m "<tipo>: <mensaje>"
 
 ### `push`
 ```bash
-cd <directorio> && git push origin main
+# Usar HTTPS con token para evitar fallos de SSH:
+cd <directorio>
+git remote set-url origin "https://$(gh auth token)@github.com/<usuario>/<nombre>.git"
+git push origin main
+git remote set-url origin "https://github.com/<usuario>/<nombre>.git"
 ```
 
 ### `commit+push` (el más usado)
 ```bash
 cd <directorio>
 git status && git add <archivos>
-git commit -m "<tipo>: <mensaje>" && git push origin main
+git commit -m "<tipo>: <mensaje>"
+git remote set-url origin "https://$(gh auth token)@github.com/<usuario>/<nombre>.git"
+git push origin main
+git remote set-url origin "https://github.com/<usuario>/<nombre>.git"
 ```
 
 ### `sync`
 ```bash
-cd <directorio> && git pull origin main && git push origin main
+cd <directorio>
+git remote set-url origin "https://$(gh auth token)@github.com/<usuario>/<nombre>.git"
+git pull origin main && git push origin main
+git remote set-url origin "https://github.com/<usuario>/<nombre>.git"
 ```
 
 ### `delete-repo`
@@ -64,20 +83,25 @@ gh repo delete <usuario>/<nombre> --yes
 
 Cuando `gh repo create` falla porque el repo ya existe, no abortar. Seguir este protocolo:
 
+> ⚠️ **Usar HTTPS con token, NO SSH.** En Windows sin SSH configurado, el push SSH falla con "Permission denied (publickey)".
+
 ```bash
 # 1. Verificar si ya tiene remote configurado:
 git remote -v
 
-# 2a. Si NO tiene remote → agregarlo:
-git remote add origin git@github.com:<usuario>/<nombre>.git
+# 2a. Si NO tiene remote → agregarlo con HTTPS:
+git remote add origin "https://$(gh auth token)@github.com/<usuario>/<nombre>.git"
 
-# 2b. Si ya tiene remote pero apunta a URL incorrecta → corregirlo:
-git remote set-url origin git@github.com:<usuario>/<nombre>.git
+# 2b. Si ya tiene remote pero apunta a URL incorrecta → corregirlo a HTTPS:
+git remote set-url origin "https://$(gh auth token)@github.com/<usuario>/<nombre>.git"
 
-# 3. Intentar push normal:
+# 3. Intentar push:
 git push -u origin main
 
-# 4. Si falla por historial divergente, reportar al orquestador con el error exacto.
+# 4. Limpiar el token de la URL:
+git remote set-url origin "https://github.com/<usuario>/<nombre>.git"
+
+# 5. Si el push falla por historial divergente, reportar al orquestador con el error exacto.
 #    NO hacer force push sin autorización explícita del orquestador.
 ```
 

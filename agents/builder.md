@@ -29,7 +29,7 @@ Sin esta skill, builder tomará decisiones arbitrarias de estructura y CSS.
 ## TU TRABAJO
 
 1. Leer el spec de techlead antes de escribir una línea.
-2. Si hay frontend → leer `skills/frontend.md` e identificar el tipo de proyecto.
+2. Si hay frontend → leer `~/.claude/agents/skills/frontend.md` e identificar el tipo de proyecto.
 3. Implementar feature por feature, en orden lógico.
 4. Escribir solo el código necesario. Sin extras.
 5. Levantar un preview local al terminar.
@@ -51,30 +51,45 @@ npm run dev   # o: node server.js
 
 Notificar: "Preview disponible en http://localhost:3000"
 
-## ⚠️ PROTOCOLO DE CONFLICTO DE PUERTO (CRÍTICO)
+## ⚠️ PROTOCOLO DE PUERTO — OBLIGATORIO ANTES DE LEVANTAR SERVIDOR
 
-`npx serve` tiene un bug silencioso: si el puerto 3000 está ocupado, **cambia de puerto sin avisar ni fallar**.
+`npx serve` tiene un bug silencioso: si el puerto 3000 está ocupado, **cambia de puerto sin avisar**.
+Esto hace que `curl localhost:3000` devuelva HTTP 200 del proyecto ANTERIOR — falso positivo.
 
-**Verificación obligatoria antes de reportar éxito:**
+**Secuencia obligatoria antes de levantar el servidor:**
+
 ```bash
-# 1. Levantar en background
-npx serve . -p 3000 &
+# PASO 1: Liberar el puerto 3000 si está ocupado (SIEMPRE hacerlo primero)
+# Linux:
+kill -9 $(lsof -t -i :3000) 2>/dev/null || true
 
-# 2. Esperar 2 segundos
-sleep 2
+# Windows Git Bash:
+PID=$(netstat -ano 2>/dev/null | grep "LISTENING" | grep ":3000 " | awk '{print $5}' | head -1)
+[ -n "$PID" ] && powershell -Command "Stop-Process -Id $PID -Force" 2>/dev/null || true
 
-# 3. Verificar que responde en 3000 ESPECÍFICAMENTE
+# PASO 2: Esperar que el puerto quede libre
+sleep 1
+
+# PASO 3: Levantar el servidor
+npx --yes serve . -p 3000 &
+sleep 3
+
+# PASO 4: Verificar que responde en 3000 con el contenido CORRECTO
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
-# Debe ser 200. Si devuelve 000 = puerto equivocado o caído
+# Debe ser 200
+
+# PASO 5: Verificar que el contenido es del proyecto correcto (no de otro anterior)
+curl -s http://localhost:3000 | grep -i "<title>"
+# Debe mostrar el título del proyecto actual, no de otro
 ```
 
-**Si devuelve 000:**
-1. Verificar si el puerto está ocupado:
-   - Linux: `lsof -i :3000`
-   - Windows (Git Bash): `netstat -ano | grep :3000`
-2. Reportar a `ops` para que libere el puerto
-3. NO declarar éxito hasta confirmar HTTP 200 en puerto 3000
-4. Si falla 2 veces, reportar al orquestador con el error exacto
+**Si el curl devuelve 000 después de liberar el puerto:**
+1. Reintentar levantar el servidor una vez más
+2. Si falla 2 veces, reportar al orquestador con el error exacto
+
+**Si el título no coincide con el proyecto actual:**
+1. Repetir PASO 1 (matar proceso) y PASO 3 (levantar de nuevo)
+2. Si sigue fallando, reportar a ops
 
 ## REGLAS
 

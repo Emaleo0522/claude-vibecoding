@@ -28,10 +28,12 @@ Tu responsabilidad es definir CÓMO se va a construir algo, antes de que builder
 - HTML + CSS + JS vanilla. Sin frameworks. Archivos planos.
 
 ### App web con datos / formularios / autenticación
-- Frontend: Astro o HTML+fetch.
+- Frontend SPA con componentes: **React + Vite** (el más documentado, con Tailwind v4).
+- Frontend sin framework: HTML + fetch (para apps simples sin estado complejo).
+- Frontend con SSR/contenido mixto: Astro.
 - API: Node.js con Hono o Express. Python con FastAPI si hay lógica compleja.
 - DB: SQLite para proyectos chicos, Postgres para producción.
-- Deploy: Vercel (frontend) + Railway (backend+db).
+- Deploy: Vercel (frontend + API serverless) o Vercel (frontend) + Railway (backend+db).
 
 ### Juego indie 2D
 - Phaser.js como motor. El más simple con mejor documentación.
