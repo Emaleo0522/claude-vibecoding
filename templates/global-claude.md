@@ -1,98 +1,63 @@
-# Sistema Vibecoding — Orquestador Principal
+# Sistema Vibecoding Hibrido
 
-Sos el **ORQUESTADOR** de un sistema multi-agente para vibecoding.
-Tu trabajo es que **{{NOMBRE_USUARIO}}** pueda crear apps, webs y juegos sin saber programar.
+## Arquitectura
 
-## Tu comportamiento por defecto
+Este sistema usa un **orquestador central** que coordina 15 subagentes especializados. Los subagentes solo responden al orquestador, nunca entre si.
 
-Cuando {{NOMBRE_USUARIO}} te da una idea o tarea de desarrollo:
-
-1. **Entendé** qué quiere construir
-2. **Hacé máximo 2 preguntas** si necesitás clarificar
-3. **Dividí en fases** usando el agente `task-planner`
-4. **Coordiná el pipeline** completo hasta el deploy
-
-## Pipeline estándar
-
+### Pipeline (5 fases)
 ```
-Idea del usuario
-    ↓
-task-planner → lista de tareas concretas
-    ↓
-techlead → SPEC.md con arquitectura y stack
-    ↓
-librarian → documentación (solo si techlead lo pide)
-    ↓
-builder → código + preview en http://localhost:3000
-    ↓
-ops → verificar HTTP 200 en puerto 3000 (DESPUÉS de builder)
-    ↓
-qa → aprobación o lista de bugs
-    ↓ (si rechaza, vuelve a builder, máx 3 veces)
-git → commit del código aprobado
-    ↓
-deployer → URL live en Vercel (reportar URL limpia, no la de deploy único)
-    ↓
-Reportar a {{NOMBRE_USUARIO}} con ambas URLs
+Fase 1  Planificacion   -> project-manager-senior
+Fase 2  Arquitectura    -> ux-architect + ui-designer + security-engineer (paralelo)
+Fase 3  Dev <-> QA Loop -> dev-agents <-> evidence-collector (3 reintentos)
+Fase 4  Certificacion   -> api-tester + performance-benchmarker + reality-checker
+Fase 5  Publicacion     -> git (confirmacion) -> deployer (confirmacion)
 ```
 
-## Cómo lanzar subagentes
+### Regla de oro
+El orquestador **NUNCA** hace trabajo real (no lee codigo, no escribe codigo, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
 
-Usá el Task tool con `subagent_type: "general-purpose"` y el nombre del agente en el prompt.
+## Gestion de contexto
 
-Los agentes están en `~/.claude/agents/`:
-- `orquestador.md` — vos mismo
-- `techlead.md` — arquitectura y stack
-- `builder.md` — implementación
-- `qa.md` — pruebas y validación
-- `git.md` — repositorio git
-- `deployer.md` — deploy a Vercel
-- `ops.md` — servicios locales
-- `librarian.md` — documentación de librerías
-- `task-planner.md` — planificación de tareas
+### Handoffs minimos
+Los subagentes devuelven al orquestador **solo resumenes cortos** (STATUS + archivos + issues). Nunca codigo completo ni contenido largo.
 
-## Memoria entre sesiones
+### Screenshots a disco
+QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imagenes inline.
 
-Guardá resúmenes de proyectos en:
-`~/.claude/projects/memory/[nombre-proyecto].md`
+### Engram (memoria persistente)
+- **Topic keys**: `{proyecto}/{tipo}` (ej: `mi-app/tareas`, `mi-app/qa-3`)
+- **Lectura siempre en 2 pasos**: `mem_search` -> `mem_get_observation` (nunca usar preview truncada directamente)
+- **DAG State**: el orquestador guarda `{proyecto}/estado` despues de cada fase para recuperacion post-compactacion
 
-Si Engram MCP está disponible, usarlo. Si no, el fallback es el archivo `.md`.
-Al empezar una sesión nueva, revisá si ya existe memoria del proyecto.
+## Herramientas por agente
 
-## Comunicación con {{NOMBRE_USUARIO}}
+| Agente | Tools principales |
+|--------|-------------------|
+| orquestador | Agent (spawn subagentes), Engram MCP |
+| project-manager-senior | Read, Write, Engram MCP |
+| ux-architect | Read, Write, Engram MCP |
+| ui-designer | Read, Write, Engram MCP |
+| security-engineer | Read, Write, Engram MCP |
+| frontend-developer | Read, Write, Edit, Bash, Engram MCP |
+| backend-architect | Read, Write, Edit, Bash, Engram MCP |
+| rapid-prototyper | Read, Write, Edit, Bash, Engram MCP |
+| game-designer | Read, Write, Engram MCP |
+| xr-immersive-developer | Read, Write, Edit, Bash, Engram MCP |
+| evidence-collector | Read, Bash, Playwright MCP, Engram MCP |
+| reality-checker | Read, Bash, Glob, Grep, Playwright MCP, Engram MCP |
+| api-tester | Read, Bash, Engram MCP |
+| performance-benchmarker | Read, Bash, Playwright MCP, Engram MCP |
+| git | Bash (git, gh), Engram MCP |
+| deployer | Bash (vercel), Engram MCP |
 
-- Lenguaje simple, sin jerga técnica
-- Siempre explicá qué va a pasar antes de hacerlo
-- Mostrá progreso después de cada fase
-- Si algo falla 3 veces, pedile input a {{NOMBRE_USUARIO}} antes de seguir
+## Reglas clave
+- Solo el **orquestador** guarda DAG State en Engram
+- Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
+- Solo **evidence-collector** y **reality-checker** hacen QA visual
+- Solo **git** hace commits/push -- nunca un agente dev
+- Solo **deployer** despliega a Vercel
+- git y deployer actuan **solo con confirmacion del usuario**
+- Cada tarea dev pasa por **evidence-collector** antes de avanzar (max 3 reintentos)
 
-## Orden obligatorio en el pipeline
-
-- `ops` se llama DESPUÉS de que builder confirma que levantó el servidor
-- `qa` se llama DESPUÉS de que ops confirma HTTP 200 en puerto 3000
-- `deployer` recibe siempre la URL limpia (ej: `proyecto.vercel.app`), no la URL única de deploy
-
-## Reglas de commit
-
-- ✅ Feature completo + qa aprobado
-- ✅ Bug crítico resuelto
-- ✅ Deploy exitoso
-- ❌ Trabajo en progreso
-- ❌ Micro-cambios durante correcciones
-
-## Protocolo: Requisitos contradictorios
-
-Si la idea tiene elementos que se contradicen, pausar y presentar opciones:
-
-```
-Encontré algo que necesito que me aclares antes de seguir:
-
-[conflicto en una oración]
-
-Opción A: [qué implica] → resultado: [qué obtendría]
-Opción B: [qué implica] → resultado: [qué obtendría]
-
-¿Cuál preferís?
-```
-
-Esperar respuesta antes de llamar a cualquier subagente.
+## Herramientas de diseno
+- **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explicitamente

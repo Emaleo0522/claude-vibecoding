@@ -1,18 +1,19 @@
-# Instalación en Windows — Claude Desktop
+# Instalacion en Windows — Claude Desktop
 
-Esta guía te lleva paso a paso desde cero hasta tener el sistema completo funcionando en Windows con Claude Desktop.
+Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcionando en Windows con Claude Desktop.
 
 ---
 
 ## Lo que vas a instalar
 
-- **Agentes de Claude**: los "ayudantes" especializados (builder, qa, git, etc.)
-- **CLAUDE.md global**: le dice a Claude cómo comportarse en todos los proyectos
-- **Node.js + npm**: para levantar previews locales de tus proyectos
-- **Git + GitHub CLI**: para guardar y publicar tu código
+- **16 agentes de Claude**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, etc.)
+- **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
+- **settings.json + settings.local.json**: configuracion de MCPs y permisos
+- **Node.js + npm**: para levantar previews locales
+- **Git + GitHub CLI**: para guardar y publicar codigo
 - **Vercel CLI**: para publicar en internet
 
-Tiempo estimado: 20–30 minutos.
+Tiempo estimado: 20-30 minutos.
 
 ---
 
@@ -21,16 +22,16 @@ Tiempo estimado: 20–30 minutos.
 1. Ir a [git-scm.com/download/win](https://git-scm.com/download/win)
 2. Descargar el instalador (64-bit)
 3. Instalarlo con las opciones por defecto
-4. Verificar: abrí **Git Bash** y escribí `git --version` → debe mostrar la versión
+4. Verificar: abri **Git Bash** y escribi `git --version`
 
-> **Git Bash** es la terminal que vas a usar. Buscala en el menú Inicio como "Git Bash".
+> **Git Bash** es la terminal que vas a usar. Buscala en el menu Inicio como "Git Bash".
 
 ---
 
 ## Paso 2: Instalar Node.js
 
 1. Ir a [nodejs.org](https://nodejs.org)
-2. Descargar la versión **LTS** (la recomendada)
+2. Descargar la version **LTS** (la recomendada)
 3. Instalarlo con opciones por defecto
 4. Verificar en Git Bash: `node --version` y `npm --version`
 
@@ -45,8 +46,7 @@ Tiempo estimado: 20–30 minutos.
    ```bash
    gh auth login
    ```
-   - Elegir: **GitHub.com** → **HTTPS** → **Login with a web browser**
-   - Se abrirá el navegador, seguir los pasos
+   - Elegir: **GitHub.com** -> **HTTPS** -> **Login with a web browser**
 
 ---
 
@@ -57,11 +57,10 @@ En Git Bash:
 npm install -g vercel
 vercel login
 ```
-Seguir los pasos en el navegador para autenticarte.
 
 ---
 
-## Paso 5: Configurar git con tu información
+## Paso 5: Configurar git
 
 En Git Bash:
 ```bash
@@ -72,120 +71,74 @@ git config --global init.defaultBranch main
 
 ---
 
-## Paso 6: Copiar los agentes
+## Paso 6: Copiar los 16 agentes
 
 En Git Bash, desde la carpeta donde clonaste este repo:
 ```bash
 # Crear la carpeta de agentes
 mkdir -p ~/.claude/agents/skills
 
-# Copiar los agentes
+# Copiar los 16 agentes
 cp agents/*.md ~/.claude/agents/
-cp agents/skills/*.md ~/.claude/agents/skills/
+
+# Copiar skills si hay
+cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
 
 # Verificar
 ls ~/.claude/agents/
 ```
 
-Deberías ver los archivos: `orquestador.md`, `builder.md`, `qa.md`, etc.
+Deberias ver 16 archivos .md: `orquestador.md`, `project-manager-senior.md`, `frontend-developer.md`, etc.
 
 ---
 
 ## Paso 7: Instalar CLAUDE.md global
 
-Este archivo le dice a Claude que sea el orquestador en todos tus proyectos.
-
 ```bash
-# Reemplazá "TuNombre" con cómo querés que Claude te llame
-cp templates/global-claude.md ~/.claude/CLAUDE.md
+cp templates/global-claude.md ~/CLAUDE.md
 ```
-
-Luego abrí `~/.claude/CLAUDE.md` con el Bloc de notas y reemplazá `{{NOMBRE_USUARIO}}` con tu nombre.
 
 ---
 
-## Paso 8: Configurar Engram (memoria persistente)
+## Paso 8: Instalar configuracion de MCPs y permisos
+
+```bash
+# Respaldar si ya existen
+cp ~/.claude/settings.json ~/.claude/settings.json.bak 2>/dev/null
+cp ~/.claude/settings.local.json ~/.claude/settings.local.json.bak 2>/dev/null
+
+# Instalar nuevos
+cp templates/settings.json ~/.claude/settings.json
+cp templates/settings.local.json ~/.claude/settings.local.json
+```
+
+---
+
+## Paso 9: Configurar Engram (memoria persistente)
 
 Engram le da a Claude memoria entre sesiones.
 
-1. Abrí Claude Desktop
-2. Ir a **Settings → Extensions**
+1. Abri Claude Desktop
+2. Ir a **Settings -> Extensions**
 3. Buscar **Engram** e instalarlo
 4. Reiniciar Claude Desktop
 
-> Si no encontrás Engram, podés saltear este paso. El sistema funciona igual, pero Claude no recordará proyectos anteriores entre sesiones.
+> Si no encontras Engram, podes saltear este paso. El sistema funciona igual, pero Claude no recordara proyectos anteriores entre sesiones.
 
 ---
 
-## Paso 9: Configurar Context7 y Playwright en Claude Code
-
-Los subagentes (builder, qa, git, etc.) corren dentro de **Claude Code**, por lo que
-los MCPs deben estar en `~/.claude/settings.json`.
-
-En Git Bash, primero instalá Playwright MCP globalmente y luego configurá el settings.json:
-
-```bash
-# 1. Instalar Playwright MCP globalmente (solo la primera vez)
-npm install -g @playwright/mcp@latest
-
-# 2. Agregar los MCPs al settings.json de Claude Code
-python3 -c "
-import json, os
-path = os.path.expanduser('~/.claude/settings.json')
-with open(path) as f: d = json.load(f)
-if 'mcpServers' not in d: d['mcpServers'] = {}
-npm_path = os.path.expanduser('~\\\\AppData\\\\Roaming\\\\npm')
-d['mcpServers']['context7'] = {
-    'command': 'C:\\\\Program Files\\\\nodejs\\\\npx.cmd',
-    'args': ['-y', '@upstash/context7-mcp']
-}
-d['mcpServers']['playwright'] = {
-    'command': npm_path + '\\\\playwright-mcp.cmd'
-}
-with open(path, 'w') as f: json.dump(d, f, indent=2)
-print('OK — MCPs agregados a settings.json')
-"
-```
-
-Reiniciá Claude Code para que carguen.
-
-> **Nota**: Playwright descarga Chromium la primera vez que QA lo usa (~150MB).
-> Esto ocurre automáticamente, sin acción de tu parte.
-
----
-
-## Paso 10: Configurar MCPs en Claude Desktop (opcional)
-
-Si también usás **Claude Desktop** directamente (no solo Claude Code), podés agregar
-los mismos MCPs allí:
-
-1. Ir a **Settings → Developer → Edit Config**
-2. El bloque `mcpServers` completo:
-   ```json
-   "mcpServers": {
-     "context7": {
-       "command": "npx",
-       "args": ["-y", "@upstash/context7-mcp"]
-     },
-     "playwright": {
-       "command": "npx",
-       "args": ["-y", "@playwright/mcp@latest"]
-     }
-   }
-   ```
-3. Guardar y reiniciar Claude Desktop
-
----
-
-## Paso 11: Verificar la instalación
+## Paso 10: Verificar la instalacion
 
 En Git Bash:
 ```bash
-# Agentes instalados
-ls ~/.claude/agents/
+# Agentes instalados (deben ser 16)
+ls ~/.claude/agents/*.md | wc -l
 
 # CLAUDE.md global
-cat ~/.claude/CLAUDE.md | head -5
+cat ~/CLAUDE.md | head -5
+
+# Settings
+cat ~/.claude/settings.json
 
 # Herramientas disponibles
 git --version
@@ -196,56 +149,68 @@ vercel --version
 
 ---
 
-## ¡Listo! Primer uso
+## Listo! Primer uso
 
-Abrí Claude Desktop y escribí:
+Abri Claude Desktop y escribi:
 
 ```
 Quiero crear [tu idea, ej: una app de lista de tareas]
 ```
 
-Claude va a:
-1. Entender tu idea
-2. Dividirla en pasos
-3. Construir el código
-4. Mostrarte el resultado en http://localhost:3000
-5. Publicarlo en internet con una URL
+O invoca al orquestador:
+
+```
+@orquestador quiero crear [tu idea]
+```
+
+El sistema se encarga del resto:
+1. Planifica las tareas (project-manager-senior)
+2. Crea la arquitectura (ux-architect + ui-designer + security-engineer)
+3. Implementa con QA visual (dev-agents + evidence-collector)
+4. Certifica (api-tester + performance-benchmarker + reality-checker)
+5. Publica (git + deployer) — con tu confirmacion
 
 ---
 
 ## Problemas frecuentes
 
 **Claude no reconoce los agentes**
-→ Reiniciá Claude Desktop. Los agentes se cargan al iniciar.
+-> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
-**`npx serve` abre en puerto diferente a 3000**
-→ Es un bug conocido. El sistema lo detecta automáticamente.
+**No aparecen los 16 agentes**
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe ser 16.
 
 **`gh auth login` falla**
-→ Probá con: `gh auth login --web`
+-> Proba con: `gh auth login --web`
 
 **`vercel login` no abre el navegador**
-→ Probá: `vercel login --github`
+-> Proba: `vercel login --github`
 
 ---
 
 ## Estructura instalada
 
 ```
+~/CLAUDE.md                    <- instrucciones globales del sistema
 ~/.claude/
-├── CLAUDE.md              ← prompt del orquestador (auto-leído)
-├── agents/
-│   ├── orquestador.md
-│   ├── builder.md
-│   ├── qa.md
-│   ├── git.md
-│   ├── deployer.md
-│   ├── ops.md
-│   ├── techlead.md
-│   ├── librarian.md
-│   ├── task-planner.md
-│   └── skills/
-│       └── engram_policy.md
-└── projects/
-    └── memory/            ← memoria de proyectos (auto-creada)
+|-- settings.json              <- MCPs (Engram)
+|-- settings.local.json        <- permisos para agentes
+|-- agents/
+|   |-- orquestador.md
+|   |-- project-manager-senior.md
+|   |-- ux-architect.md
+|   |-- ui-designer.md
+|   |-- security-engineer.md
+|   |-- frontend-developer.md
+|   |-- backend-architect.md
+|   |-- rapid-prototyper.md
+|   |-- game-designer.md
+|   |-- xr-immersive-developer.md
+|   |-- evidence-collector.md
+|   |-- reality-checker.md
+|   |-- api-tester.md
+|   |-- performance-benchmarker.md
+|   |-- git.md
+|   |-- deployer.md
+|   |-- skills/
 ```
