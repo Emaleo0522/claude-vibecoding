@@ -69,5 +69,12 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 - ⚠️ **Migración NO es automática**: siempre agregar `"migrate": "npx @better-auth/cli migrate"` al `package.json` y ejecutarlo antes del primer `npm run dev`
 - ⚠️ **Next.js 16+**: usar `proxy.ts` con `export async function proxy()` — el archivo `middleware.ts` está deprecado
 
+## Preview servers — Windows (Claude Desktop)
+Al levantar servidores de desarrollo locales con `preview_start`, usar este formato en `.claude/launch.json`:
+- `"runtimeExecutable": "cmd"`
+- `"runtimeArgs": ["/c", "cd nombre-proyecto && npm run dev"]`
+
+Template listo en `templates/windows-launch.json`.
+
 ## Herramientas de diseño
 - **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explícitamente

@@ -92,11 +92,13 @@ Deberias ver 17 archivos .md: los 16 agentes (`orquestador.md`, `project-manager
 
 ---
 
-## Paso 7: Instalar CLAUDE.md global
+## Paso 7: Instalar CLAUDE.md global (versión Windows)
 
 ```bash
-cp templates/global-claude.md ~/CLAUDE.md
+cp templates/windows-claude.md ~/CLAUDE.md
 ```
+
+> Esta versión incluye las reglas específicas de Windows: Better Auth críticas y configuración de preview servers.
 
 ---
 
@@ -111,6 +113,19 @@ cp ~/.claude/settings.local.json ~/.claude/settings.local.json.bak 2>/dev/null
 cp templates/settings.json ~/.claude/settings.json
 cp templates/settings.local.json ~/.claude/settings.local.json
 ```
+
+---
+
+## Paso 8b: Configurar preview servers (launch.json)
+
+Para que `preview_start` funcione correctamente en Windows:
+
+```bash
+mkdir -p ~/.claude
+cp templates/windows-launch.json ~/.claude/launch.json
+```
+
+Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proyecto cuando lo necesites.
 
 ---
 

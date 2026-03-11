@@ -36,13 +36,18 @@ Reinicia Claude Code cuando termine.
 
 ```bash
 git clone https://github.com/Emaleo0522/claude-vibecoding.git
+cd claude-vibecoding
 ```
 
-Abri Claude Desktop, abri la carpeta del repo y decile:
+Luego abri Git Bash en esa carpeta y ejecuta el instalador paso a paso siguiendo `install/windows.md`.
+O abri Claude Desktop con la carpeta del repo y decile:
 
-> "Instalate el sistema de este repo"
+> "Instalate el sistema de este repo siguiendo install/windows.md"
 
-Claude va a leer `CLAUDE.md` y seguir los pasos de `install/windows.md` automaticamente.
+**Incluye configuración completa para Windows:**
+- `templates/windows-claude.md` — CLAUDE.md con reglas específicas Windows
+- `templates/windows-launch.json` — template de launch.json para preview servers
+- Pasos guiados para MCPs: Engram, Playwright, Context7
 
 ---
 
@@ -154,12 +159,14 @@ agents/
 |-- better-auth-reference.md   <- referencia Better Auth para autenticacion
 |-- skills/
 install/
-|-- linux.sh         -> instalacion automatica Linux
-|-- windows.md       -> guia paso a paso Windows
+|-- linux.sh         -> instalacion automatica Linux (Claude Code)
+|-- windows.md       -> guia paso a paso Windows (Claude Desktop)
 templates/
-|-- global-claude.md     -> CLAUDE.md del sistema (se copia a ~/CLAUDE.md)
-|-- settings.json        -> configuracion MCPs (Engram)
-|-- settings.local.json  -> permisos para todos los agentes
+|-- global-claude.md        -> CLAUDE.md para Linux/Claude Code
+|-- windows-claude.md       -> CLAUDE.md para Windows/Claude Desktop
+|-- windows-launch.json     -> template launch.json para preview servers en Windows
+|-- settings.json           -> configuracion MCPs (Engram) para Claude Code
+|-- settings.local.json     -> permisos para todos los agentes
 CLAUDE.md            -> auto-instalacion (Claude lo lee al abrir el repo)
 README.md            -> esta guia
 ```

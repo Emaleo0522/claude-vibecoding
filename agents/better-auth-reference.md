@@ -88,6 +88,15 @@ npx @better-auth/cli generate
 npx @better-auth/cli migrate
 ```
 
+> ⚠️ **CRÍTICO**: Better Auth NO auto-migra al arrancar. Siempre agregar script en package.json:
+> ```json
+> "migrate": "npx @better-auth/cli migrate"
+> ```
+> Y ejecutar `npm run migrate` antes del primer `npm run dev` en cualquier entorno nuevo.
+
+### Next.js 16+: middleware → proxy
+En Next.js 16+, el archivo `middleware.ts` fue renombrado a `proxy.ts`. Usar `proxy.ts` con `export async function proxy()`.
+
 ---
 
 ## 3. Integraciones por Framework
@@ -353,8 +362,10 @@ export const auth = betterAuth({
 
 | Proyecto | DB Adapter | Framework Integration |
 |----------|-----------|----------------------|
-| Next.js + Prisma | prismaAdapter | toNextJsHandler + middleware |
-| Next.js + Drizzle | drizzleAdapter | toNextJsHandler + middleware |
+| Next.js 16+ + Prisma | prismaAdapter | toNextJsHandler + **proxy.ts** |
+| Next.js 16+ + Drizzle | drizzleAdapter | toNextJsHandler + **proxy.ts** |
+| Next.js ≤15 + Prisma | prismaAdapter | toNextJsHandler + middleware.ts |
+| Next.js ≤15 + Drizzle | drizzleAdapter | toNextJsHandler + middleware.ts |
 | Nuxt + Prisma | prismaAdapter | toNodeHandler + Nuxt middleware |
 | Astro + cualquiera | prismaAdapter/drizzleAdapter | handler + Astro middleware |
 | Express API | URL directa o adapter | toNodeHandler |
