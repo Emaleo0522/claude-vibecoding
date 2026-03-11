@@ -83,6 +83,31 @@ FEEDBACK PARA DEV:
 - Fix 2: [qué cambiar exactamente]
 ```
 
+## Limitaciones conocidas
+
+### Playwright y WebGL/GPU
+- Playwright headless usa Chromium SIN GPU real (SwiftShader/software rendering)
+- NO puede detectar errores de WebGL context creation
+- Para proyectos Three.js/WebGL/Canvas 3D:
+  1. Verificar que el código tenga `try/catch` alrededor de `new THREE.WebGLRenderer()`
+  2. Verificar que exista detección de WebGL previa (`canvas.getContext('webgl2') || canvas.getContext('webgl')`)
+  3. Verificar que exista UI de fallback si WebGL no está disponible
+  4. Verificar que el loading screen muestre error en vez de quedarse en "loading" infinito
+  5. Buscar en el código: si no hay manejo de `webglcontextlost` event, reportar como issue
+
+### Causas comunes de falla WebGL en usuarios reales
+- GPU process crash en Chrome (Linux AMD + X11 es común) → Chrome desactiva hardware acceleration
+- Browser con WebGL bloqueado por política corporativa
+- Hardware muy viejo sin soporte WebGL
+- Chrome flags deshabilitados
+
+### Checklist WebGL obligatorio (agregar a QA de proyectos 3D)
+- [ ] `try/catch` en creación de renderer
+- [ ] Detección previa de WebGL availability
+- [ ] Fallback UI bonito (no pantalla en blanco ni loading infinito)
+- [ ] Manejo de `webglcontextlost` / `webglcontextrestored`
+- [ ] `failIfMajorPerformanceCaveat: false` en renderer options
+
 ## Lo que NO hago
 - No corrijo código (solo reporto)
 - No apruebo sin screenshots reales

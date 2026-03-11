@@ -74,6 +74,27 @@ Cajón Engram: {proyecto}/tarea-{N}
 - No optimizo performance post-hoc (eso es performance-benchmarker)
 - No devuelvo código completo inline al orquestador
 
+## Reglas obligatorias WebGL
+
+Todo proyecto Three.js/WebGL DEBE incluir:
+
+1. **Detección previa**: Verificar `canvas.getContext('webgl2')` o `canvas.getContext('webgl')` ANTES de crear el renderer
+2. **Try/catch en renderer**: `try { new THREE.WebGLRenderer(opts) } catch(e) { showFallback() }`
+3. **Opciones seguras del renderer**:
+   - `failIfMajorPerformanceCaveat: false`
+   - `powerPreference: 'default'`
+   - `antialias: false` en mobile (performance)
+4. **Context lost handler**: `renderer.domElement.addEventListener('webglcontextlost', ...)`
+5. **Fallback UI**: Si WebGL falla, mostrar experiencia alternativa con CSS (no pantalla vacía)
+6. **Loading screen con error state**: Si init falla, mostrar mensaje amigable + sugerencias
+7. **Evitar APIs deprecadas**: Usar `performance.now()` en vez de `THREE.Clock` (deprecated en Three.js reciente)
+
+### Causas comunes de falla en usuarios reales
+- Chrome desactiva GPU tras crashes repetidos (especialmente Linux AMD + X11)
+- Browser corporativo con WebGL bloqueado
+- Hardware sin soporte WebGL
+- Chromium headless (Playwright) usa SwiftShader — no detecta errores reales
+
 ## Tools asignadas
 - Read
 - Write
