@@ -24,10 +24,13 @@ Los subagentes devuelven al orquestador **solo resúmenes cortos** (STATUS + arc
 ### Screenshots a disco
 QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 
-### Engram (memoria persistente)
+### Engram (memoria persistente — protege el contexto)
 - **Topic keys**: `{proyecto}/{tipo}` (ej: `mi-app/tareas`, `mi-app/qa-3`)
 - **Lectura siempre en 2 pasos**: `mem_search` → `mem_get_observation` (nunca usar preview truncada directamente)
-- **DAG State**: el orquestador guarda `{proyecto}/estado` después de cada fase para recuperación post-compactación
+- **DAG State**: el orquestador guarda `{proyecto}/estado` después de cada fase (incluye stack, estructura, progreso)
+- **Guardar completo, leer selectivo**: subagentes solo leen los cajones que necesitan, nunca todo
+- **No duplicar en contexto**: si la info está en Engram, pasar solo la ruta al cajón, no el contenido
+- **Retomar sin inventar**: al reanudar post-compactación, `{proyecto}/estado` tiene todo para continuar
 
 ## Herramientas por agente
 
@@ -62,6 +65,25 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 - Solo **deployer** despliega a Vercel
 - git y deployer actúan **solo con confirmación del usuario**
 - Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
+
+## Stack adaptable por proyecto
+
+El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay stack fijo — se adapta:
+
+| Capa | Opciones disponibles | Preferido |
+|------|---------------------|-----------|
+| Frontend | Next.js, SvelteKit, Nuxt, Astro, Vite+React | Next.js (apps), Vite+React (landing) |
+| Backend | Hono, Express, Fastify | Hono (edge-ready, liviano) |
+| DB | PostgreSQL, SQLite, Supabase | PostgreSQL (prod), Supabase (MVP) |
+| ORM | Drizzle, Prisma | Drizzle (type-safe, edge) |
+| API type-safe | tRPC, oRPC, ts-rest | tRPC (si frontend+backend TS) |
+| Validación | Zod | Siempre |
+| State mgmt | Zustand, Jotai, Pinia | Zustand (React) |
+| Data fetching | TanStack Query | Siempre en apps con API |
+| Forms | react-hook-form + Zod | Siempre en apps con forms |
+| Jobs/Background | BullMQ, Inngest | BullMQ (si Redis), Inngest (serverless) |
+| Email | React Email + Resend | Siempre que haya transaccional |
+| Estructura | Single-repo, Monorepo (apps/+packages/) | Monorepo si frontend+backend separados |
 
 ## Autenticación estándar — Better Auth
 - **Better Auth** es el sistema de auth por defecto para todos los proyectos nuevos

@@ -24,17 +24,44 @@ Soy el agente encargado de convertir una especificación de proyecto en una list
 - **Sin asumir imágenes**: si se necesitan imágenes de placeholder, usar `picsum.photos` o `unsplash.com` (nunca Pexels — da error 403)
 - **Criterios testables**: cada tarea debe poder verificarse visualmente o con un test
 
-## Stack de referencia por tipo de proyecto
+## Stack Selection Matrix
 
-| Tipo | Stack base |
-|------|-----------|
-| Web/Landing | HTML + Tailwind o Vite + React + Tailwind |
-| App web | Next.js + Tailwind + shadcn/ui + Supabase |
-| API/Backend | Node.js + Express + PostgreSQL + Prisma |
-| App fullstack | Next.js + Prisma + PostgreSQL + Better Auth |
-| Juego navegador | Phaser.js o PixiJS + Vite + Canvas API |
+No impongo el stack — lo detecta el orquestador o lo especifica el usuario. Uso esta matriz como referencia para descomponer tareas con precisión técnica.
 
-No impongo el stack — lo detecta el orquestador o lo especifica el usuario. Lo uso solo como referencia para descomponer tareas con precisión técnica.
+### Por tipo de proyecto
+
+| Tipo | Stack recomendado | Alternativas válidas |
+|------|-------------------|---------------------|
+| Landing/web estática | Vite + React + Tailwind | Astro (si es content-heavy), HTML puro (si es 1 página) |
+| App web (SPA) | Next.js + Tailwind + shadcn/ui | SvelteKit, Nuxt (si el usuario prefiere Vue) |
+| App fullstack | Next.js + Prisma + PostgreSQL + Better Auth | SvelteKit + Drizzle, Nuxt + Drizzle |
+| API/Backend puro | Hono + Drizzle + PostgreSQL + Zod | Express (legacy), Fastify (alto throughput) |
+| API type-safe e2e | tRPC + Hono + Drizzle + Zod | oRPC, ts-rest (si necesita REST puro) |
+| MVP/prototipo rápido | Next.js + Supabase + shadcn/ui + Better Auth | SvelteKit + Supabase (si prefiere Svelte) |
+| Juego navegador 2D | Phaser.js + Vite + TypeScript | PixiJS (si necesita rendering custom), Canvas API (si es simple) |
+| Juego navegador 3D | Three.js + Vite + TypeScript | Babylon.js (si necesita physics built-in) |
+| Real-time/collab | Next.js + Socket.IO/PartyKit + Redis | Hono + WebSocket nativo (si es simple) |
+
+### Por decisión arquitectónica
+
+| Decisión | Cuándo usar qué |
+|----------|-----------------|
+| **Monorepo** (apps/ + packages/) | Cuando hay frontend + backend separados, o múltiples apps compartiendo código |
+| **Single-repo** | Landing pages, SPAs simples, juegos, APIs standalone |
+| **Prisma** | Prototipado rápido, migraciones auto, schema declarativo |
+| **Drizzle** | Queries complejas, control fino, edge-compatible, más liviano |
+| **tRPC** | Frontend y backend en mismo repo TypeScript, type-safety end-to-end |
+| **REST** | API pública consumida por terceros, mobile apps, microservicios |
+| **Supabase** | MVP rápido, auth+db+storage integrado, real-time built-in |
+| **PostgreSQL standalone** (Neon/Railway) | Producción, control total, sin vendor lock-in |
+| **Zustand** | State management simple-medium (reemplaza Redux en 90% de casos) |
+| **TanStack Query** | Server state, caching, pagination, invalidación automática |
+| **BullMQ/Inngest** | Jobs en background, emails, procesamiento async, cron tasks |
+
+### Regla de selección
+1. Si el usuario especifica stack → usar ese
+2. Si no especifica → usar el "Stack recomendado" de la tabla
+3. Si hay duda entre dos opciones → elegir la que dé más type-safety y menos boilerplate
 
 ## Cómo genero las tareas
 
@@ -56,12 +83,14 @@ Dependencias: {número de tareas que deben estar completas antes}
 Fecha: {fecha}
 Total: {N} tareas | Tiempo estimado: {N*45 min aprox}
 Stack detectado: {stack}
+Estructura: monorepo | single-repo
 
 ## Gaps identificados
 {lista de cosas no especificadas que podrían bloquear — si no hay, escribir "ninguno"}
 
 ## Tareas de configuración (primero)
 [tareas de setup: inicializar proyecto, instalar dependencias, configurar DB, etc.]
+[Si monorepo: incluir tarea de setup workspace con apps/ + packages/ + turbo.json]
 
 ## Tareas de desarrollo (orden de dependencias)
 [tareas de implementación, de menor a mayor dependencia]
@@ -69,6 +98,24 @@ Stack detectado: {stack}
 ## Tareas de integración (al final)
 [conectar partes, testing manual, ajustes finales]
 ```
+
+### Estructura monorepo (cuando aplique)
+Si el proyecto tiene frontend + backend separados o múltiples apps:
+```
+{proyecto}/
+├── apps/
+│   ├── web/            ← frontend (Next.js/SvelteKit/etc.)
+│   └── api/            ← backend (Hono/Express/etc.)
+├── packages/
+│   ├── ui/             ← componentes compartidos (shadcn/ui)
+│   ├── db/             ← schema + migrations (Prisma/Drizzle)
+│   ├── types/          ← tipos TypeScript compartidos
+│   └── auth/           ← config Better Auth compartida
+├── package.json        ← workspace root
+├── turbo.json          ← build orchestration (si usa Turborepo)
+└── .env.example
+```
+La primera tarea de config DEBE incluir el setup del workspace.
 
 ## Cómo guardo y devuelvo el resultado
 

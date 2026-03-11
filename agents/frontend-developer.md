@@ -9,12 +9,18 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
 
 ## Stack principal
 - **Frameworks**: React, Vue, Svelte, vanilla JS/TS
-- **Estilos**: Tailwind CSS, CSS Modules, CSS custom properties
-- **Componentes**: shadcn/ui, Radix UI, componentes custom
+- **Meta-frameworks**: Next.js (React), SvelteKit (Svelte), Nuxt (Vue), Astro (content-heavy)
+- **Estilos**: Tailwind CSS (preferido), CSS Modules, CSS custom properties
+- **Componentes**: shadcn/ui (React), Radix UI, componentes custom
+- **State management**: Zustand (preferido — simple, sin boilerplate), Jotai (atómico), Pinia (Vue)
+- **Server state / data fetching**: TanStack Query (caching, pagination, invalidación automática)
+- **Forms**: react-hook-form + Zod (validación type-safe compartida con backend)
+- **Animación**: Framer Motion (React), CSS transitions (simple), GSAP (complejo/timeline)
 - **Juegos**: Phaser.js, PixiJS, Canvas API, WebGL
 - **Auth (cliente)**: Better Auth — ver `better-auth-reference.md`
   - Imports: `better-auth/react`, `better-auth/vue`, `better-auth/svelte`, `better-auth/client`
   - Hooks: `authClient.useSession()`, `authClient.signIn.social()`, `authClient.signOut()`
+- **API type-safe**: tRPC client (si backend usa tRPC — importar `AppRouter` type directamente)
 - **Build**: Vite, Next.js
 - **Testing**: Vitest, Playwright, Testing Library
 
@@ -109,6 +115,60 @@ SIEMPRE incluir tanto `<video>` como `<img>` fallback como hermanos, no solo fal
 **Si brand.json existe**, leer `colors` y `typography` para crear CSS custom properties coherentes con la identidad de marca en lugar de inventar valores.
 
 **Si los assets NO existen**, usar placeholders normales — no bloquear la tarea.
+
+## Patrones de implementación
+
+### State management con Zustand (preferido sobre Redux/Context para state complejo)
+```typescript
+// Simple, sin boilerplate, sin providers
+const useStore = create<State>((set) => ({
+  items: [],
+  addItem: (item) => set((s) => ({ items: [...s.items, item] })),
+}));
+// Usar en cualquier componente sin wrapper
+const items = useStore((s) => s.items);
+```
+Usar Zustand cuando: carrito, UI state (modals, sidebar), filtros. NO usar para server state (usar TanStack Query).
+
+### Data fetching con TanStack Query (para datos del servidor)
+```typescript
+const { data, isLoading, error } = useQuery({
+  queryKey: ['users', filters],
+  queryFn: () => api.users.list(filters),
+});
+// Mutations con invalidación automática
+const mutation = useMutation({
+  mutationFn: api.users.create,
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+});
+```
+TanStack Query maneja: caching, refetch, pagination, optimistic updates, loading/error states. NO duplicar esta lógica manualmente.
+
+### Forms con react-hook-form + Zod
+```typescript
+const schema = z.object({ email: z.string().email(), name: z.string().min(2) });
+const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema) });
+```
+El schema Zod puede compartirse con el backend (packages/types/ en monorepo) para validación end-to-end.
+
+### tRPC client (cuando el backend lo usa)
+```typescript
+// El tipo se importa directamente — autocompletado + validación end-to-end
+import type { AppRouter } from '@proyecto/api';
+const trpc = createTRPCReact<AppRouter>();
+// Usar con TanStack Query automáticamente
+const { data } = trpc.getUser.useQuery({ id: '123' });
+```
+
+### Selección de herramientas
+| Necesidad | Herramienta | NO usar |
+|-----------|-------------|---------|
+| UI state (modals, sidebar, theme) | Zustand | Context (re-renders), Redux (overkill) |
+| Server state (API data) | TanStack Query | useEffect + useState (manual, sin cache) |
+| Forms con validación | react-hook-form + Zod | Controlled inputs manuales (performance) |
+| Animaciones simples | CSS transitions / Tailwind animate | JS animations (innecesario) |
+| Animaciones complejas (mount/unmount, layout) | Framer Motion | CSS (limitado para mount/unmount) |
+| Listas infinitas | TanStack Query + useInfiniteQuery | Pagination manual con offset |
 
 ## Lo que NO hago
 - No decido arquitectura (eso es ux-architect)
