@@ -31,6 +31,7 @@ El movimiento amplifica errores anatomicos entre frames. Clasificar ANTES de gen
 ### RISKY (sugerir alternativa al orquestador)
 - Persona en primer plano con movimiento rapido (bailando, corriendo, gesticulando)
 - Manos visibles manipulando objetos en movimiento
+- **Liquidos vertidos/servidos en primer plano** (la IA pierde coherencia espacial: liquido cae fuera del recipiente)
 - Grupo de personas interactuando de cerca
 - Rostro en primer plano con expresiones cambiantes
 - Movimiento complejo de extremidades (deporte, yoga, cocinar con manos visibles)
@@ -45,6 +46,14 @@ El movimiento amplifica errores anatomicos entre frames. Clasificar ANTES de gen
 
 ### Negative prompts para video
 LTX-Video tiene un parametro nativo `negative_prompt` — usarlo como campo separado en el input, NO concatenar en el prompt.
+
+**Negative prompt BASE (incluir SIEMPRE en toda generacion):**
+```
+low quality, worst quality, deformed, distorted, disfigured, extra limbs, extra fingers, bad anatomy, blurry faces, flickering, frame inconsistency, morphing, jittering, unnatural movement, text, subtitles, captions, letters, words, watermark, logo, writing, credits, title
+```
+
+La parte anti-texto (`text, subtitles, captions, letters, words, watermark, logo, writing, credits, title`) es critica — LTX-Video genera artefactos de texto fantasma (subtitulos borrosos) en la parte inferior del video si no se incluye.
+
 Ver el campo `negative_prompt` en el JSON de prediccion (Paso 3b).
 
 ### Regla de duracion
@@ -155,7 +164,7 @@ PREDICTION=$(curl -s -X POST \
     \"version\": \"$VERSION\",
     \"input\": {
       \"prompt\": \"{style_tags}, {motion_style}, subtle movement, cinematic, seamless loop\",
-      \"negative_prompt\": \"low quality, worst quality, deformed, distorted, disfigured, extra limbs, extra fingers, bad anatomy, blurry faces, flickering, frame inconsistency, morphing, jittering, unnatural movement\",
+      \"negative_prompt\": \"low quality, worst quality, deformed, distorted, disfigured, extra limbs, extra fingers, bad anatomy, blurry faces, flickering, frame inconsistency, morphing, jittering, unnatural movement, text, subtitles, captions, letters, words, watermark, logo, writing, credits, title\",
       \"aspect_ratio\": \"16:9\",
       \"length\": 97
     }
@@ -324,6 +333,12 @@ ACCIÓN REQUERIDA: {instrucción}
 
 ## Notas de produccion (lecciones de testing real)
 
+### Generacion secuencial (NUNCA en paralelo)
+- Replicate rechaza peticiones concurrentes en cuentas con poco credito (devuelve `id: null`)
+- **Siempre generar videos de a uno**: lanzar prediction, esperar a que complete, luego lanzar la siguiente
+- Mientras un video se genera (~40-90s), el agente puede trabajar en otra cosa (preparar HTML, CSS, etc.)
+- Costo estimado: ~$0.03-0.10 por video dependiendo de la duracion
+
 ### Parametros correctos de LTX-Video
 - **Usar `length`** (ej: 97), NO `num_frames` — este ultimo no existe en la API actual
 - **Usar `aspect_ratio: "16:9"`**, NO `width`/`height` — width/height causan errores 422
@@ -340,6 +355,22 @@ Esto es opcional — requiere ffmpeg instalado. Si no esta disponible, documenta
 
 ### Playwright y video
 Chromium headless (Playwright MCP) NO puede reproducir video. El evidence-collector vera la imagen fallback, no el video. Esto es comportamiento esperado, NO un bug. No reintentar QA visual por esto.
+
+### Resultados del stress test (2026-03-11)
+3 videos generados con LTX-Video para validar tiers:
+
+| Tier | Prompt | Resultado | Problema |
+|------|--------|-----------|----------|
+| RISKY 4s | Barista sirviendo latte, manos en primer plano | FALLO | Liquido vertido fuera de la taza — error de coherencia espacial |
+| MEDIUM 7s | Persona de espaldas caminando en cafeteria | PERFECTO | Sin errores detectados |
+| SAFE 10s | Paneo lento cafeteria vacia | CASI PERFECTO | Texto fantasma/subtitulos borrosos en parte inferior |
+
+**Conclusiones:**
+- La clasificacion SAFE/MEDIUM/RISKY se valida correctamente
+- MEDIUM es el sweet spot: permite personas si se encuadra bien
+- RISKY con liquidos + manos = error garantizado de coherencia espacial
+- El negative prompt anti-texto es OBLIGATORIO para evitar subtitulos fantasma
+- SAFE funciona excelente para ambientes y paneos
 
 ### HTML integration
 El elemento `<video>` DEBE tener un `<img>` fallback como sibling (no solo CSS fallback):
