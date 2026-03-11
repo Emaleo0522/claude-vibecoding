@@ -8,7 +8,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 - **16 agentes de Claude + 1 referencia**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, etc.) + `better-auth-reference.md` (guia de autenticacion)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
-- **settings.json + settings.local.json**: configuracion de MCPs y permisos
+- **MCPs**: Engram (memoria), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
 - **Git + GitHub CLI**: para guardar y publicar codigo
 - **Vercel CLI**: para publicar en internet
@@ -98,25 +98,79 @@ Deberias ver 17 archivos .md: los 16 agentes (`orquestador.md`, `project-manager
 cp templates/windows-claude.md ~/CLAUDE.md
 ```
 
-> Esta versión incluye las reglas específicas de Windows: Better Auth críticas y configuración de preview servers.
+> Esta version incluye las reglas especificas de Windows: Better Auth criticas y configuracion de preview servers.
 
 ---
 
-## Paso 8: Instalar configuracion de MCPs y permisos
+## Paso 8: Configurar MCPs para Claude Desktop
 
-```bash
-# Respaldar si ya existen
-cp ~/.claude/settings.json ~/.claude/settings.json.bak 2>/dev/null
-cp ~/.claude/settings.local.json ~/.claude/settings.local.json.bak 2>/dev/null
+En Windows, los MCPs se configuran en un archivo especifico de Claude Desktop — **diferente** al de Linux.
 
-# Instalar nuevos
-cp templates/settings.json ~/.claude/settings.json
-cp templates/settings.local.json ~/.claude/settings.local.json
+### Paso 8a: Instalar Engram
+
+Engram requiere descargar el ejecutable:
+
+1. Ir a [github.com/Gentleman-Programming/engram/releases](https://github.com/Gentleman-Programming/engram/releases)
+2. Descargar `engram-windows-amd64.exe` (o el que corresponda a tu arquitectura)
+3. Crear la carpeta y mover el ejecutable:
+   ```bash
+   mkdir -p ~/bin
+   mv ~/Downloads/engram-windows-amd64.exe ~/bin/engram.exe
+   ```
+
+### Paso 8b: Configurar claude_desktop_config.json
+
+Abri el archivo de configuracion de Claude Desktop:
+```
+%APPDATA%\Claude\claude_desktop_config.json
 ```
 
+En Git Bash:
+```bash
+# Crear o editar el archivo
+code "$APPDATA/Claude/claude_desktop_config.json"
+# Si no tenes VS Code: notepad "$APPDATA/Claude/claude_desktop_config.json"
+```
+
+Pega este contenido (reemplaza `{TU_USUARIO}` con tu nombre de usuario de Windows):
+
+```json
+{
+  "mcpServers": {
+    "engram": {
+      "command": "C:\Users\{TU_USUARIO}\bin\engram.exe",
+      "args": ["mcp", "--tools=agent"]
+    },
+    "context7": {
+      "command": "C:\Program Files\nodejs\npx.cmd",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "playwright": {
+      "command": "C:\Program Files\nodejs\npx.cmd",
+      "args": ["playwright-mcp"]
+    }
+  }
+}
+```
+
+> Template disponible en `templates/windows-mcp-config.json`
+
+> **Nota sobre rutas**: Si Node.js esta en una ubicacion diferente, buscala con `where npx` en CMD.
+
+### Paso 8c: Reiniciar Claude Desktop
+
+Cerrar y volver a abrir Claude Desktop para que cargue los MCPs.
+
+### MCPs opcionales (via Claude Desktop Extensions)
+
+Dentro de Claude Desktop puedes instalar MCPs adicionales desde **Settings → Extensions**:
+- **Vercel MCP** — gestionar deployments
+- **Netlify MCP** — alternativa de deploy
+- **Gmail / Google Calendar** — integraciones de productividad
+
 ---
 
-## Paso 8b: Configurar preview servers (launch.json)
+## Paso 9: Configurar preview servers (launch.json)
 
 Para que `preview_start` funcione correctamente en Windows:
 
@@ -129,31 +183,15 @@ Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proye
 
 ---
 
-## Paso 9: Configurar Engram (memoria persistente)
-
-Engram le da a Claude memoria entre sesiones.
-
-1. Abri Claude Desktop
-2. Ir a **Settings -> Extensions**
-3. Buscar **Engram** e instalarlo
-4. Reiniciar Claude Desktop
-
-> Si no encontras Engram, podes saltear este paso. El sistema funciona igual, pero Claude no recordara proyectos anteriores entre sesiones.
-
----
-
 ## Paso 10: Verificar la instalacion
 
 En Git Bash:
 ```bash
-# Agentes instalados (deben ser 16)
+# Agentes instalados (deben ser 17)
 ls ~/.claude/agents/*.md | wc -l
 
 # CLAUDE.md global
-cat ~/CLAUDE.md | head -5
-
-# Settings
-cat ~/.claude/settings.json
+head -5 ~/CLAUDE.md
 
 # Herramientas disponibles
 git --version
@@ -161,6 +199,8 @@ node --version
 gh --version
 vercel --version
 ```
+
+En Claude Desktop: abri una nueva conversacion y escribi `@orquestador hola` — si responde, todo funciona.
 
 ---
 
@@ -195,38 +235,33 @@ El sistema se encarga del resto:
 **No aparecen los 16 agentes**
 -> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe ser 17.
 
+**MCPs no aparecen en Claude Desktop**
+-> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.
+
 **`gh auth login` falla**
 -> Proba con: `gh auth login --web`
 
 **`vercel login` no abre el navegador**
 -> Proba: `vercel login --github`
 
+**`preview_start` falla con ENOENT**
+-> Verificar que `launch.json` usa `"runtimeExecutable": "cmd"` con `"runtimeArgs": ["/c", "cd proyecto && npm run dev"]`
+
 ---
 
 ## Estructura instalada
 
 ```
-~/CLAUDE.md                    <- instrucciones globales del sistema
+~/CLAUDE.md                                      <- instrucciones globales del sistema (Windows)
 ~/.claude/
-|-- settings.json              <- MCPs (Engram)
-|-- settings.local.json        <- permisos para agentes
+|-- launch.json                                  <- configuracion de preview servers
 |-- agents/
 |   |-- orquestador.md
 |   |-- project-manager-senior.md
-|   |-- ux-architect.md
-|   |-- ui-designer.md
-|   |-- security-engineer.md
-|   |-- frontend-developer.md
-|   |-- backend-architect.md
-|   |-- rapid-prototyper.md
-|   |-- game-designer.md
-|   |-- xr-immersive-developer.md
-|   |-- evidence-collector.md
-|   |-- reality-checker.md
-|   |-- api-tester.md
-|   |-- performance-benchmarker.md
-|   |-- git.md
-|   |-- deployer.md
+|   |-- ... (16 agentes)
 |   |-- better-auth-reference.md
-|   |-- skills/
+%APPDATA%\Claude\
+|-- claude_desktop_config.json                   <- MCPs (Engram, Context7, Playwright)
+~/bin/
+|-- engram.exe                                   <- binario de Engram MCP
 ```
