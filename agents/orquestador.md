@@ -222,7 +222,7 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
 ```
 1. Delega a brand-agent:
    - Pasa: project_dir, project_name, brief (style/tone/colores si el usuario los especificó),
-           asset_needs (["logo","hero_image","bg_video"] según spec)
+           asset_needs (["logo","hero_image"] siempre + "bg_video" solo si el usuario lo pidió)
    - Guarda en Engram: {proyecto}/branding
    - Devuelve: STATUS + resumen de identidad (nombre, paleta, tipografía, style_tags)
 
@@ -239,10 +239,13 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
    - image-agent guarda en: {project_dir}/assets/images/
    - Devuelven: STATUS + lista de archivos generados (solo rutas)
 
-4. Después de image-agent exitoso → delega video-agent:
-   - Recibe: { "project_dir": "...", "duration_s": 5, "motion_intensity": "low" }
-   - Guarda en: {project_dir}/assets/video/
-   - Devuelve: STATUS + rutas (bg-loop.mp4 y/o fallback.css)
+4. CONSULTAR VIDEO al usuario (NO generar automáticamente):
+   Preguntar: "¿Querés un video de fondo para la hero section? (requiere crédito en Replicate, ~$0.03-0.10)"
+     → Si acepta: delega video-agent con { "project_dir": "...", "duration_s": 7, "motion_intensity": "low" }
+       - Guarda en: {project_dir}/assets/video/
+       - Devuelve: STATUS + rutas (bg-loop.mp4 y/o fallback.css)
+     → Si rechaza: saltar video, usar imagen estática como hero background
+       - Marcar en DAG State: assets_creativos.video → "no-requerido"
 
 5. PAUSA — Presentar assets al usuario para aprobación (ver protocolo abajo)
    → Si rechaza alguno: seguir protocolo de reintentos (máx 3 por imagen)
