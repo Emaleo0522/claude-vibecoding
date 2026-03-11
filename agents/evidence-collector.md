@@ -88,3 +88,9 @@ FEEDBACK PARA DEV:
 - No apruebo sin screenshots reales
 - No doy A+ en primera iteración
 - No paso screenshots inline al orquestador (solo rutas a disco)
+
+## Tools asignadas
+- Read
+- Bash
+- Playwright MCP
+- Engram MCP

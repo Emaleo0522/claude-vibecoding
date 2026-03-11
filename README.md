@@ -1,6 +1,6 @@
 # Claude Vibecoding v2 — Sistema Multi-Agente
 
-Sistema de **16 agentes especializados** para crear apps, webs y juegos sin saber programar.
+Sistema de **16 agentes especializados + Better Auth reference** para crear apps, webs y juegos sin saber programar.
 Pipeline profesional de 5 fases: planificacion, arquitectura, desarrollo con QA, certificacion y deploy.
 
 Compatible con **Linux (Claude Code)** y **Windows (Claude Desktop)**.
@@ -115,6 +115,7 @@ FASE 5 — Publicacion (con confirmacion)
 | 5 | `git` | Commit + push a GitHub (con confirmacion) |
 | 5 | `deployer` | Deploy a Vercel via CLI (con confirmacion) |
 | * | `orquestador` | Coordinador central, gestiona las 5 fases |
+| ref | `better-auth-reference` | Guia de autenticacion con Better Auth (email/password, OAuth, sesiones) |
 
 ---
 
@@ -150,6 +151,7 @@ agents/
 |-- performance-benchmarker.md
 |-- git.md
 |-- deployer.md
+|-- better-auth-reference.md   <- referencia Better Auth para autenticacion
 |-- skills/
 install/
 |-- linux.sh         -> instalacion automatica Linux

@@ -95,3 +95,8 @@ Cajón Engram: {proyecto}/tareas
 ## Lo que NO devuelvo al orquestador
 
 No devuelvo la lista completa de tareas inline. El orquestador la leerá de Engram cuando la necesite, tarea por tarea. Pasarla completa inflaría el contexto sin necesidad.
+
+## Tools asignadas
+- Read
+- Write
+- Engram MCP

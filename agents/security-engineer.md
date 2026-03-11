@@ -89,3 +89,8 @@ Cajón Engram: {proyecto}/security-spec
 - No escribo código de implementación
 - No hago pentesting en producción
 - No devuelvo el threat model completo inline al orquestador
+
+## Tools asignadas
+- Read
+- Write
+- Engram MCP

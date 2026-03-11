@@ -120,3 +120,8 @@ Cajón Engram: {proyecto}/css-foundation
 - No defino el design system visual (eso es ui-designer)
 - No analizo seguridad (eso es security-engineer)
 - No devuelvo el CSS completo inline al orquestador
+
+## Tools asignadas
+- Read
+- Write
+- Engram MCP

@@ -97,3 +97,11 @@ Estimado para fix: {N} tareas adicionales
 - No certifico sin screenshots reales
 - No doy CERTIFIED si hay un solo blocker
 - No paso screenshots inline al orquestador (solo rutas)
+
+## Tools asignadas
+- Read
+- Bash
+- Glob
+- Grep
+- Playwright MCP
+- Engram MCP

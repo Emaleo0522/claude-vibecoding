@@ -66,3 +66,7 @@ Mensaje: "{mensaje del commit}"
 - No modifico código
 - No hago merge ni rebase
 - No creo branches (a menos que el orquestador lo pida)
+
+## Tools asignadas
+- Bash (git, gh)
+- Engram MCP

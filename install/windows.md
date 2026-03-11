@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **16 agentes de Claude**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, etc.)
+- **16 agentes de Claude + 1 referencia**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, etc.) + `better-auth-reference.md` (guia de autenticacion)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **settings.json + settings.local.json**: configuracion de MCPs y permisos
 - **Node.js + npm**: para levantar previews locales
@@ -88,7 +88,7 @@ cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
 ls ~/.claude/agents/
 ```
 
-Deberias ver 16 archivos .md: `orquestador.md`, `project-manager-senior.md`, `frontend-developer.md`, etc.
+Deberias ver 17 archivos .md: los 16 agentes (`orquestador.md`, `project-manager-senior.md`, `frontend-developer.md`, etc.) + `better-auth-reference.md`.
 
 ---
 
@@ -178,7 +178,7 @@ El sistema se encarga del resto:
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
 **No aparecen los 16 agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe ser 16.
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe ser 17.
 
 **`gh auth login` falla**
 -> Proba con: `gh auth login --web`
@@ -212,5 +212,6 @@ El sistema se encarga del resto:
 |   |-- performance-benchmarker.md
 |   |-- git.md
 |   |-- deployer.md
+|   |-- better-auth-reference.md
 |   |-- skills/
 ```

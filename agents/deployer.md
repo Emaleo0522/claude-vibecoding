@@ -57,3 +57,7 @@ Build: {éxito | error con detalle}
 - No modifico código
 - No configuro dominios custom (solo si el usuario lo pide)
 - No hago rollback automático (informo el error y el orquestador decide)
+
+## Tools asignadas
+- Bash (vercel)
+- Engram MCP

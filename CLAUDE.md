@@ -25,8 +25,8 @@ Ejecutar el instalador automatico:
 bash install/linux.sh
 ```
 
-El script instala Node.js, Vercel CLI, gh CLI, copia los 16 agentes, configura los MCPs
-(Engram, Context7, Playwright) y guia al usuario con los pasos de autenticacion.
+El script instala Node.js, Vercel CLI, gh CLI, copia los 16 agentes + 1 referencia (Better Auth),
+configura los MCPs (Engram, Context7, Playwright) y guia al usuario con los pasos de autenticacion.
 
 Cuando el script termine, decirle al usuario:
 
@@ -49,7 +49,7 @@ Cuando termines, decirle al usuario:
 ## Como verificar que la instalacion fue exitosa
 
 Despues de reiniciar Claude (en cualquier plataforma):
-- Los archivos `.md` estan en `~/.claude/agents/` (16 agentes)
+- Los archivos `.md` estan en `~/.claude/agents/` (16 agentes + better-auth-reference.md)
 - El archivo global `~/.claude/CLAUDE.md` existe y tiene las instrucciones del orquestador
 - `~/.claude/settings.json` tiene Engram configurado
 - `~/.claude/settings.local.json` tiene los permisos para los MCPs

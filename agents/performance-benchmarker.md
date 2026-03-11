@@ -75,3 +75,9 @@ Cajón Engram: {proyecto}/perf-report
 - No optimizo código (solo reporto qué optimizar)
 - No hago QA visual (eso es evidence-collector)
 - No testeo APIs (eso es api-tester)
+
+## Tools asignadas
+- Read
+- Bash
+- Playwright MCP
+- Engram MCP

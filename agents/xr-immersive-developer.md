@@ -73,3 +73,10 @@ Cajón Engram: {proyecto}/tarea-{N}
 - No hago QA (eso es evidence-collector)
 - No optimizo performance post-hoc (eso es performance-benchmarker)
 - No devuelvo código completo inline al orquestador
+
+## Tools asignadas
+- Read
+- Write
+- Edit
+- Bash
+- Engram MCP

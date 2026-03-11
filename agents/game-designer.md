@@ -76,3 +76,8 @@ Cajón Engram: {proyecto}/gdd
 - No escribo código (eso es frontend-developer o xr-immersive-developer)
 - No decido el motor/framework (eso lo decide el orquestador según el stack)
 - No devuelvo el GDD completo inline al orquestador
+
+## Tools asignadas
+- Read
+- Write
+- Engram MCP

@@ -1,33 +1,33 @@
-# Sistema Vibecoding Hibrido
+# Sistema Vibecoding Híbrido
 
 ## Arquitectura
 
-Este sistema usa un **orquestador central** que coordina 15 subagentes especializados. Los subagentes solo responden al orquestador, nunca entre si.
+Este sistema usa un **orquestador central** (1 coordinador + 15 subagentes = 16 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
 
 ### Pipeline (5 fases)
 ```
-Fase 1  Planificacion   -> project-manager-senior
-Fase 2  Arquitectura    -> ux-architect + ui-designer + security-engineer (paralelo)
-Fase 3  Dev <-> QA Loop -> dev-agents <-> evidence-collector (3 reintentos)
-Fase 4  Certificacion   -> api-tester + performance-benchmarker + reality-checker
-Fase 5  Publicacion     -> git (confirmacion) -> deployer (confirmacion)
+Fase 1  Planificación   → project-manager-senior
+Fase 2  Arquitectura    → ux-architect + ui-designer + security-engineer (paralelo)
+Fase 3  Dev ↔ QA Loop  → dev-agents ↔ evidence-collector (3 reintentos)
+Fase 4  Certificación   → api-tester + performance-benchmarker + reality-checker
+Fase 5  Publicación     → git (confirmación) → deployer (confirmación)
 ```
 
 ### Regla de oro
-El orquestador **NUNCA** hace trabajo real (no lee codigo, no escribe codigo, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
+El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
 
-## Gestion de contexto
+## Gestión de contexto
 
-### Handoffs minimos
-Los subagentes devuelven al orquestador **solo resumenes cortos** (STATUS + archivos + issues). Nunca codigo completo ni contenido largo.
+### Handoffs mínimos
+Los subagentes devuelven al orquestador **solo resúmenes cortos** (STATUS + archivos + issues). Nunca código completo ni contenido largo.
 
 ### Screenshots a disco
-QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imagenes inline.
+QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 
 ### Engram (memoria persistente)
 - **Topic keys**: `{proyecto}/{tipo}` (ej: `mi-app/tareas`, `mi-app/qa-3`)
-- **Lectura siempre en 2 pasos**: `mem_search` -> `mem_get_observation` (nunca usar preview truncada directamente)
-- **DAG State**: el orquestador guarda `{proyecto}/estado` despues de cada fase para recuperacion post-compactacion
+- **Lectura siempre en 2 pasos**: `mem_search` → `mem_get_observation` (nunca usar preview truncada directamente)
+- **DAG State**: el orquestador guarda `{proyecto}/estado` después de cada fase para recuperación post-compactación
 
 ## Herramientas por agente
 
@@ -54,10 +54,16 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imagenes inline.
 - Solo el **orquestador** guarda DAG State en Engram
 - Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
 - Solo **evidence-collector** y **reality-checker** hacen QA visual
-- Solo **git** hace commits/push -- nunca un agente dev
+- Solo **git** hace commits/push — nunca un agente dev
 - Solo **deployer** despliega a Vercel
-- git y deployer actuan **solo con confirmacion del usuario**
-- Cada tarea dev pasa por **evidence-collector** antes de avanzar (max 3 reintentos)
+- git y deployer actúan **solo con confirmación del usuario**
+- Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
 
-## Herramientas de diseno
-- **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explicitamente
+## Autenticación estándar — Better Auth
+- **Better Auth** es el sistema de auth por defecto para todos los proyectos nuevos
+- Referencia completa: `/home/pc004/.claude/agents/better-auth-reference.md`
+- Agentes que lo usan: backend-architect (server), frontend-developer (client), rapid-prototyper (full-stack)
+- Solo usar Clerk/Supabase Auth/JWT custom si el proyecto ya los tiene implementados
+
+## Herramientas de diseño
+- **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explícitamente

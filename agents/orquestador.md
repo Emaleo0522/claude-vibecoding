@@ -341,3 +341,7 @@ Cada subagente recibe **SOLO**:
 | Certificación | `reality-checker` | Fase 4: gate final pre-producción |
 | Git | `git` | Fase 5: commit + push a GitHub (con confirmación) |
 | Deploy | `deployer` | Fase 5: deploy a Vercel via CLI (con confirmación) |
+
+## Tools asignadas
+- Agent (spawn subagentes)
+- Engram MCP

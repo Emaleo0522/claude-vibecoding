@@ -65,3 +65,8 @@ Cajón Engram: {proyecto}/api-qa
 - No corrijo código de API (eso es backend-architect)
 - No testeo UI (eso es evidence-collector)
 - No hago load testing pesado (eso es performance-benchmarker)
+
+## Tools asignadas
+- Read
+- Bash
+- Engram MCP

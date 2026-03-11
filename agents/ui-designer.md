@@ -72,3 +72,8 @@ Cajón Engram: {proyecto}/design-system
 - No escribo código de implementación (eso es frontend-developer)
 - No creo la arquitectura CSS base (eso es ux-architect)
 - No devuelvo el design system completo inline al orquestador
+
+## Tools asignadas
+- Read
+- Write
+- Engram MCP
