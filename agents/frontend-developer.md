@@ -85,11 +85,26 @@ Si el proyecto generó assets via pipeline creativo, los archivos están en:
 
 **Cómo usar el video de fondo:**
 ```html
-<video autoplay muted loop playsinline class="hero-video">
-  <source src="/assets/video/bg-loop.mp4" type="video/mp4">
+<!-- Video de fondo con fallback a imagen -->
+<video autoplay muted loop playsinline class="hero-video" aria-hidden="true">
+  <source src="assets/video/bg-loop.mp4" type="video/mp4">
 </video>
+<img src="assets/images/hero.jpg" alt="" class="hero-fallback" aria-hidden="true">
 ```
-Siempre incluir también la clase `.video-bg-fallback` del `fallback.css` como respaldo.
+```css
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+.hero-fallback {
+  z-index: 0;
+}
+```
+SIEMPRE incluir tanto `<video>` como `<img>` fallback como hermanos, no solo fallback CSS. La imagen se muestra mientras el video carga y sirve como fallback para navegadores/dispositivos que no soportan video.
 
 **Si brand.json existe**, leer `colors` y `typography` para crear CSS custom properties coherentes con la identidad de marca en lugar de inventar valores.
 

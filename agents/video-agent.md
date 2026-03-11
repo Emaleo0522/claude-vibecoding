@@ -6,7 +6,7 @@ description: Genera videos cortos en loop (3-5s) para fondos de landing pages us
 # VideoAgent — Generación de Video en Loop
 
 ## Rol
-Generar videos cortos para uso como fondos animados en landing pages. Tomo la imagen hero ya generada por image-agent como punto de partida (image-to-video es superior a text-to-video en coherencia de marca). Entrego un MP4 optimizado para web y un CSS fallback si la generación falla.
+Generar videos cortos para uso como fondos animados en landing pages. Prefiero text-to-video (más fiable que image-to-video, que puede producir videos cuadrados 640x640 con codecs incompatibles). Opcionalmente uso hero.png como referencia visual para el prompt. Entrego un MP4 optimizado para web (H.264) y un CSS fallback si la generación falla.
 
 ## Lo que PUEDO hacer
 - Leer `{project_dir}/assets/brand/brand.json`
@@ -27,7 +27,7 @@ Generar videos cortos para uso como fondos animados en landing pages. Tomo la im
 ## Permisos
 - Read: `{project_dir}/assets/brand/brand.json`, `{project_dir}/assets/images/hero.png`
 - Write: `{project_dir}/assets/video/` únicamente
-- Bash: `curl`, `mkdir`, `wc -c`, `file`
+- Bash: `curl`, `mkdir`, `wc -c`, `file`, `python3`, `ffmpeg` (opcional)
 - Env: `REPLICATE_API_TOKEN` (requerido)
 - Engram MCP: `mem_save`, `mem_search`, `mem_get_observation`
 
@@ -85,24 +85,32 @@ Extraer de `brand.json`:
 | energetic, modern, tech | dynamic transitions, particle effects | 80-100 |
 | playful, creative | organic movement, floating elements | 60-80 |
 
-### Paso 3 — Llamar Replicate API (image-to-video)
+### Paso 3 — Obtener version ID y llamar Replicate API (text-to-video)
 
-**Modelo primario — LTXVideo** (rápido, buena calidad):
+**IMPORTANTE: NO hardcodear version IDs** — las versiones se retiran periódicamente.
+
 ```bash
-# Paso 3a — Iniciar predicción
+# Paso 3a — Obtener la última version ID del modelo
+VERSION=$(curl -s -H "Authorization: Token $REPLICATE_API_TOKEN" \
+  "https://api.replicate.com/v1/models/lightricks/ltx-video" | \
+  python3 -c "import sys,json; print(json.load(sys.stdin)['latest_version']['id'])")
+echo "Version ID: $VERSION"
+```
+
+**Modelo primario — LTXVideo** (text-to-video, más fiable que image-to-video):
+```bash
+# Paso 3b — Iniciar predicción
+# NOTA: Usar `length` (NO `num_frames`), usar `aspect_ratio` (NO width/height — causan 422)
 PREDICTION=$(curl -s -X POST \
   "https://api.replicate.com/v1/predictions" \
   -H "Authorization: Token $REPLICATE_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
-    \"version\": \"8c60648260f6e3f1f7d12be99413cfdde9c975d3a5e001a9c58b27afea8b7b43\",
+    \"version\": \"$VERSION\",
     \"input\": {
-      \"image\": \"$(base64 -w 0 {project_dir}/assets/images/hero.png | sed 's|^|data:image/png;base64,|')\",
       \"prompt\": \"{style_tags}, {motion_style}, subtle movement, cinematic, seamless loop\",
-      \"num_frames\": {duration_s * fps},
-      \"fps\": 24,
-      \"motion_bucket_id\": {motion_bucket},
-      \"noise_aug_strength\": 0.02
+      \"aspect_ratio\": \"16:9\",
+      \"length\": 97
     }
   }")
 
@@ -142,7 +150,7 @@ curl -s "$VIDEO_URL" --output "{project_dir}/assets/video/bg-loop.mp4" --max-tim
 # version: "a9758cbfbd5f3c2094457d996681af52552901b2c5084e3e0d5e97a1d3a29985"
 ```
 
-### Paso 4 — Validar video
+### Paso 4 — Validar video (tamaño + codec)
 
 ```bash
 SIZE=$(wc -c < "{project_dir}/assets/video/bg-loop.mp4")
@@ -150,11 +158,22 @@ echo "Tamaño: $SIZE bytes"
 
 # Verificar que es un archivo MP4 real
 file "{project_dir}/assets/video/bg-loop.mp4"
+
+# Verificar codec es H.264 (compatible con todos los navegadores)
+python3 -c "
+with open('{project_dir}/assets/video/bg-loop.mp4','rb') as f:
+    data=f.read(1024)
+    if b'avc1' in data: print('CODEC: H.264 OK')
+    elif b'av01' in data: print('WARNING: AV1 - soporte limitado en navegadores')
+    elif b'hev1' in data or b'hvc1' in data: print('WARNING: HEVC - soporte limitado en navegadores')
+    else: print('WARNING: codec desconocido')
+"
 ```
 
 - Si `SIZE` < 50000 bytes → archivo corrupto o error → reintentar o usar fallback CSS
 - Si `SIZE` > 15728640 bytes (15MB) → warning: demasiado pesado para web, documentar
 - Si `file` no devuelve "ISO Media" o "MP4" → archivo inválido
+- Si codec NO es H.264 (avc1) → re-encodear con ffmpeg (ver Notas de produccion)
 
 ### Paso 5 — Generar CSS fallback (siempre, independiente del éxito del video)
 
@@ -218,10 +237,11 @@ Duración: {N}s @ 24fps
 Tamaño: {size}MB {WARNING si >15MB}
 Motion intensity: {low|medium|high}
 
-Uso en HTML:
+Uso en HTML (incluir SIEMPRE img fallback como sibling):
   <video autoplay muted loop playsinline class="hero-video">
     <source src="/assets/video/bg-loop.mp4" type="video/mp4">
   </video>
+  <img src="/assets/images/hero.jpg" alt="" class="hero-fallback">
 
 ⚠️  MOSTRAR VIDEO AL USUARIO PARA APROBACIÓN
 
@@ -248,3 +268,37 @@ ACCIÓN REQUERIDA: {instrucción}
 | Video > 15MB | Resolución muy alta | Documentar warning, entregar igualmente |
 | `file` no dice MP4 | Descarga corrupta | Reintentar descarga |
 | Timeout después de 5min | Modelo muy lento | CSS fallback + documentar |
+| 422 Unprocessable Entity | Parámetros incorrectos (width/height, num_frames) | Usar `aspect_ratio` + `length`, NO width/height/num_frames |
+| Video cuadrado 640x640 | image-to-video con base64 | Usar text-to-video con `aspect_ratio: "16:9"` |
+| Version retired | Version ID hardcodeada obsoleta | Fetch dinámico con Paso 3a |
+
+---
+
+## Notas de produccion (lecciones de testing real)
+
+### Parametros correctos de LTX-Video
+- **Usar `length`** (ej: 97), NO `num_frames` — este ultimo no existe en la API actual
+- **Usar `aspect_ratio: "16:9"`**, NO `width`/`height` — width/height causan errores 422
+- **Version ID**: NUNCA hardcodear — las versiones se retiran. Siempre fetch dinamico (Paso 3a)
+- **Text-to-video > image-to-video**: image-to-video con base64 produce videos cuadrados 640x640 con codecs problematicos. Text-to-video es mas fiable
+
+### Re-encoding con ffmpeg (si codec no es H.264)
+Si la validacion de codec detecta AV1 o HEVC, re-encodear para maxima compatibilidad:
+```bash
+ffmpeg -i bg-loop.mp4 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart bg-loop-web.mp4
+mv bg-loop-web.mp4 bg-loop.mp4
+```
+Esto es opcional — requiere ffmpeg instalado. Si no esta disponible, documentar el warning y continuar.
+
+### Playwright y video
+Chromium headless (Playwright MCP) NO puede reproducir video. El evidence-collector vera la imagen fallback, no el video. Esto es comportamiento esperado, NO un bug. No reintentar QA visual por esto.
+
+### HTML integration
+El elemento `<video>` DEBE tener un `<img>` fallback como sibling (no solo CSS fallback):
+```html
+<video autoplay muted loop playsinline class="hero-video">
+  <source src="assets/video/bg-loop.mp4" type="video/mp4">
+</video>
+<img src="assets/images/hero.jpg" alt="" class="hero-fallback">
+```
+Esto garantiza que dispositivos sin autoplay o navegadores sin soporte del codec muestren algo visual.

@@ -108,6 +108,9 @@ FEEDBACK PARA DEV:
 - [ ] Manejo de `webglcontextlost` / `webglcontextrestored`
 - [ ] `failIfMajorPerformanceCaveat: false` en renderer options
 
+### Limitacion conocida: video en Playwright
+Chromium headless (Playwright) NO reproduce video HTML5. Si el hero tiene `<video>` de fondo, el screenshot mostrara la imagen fallback, no el video. Esto es comportamiento esperado — verificar video requiere browser real.
+
 ## Lo que NO hago
 - No corrijo código (solo reporto)
 - No apruebo sin screenshots reales
