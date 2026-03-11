@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **16 agentes de Claude + 1 referencia**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, etc.) + `better-auth-reference.md` (guia de autenticacion)
+- **20 agentes de Claude + 1 referencia**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, agentes creativos, etc.) + `better-auth-reference.md` (guia de autenticacion)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
@@ -88,7 +88,7 @@ cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
 ls ~/.claude/agents/
 ```
 
-Deberias ver 17 archivos .md: los 16 agentes (`orquestador.md`, `project-manager-senior.md`, `frontend-developer.md`, etc.) + `better-auth-reference.md`.
+Deberias ver 21 archivos .md: los 20 agentes (`orquestador.md`, `project-manager-senior.md`, `frontend-developer.md`, etc.) + `better-auth-reference.md`.
 
 ---
 
@@ -232,8 +232,8 @@ El sistema se encarga del resto:
 **Claude no reconoce los agentes**
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
-**No aparecen los 16 agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe ser 17.
+**No aparecen los 20 agentes**
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe ser 21.
 
 **MCPs no aparecen en Claude Desktop**
 -> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.

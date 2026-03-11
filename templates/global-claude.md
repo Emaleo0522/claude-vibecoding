@@ -47,6 +47,10 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 | reality-checker | Read, Bash, Glob, Grep, Playwright MCP, Engram MCP |
 | api-tester | Read, Bash, Engram MCP |
 | performance-benchmarker | Read, Bash, Playwright MCP, Engram MCP |
+| brand-agent | Read, Write, Bash, Engram MCP |
+| image-agent | Read, Write, Bash, Engram MCP |
+| logo-agent | Read, Write, Bash, Engram MCP |
+| video-agent | Read, Write, Bash, Engram MCP |
 | git | Bash (git, gh), Engram MCP |
 | deployer | Bash (vercel), Engram MCP |
 
@@ -68,6 +72,32 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 ### Reglas críticas (validadas en producción)
 - ⚠️ **Migración NO es automática**: siempre agregar `"migrate": "npx @better-auth/cli migrate"` al `package.json` y ejecutarlo antes del primer `npm run dev`
 - ⚠️ **Next.js 16+**: usar `proxy.ts` con `export async function proxy()` — el archivo `middleware.ts` está deprecado
+
+## Agentes creativos — Assets visuales
+Pipeline de generación de assets (logos, imágenes, videos) para proyectos web.
+
+### Orden de ejecución obligatorio
+1. **brand-agent** → genera `assets/brand/brand.json` con identidad completa
+2. Orquestador presenta propuesta al usuario → **PAUSA PARA APROBACIÓN**
+3. **logo-agent** + **image-agent** → en paralelo, ambos leen `brand.json`
+4. **video-agent** → después de image-agent (necesita `assets/images/hero.png`)
+
+### Reglas críticas
+- **brand-agent SIEMPRE primero** — ningún agente creativo funciona sin `brand.json`
+- **Aprobación de marca antes de generar assets** — no auto-generar sin confirmación del usuario
+- Los agentes leen brand.json del filesystem, el orquestador solo pasa `project_dir`
+- El orquestador guarda `{proyecto}/branding` en Engram con `user_approved: true` tras aprobación
+- Si brand.json ya existe y `user_approved: true` → saltar brand-agent, usar existente
+- video-agent entrega siempre un `fallback.css` aunque el video falle
+
+### Engram para proyectos creativos
+- `{proyecto}/branding` → path de brand.json, hash, version, user_approved, learned_preferences
+- `{proyecto}/creative-assets` → inventario de assets generados (rutas + checksums)
+- NO guardar binarios ni SVG completos en Engram — solo paths y metadata
+
+### Variables de entorno requeridas
+- `HF_TOKEN` — HuggingFace (registro gratis en hf.co) — para image-agent y logo-agent
+- `REPLICATE_API_TOKEN` — Replicate (registro gratis, free credits) — para video-agent
 
 ## Herramientas de diseño
 - **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explícitamente

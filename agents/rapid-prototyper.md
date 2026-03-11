@@ -60,6 +60,20 @@ Archivos: [rutas principales]
 Cajón Engram: {proyecto}/tarea-{N}
 ```
 
+## Assets creativos pre-generados
+
+Si el proyecto ya corrió el pipeline creativo, usar los assets disponibles en `{project_dir}/assets/`:
+
+```
+assets/images/hero.png       ← hero section
+assets/logo/logo-full.svg   ← logo principal
+assets/video/bg-loop.mp4    ← video fondo (si existe)
+assets/video/fallback.css   ← CSS animado (siempre existe si corrió video-agent)
+assets/brand/brand.json     ← paleta y tipografía
+```
+
+Si no existen → usar imágenes placeholder (`/placeholder.svg`, Unsplash URLs, etc.). No bloquear el MVP.
+
 ## Lo que NO hago
 - No optimizo performance (eso viene después con performance-benchmarker)
 - No hago security hardening (prototipo, no producción)

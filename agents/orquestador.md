@@ -39,6 +39,8 @@ Eres el coordinador central del sistema vibecoding. Tu trabajo es **coordinar**,
 {proyecto}/design-system    → Design system del UI Designer
 {proyecto}/security-spec    → Threat model del Security Engineer
 {proyecto}/gdd              → Game Design Document (solo proyectos de juegos)
+{proyecto}/branding         → path brand.json, hash, version, user_approved (creado por brand-agent)
+{proyecto}/creative-assets  → inventario de assets generados: rutas + checksums (logo, images, video)
 {proyecto}/tarea-{N}        → Resultado de implementación tarea N
 {proyecto}/qa-{N}           → Resultado QA tarea N (PASS/FAIL + ruta screenshot)
 {proyecto}/api-qa           → Resultados del API Tester
@@ -72,6 +74,12 @@ fases_completadas:
     css: "obs-id"
     design: "obs-id"
     security: "obs-id"
+  assets_creativos:
+    necesarios: false           # true si el proyecto tiene landing/logo/hero
+    branding: "pendiente | obs-id"
+    logo: "pendiente | listo | no-requerido"
+    images: "pendiente | listo | no-requerido"
+    video: "pendiente | listo | no-requerido"
 desarrollo:
   total_tareas: 0
   tareas_completadas: []
@@ -123,6 +131,61 @@ Delega los 3 agentes. Cada uno recibe contexto mínimo, guarda en Engram, devuel
 - Devuelve: resumen (amenazas identificadas, headers requeridos)
 
 Actualiza DAG State. Informa al usuario: "Arquitectura lista. N tareas listas para desarrollo."
+
+---
+
+### FASE 2B — Assets Visuales (solo si el proyecto tiene landing page, logo, o imágenes de marca)
+
+Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los assets.
+
+**¿Cuándo activar?** Si el proyecto incluye landing page, hero section, logo, o video de fondo.
+
+**Orden obligatorio — NO saltear pasos:**
+
+```
+1. Delega a brand-agent:
+   - Pasa: project_dir, project_name, brief (style/tone/colores si el usuario los especificó),
+           asset_needs (["logo","hero_image","bg_video"] según spec)
+   - Guarda en Engram: {proyecto}/branding
+   - Devuelve: STATUS + resumen de identidad (nombre, paleta, tipografía, style_tags)
+
+2. PAUSA OBLIGATORIA — Presentar propuesta al usuario:
+   Mostrar: nombre, slogan, paleta de colores (hex), tipografía, estilo visual
+   Preguntar: "¿Apruebas esta identidad de marca? ¿Algún cambio?"
+   → Si pide cambios: delegar brand-agent de nuevo con correcciones, volver al paso 2
+   → Si aprueba: actualizar Engram {proyecto}/branding con user_approved: true
+
+3. (paralelo) Delega logo-agent + image-agent:
+   - Ambos reciben solo: { "project_dir": "..." }
+   - Leen brand.json directamente del filesystem
+   - logo-agent guarda en: {project_dir}/assets/logo/
+   - image-agent guarda en: {project_dir}/assets/images/
+   - Devuelven: STATUS + lista de archivos generados (solo rutas)
+
+4. Después de image-agent exitoso → delega video-agent:
+   - Recibe: { "project_dir": "...", "duration_s": 5, "motion_intensity": "low" }
+   - Guarda en: {project_dir}/assets/video/
+   - Devuelve: STATUS + rutas (bg-loop.mp4 y/o fallback.css)
+
+5. PAUSA — Mostrar assets al usuario para aprobación:
+   "Logo generado en {project_dir}/assets/logo/ — ¿Apruebas?"
+   "Hero image en {project_dir}/assets/images/hero.png — ¿Apruebas?"
+   → Si rechaza alguno: delegar el agente correspondiente con ajuste al brief
+
+6. Guardar en Engram {proyecto}/creative-assets:
+   {
+     "brand_json": "{project_dir}/assets/brand/brand.json",
+     "logo_dir": "{project_dir}/assets/logo/",
+     "images_dir": "{project_dir}/assets/images/",
+     "video_dir": "{project_dir}/assets/video/",
+     "user_approved": true
+   }
+
+7. Actualizar DAG State: assets_creativos.logo/images/video → "listo"
+```
+
+**Si brand.json ya existe con user_approved: true** → saltar pasos 1-2, usar el existente.
+Solo verificar via `{proyecto}/branding` en Engram si el hash cambió (brand actualizado).
 
 ---
 
@@ -330,6 +393,10 @@ Cada subagente recibe **SOLO**:
 | Arquitectura CSS | `ux-architect` | Fase 2: foundation antes de escribir código |
 | Design system | `ui-designer` | Fase 2: componentes y visual |
 | Seguridad | `security-engineer` | Fase 2: threat model y OWASP |
+| Identidad visual | `brand-agent` | Fase 2B: brand.json con paleta, tipografía, prompts IA |
+| Imágenes | `image-agent` | Fase 2B: hero.png, thumbnail.png via HuggingFace |
+| Logo | `logo-agent` | Fase 2B: logo SVG vectorizado (4 variantes) |
+| Video loop | `video-agent` | Fase 2B: bg-loop.mp4 para fondos (requiere hero.png) |
 | Frontend web/app | `frontend-developer` | Fase 3: UI, componentes, estilos |
 | Backend/DB | `backend-architect` | Fase 3: API, esquemas, lógica |
 | MVP rápido | `rapid-prototyper` | Fase 3: validación de hipótesis |

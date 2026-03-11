@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v2
-# 16 agentes + 1 referencia (Better Auth) | Pipeline de 5 fases
+# 20 agentes + 1 referencia (Better Auth) | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,7 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v2${NC}"
-echo -e "${CYAN}  16 agentes + Better Auth ref | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  20 agentes + Better Auth ref | Pipeline de 5 fases${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -99,7 +99,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 16 agentes + better-auth-reference en ~/.claude/agents/ --
+# -- 8. Instalar 20 agentes + better-auth-reference en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
@@ -173,7 +173,7 @@ if [[ -f "$LOCAL_TEMPLATE" ]]; then
     warn "settings.local.json existente respaldado en $CLAUDE_LOCAL.bak"
   fi
   cp "$LOCAL_TEMPLATE" "$CLAUDE_LOCAL"
-  info "settings.local.json instalado (permisos para 16 agentes)"
+  info "settings.local.json instalado (permisos para 20 agentes)"
 else
   warn "No se encontro templates/settings.local.json — saltando"
 fi

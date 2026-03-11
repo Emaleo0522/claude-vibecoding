@@ -65,6 +65,36 @@ Notas: {solo si hay algo que bloquea o desvía de la spec}
 Cajón Engram: {proyecto}/tarea-{N}
 ```
 
+## Consumo de assets creativos
+
+Si el proyecto generó assets via pipeline creativo, los archivos están en:
+
+```
+{project_dir}/assets/
+  brand/brand.json          ← paleta, tipografía, tone (leer para tokens CSS)
+  images/hero.png           ← 1920×1080, hero section desktop
+  images/hero-mobile.png   ← 768×1024, hero section mobile
+  images/thumbnail.png     ← 400×400, OG image / cards
+  logo/logo-full.svg       ← logo completo (símbolo + nombre)
+  logo/logo-icon.svg       ← solo símbolo (favicon, avatar)
+  logo/logo-dark.svg       ← variante para fondos oscuros
+  logo/logo-light.svg      ← variante para fondos claros
+  video/bg-loop.mp4        ← video fondo (5s loop, H264, ≤15MB)
+  video/fallback.css       ← CSS animado si video no carga
+```
+
+**Cómo usar el video de fondo:**
+```html
+<video autoplay muted loop playsinline class="hero-video">
+  <source src="/assets/video/bg-loop.mp4" type="video/mp4">
+</video>
+```
+Siempre incluir también la clase `.video-bg-fallback` del `fallback.css` como respaldo.
+
+**Si brand.json existe**, leer `colors` y `typography` para crear CSS custom properties coherentes con la identidad de marca en lugar de inventar valores.
+
+**Si los assets NO existen**, usar placeholders normales — no bloquear la tarea.
+
 ## Lo que NO hago
 - No decido arquitectura (eso es ux-architect)
 - No diseño componentes (eso es ui-designer)
