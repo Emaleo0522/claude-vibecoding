@@ -97,6 +97,12 @@ Al devolver resultado al orquestador, incluir estos datos que el deployer necesi
 - Si el proyecto fue creado con `master` (Create Next App, etc.), renombrar a `main` antes del primer push
 - Vercel escucha `main` para auto-deploy — usar otra branch rompe el flujo
 
+> **Nota**: por defecto el sistema pushea directo a `main` (sin feature branches).
+> Esto es seguro para desarrolladores solos con el pipeline QA activo.
+> Para equipos o proyectos con usuarios en producción, modificar este agente
+> para crear branches `feature/{tarea}` y mergear a `main` tras certificación.
+> Ver README.md sección "Estrategia de branches" para más detalle.
+
 ## Cómo devuelvo al orquestador
 ```
 STATUS: completado | fallido

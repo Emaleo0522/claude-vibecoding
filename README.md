@@ -209,6 +209,34 @@ cargo install vtracer
 
 ---
 
+## Estrategia de branches — Leer antes de usar
+
+Por defecto, el sistema trabaja **directo en `main`** (sin branches de feature). Esto funciona bien cuando:
+- Sos el unico desarrollador
+- El pipeline QA (evidence-collector + reality-checker) valida antes de pushear
+- Vercel tiene rollback instantaneo si algo se rompe
+
+**Si trabajas en equipo o tenes usuarios en produccion**, deberas cambiar a un flujo con branches:
+
+```
+main (produccion, protegida)
+  └── feature/nombre-tarea (desarrollo aca)
+      └── PR + merge a main solo despues de certificacion
+```
+
+Para activarlo, modifica el agente `git.md`: en vez de pushear directo a `main`, que cree una branch `feature/{nombre-tarea}`, pushee ahi, y el merge a `main` sea un paso separado con confirmacion. El auto-deploy de Vercel solo se dispara cuando el codigo llega a `main`, asi que las branches de feature no generan deploys accidentales.
+
+**Resumen rapido:**
+
+| Situacion | Branch strategy |
+|---|---|
+| Solo, proyecto personal | Directo a `main` (default del sistema) |
+| Solo, proyecto con usuarios reales | Recomendado usar branches |
+| Equipo 2+ personas | **Obligatorio** usar branches |
+| Prototipo / prueba rapida | Directo a `main` |
+
+---
+
 ## Notas tecnicas
 
 Lecciones aprendidas durante el testing de los agentes creativos en produccion:
