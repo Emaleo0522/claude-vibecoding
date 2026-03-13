@@ -130,12 +130,30 @@ Pipeline de generación de assets (logos, imágenes, videos) para proyectos web.
 - AggregateRating/Reviews JSON-LD solo con datos de testimonios REALES, nunca inventados
 - `@vercel/og` es el método preferido para OG images dinámicos en Next.js (no Pillow/canvas)
 - Páginas con SEO dinámico (colecciones, productos) → Server Component + `generateMetadata`
+- **`llms.txt` + `llms-full.txt` para AI search**: sitios que quieren visibilidad en ChatGPT, Perplexity, Claude deben incluir estos archivos en la raíz. `llms.txt` = descripción concisa + catálogo + contacto. `llms-full.txt` = FAQ completa + descripciones detalladas de productos/servicios. Son como `robots.txt` pero para LLMs.
+- **`robots.txt` con AI crawlers explícitos**: agregar `User-agent: GPTBot`, `Google-Extended`, `anthropic-ai`, `CCBot`, `PerplexityBot`, `Applebot-Extended` con `Allow: /` — los bots respetan esto y es señal de que el sitio quiere ser indexado por IAs
 
 ### Performance Web (obligatorio en todos los proyectos)
 - Preconnect + dns-prefetch para dominios externos (Unsplash, Google Fonts, CDNs)
+- **Preconnect al backend propio también**: si hay API calls a un origen externo (PocketBase, Express, etc.), agregar `<link rel="preconnect" href="https://mi-backend.com">` — ahorra el DNS lookup en el primer fetch
 - `manifest.json` básico siempre (PWA-ready, mejora Lighthouse)
 - `theme-color` meta tag para mobile browsers
 - Google Search Console verification tag como placeholder (listo para reemplazar)
+- **`<link rel="preload" as="image">` para el LCP element**: si la imagen más grande del viewport está en CSS o tiene `loading="auto"`, el browser la descubre tarde. Identificar el LCP y agregarlo como preload explícito en `<head>`
+- **PNG grandes como background → WebP obligatorio**: imágenes PNG usadas como `background-image` en CSS pueden superar 1MB fácilmente. Convertir a WebP (ahorro típico >90%). La imagen no aparece en el HTML, el browser la descubre al parsear CSS — doble penalización.
+
+### Vercel — Sitios Estáticos
+- **`Cache-Control: max-age=0` es el default de Vercel** para todos los assets estáticos — el browser re-valida en cada visita. Para añadir browser caching, crear `vercel.json` con headers explícitos: `max-age=604800` para `/assets/**`, `max-age=3600` para `/js/**` y `/css/**`
+- **Security headers via `vercel.json`**: Vercel no agrega X-Frame-Options, X-Content-Type-Options, Referrer-Policy ni Permissions-Policy por defecto. Agregarlos en `vercel.json` bajo `"source": "/(.*)"`. Plantilla mínima:
+  ```json
+  { "headers": [{ "source": "/(.*)", "headers": [
+    { "key": "X-Content-Type-Options", "value": "nosniff" },
+    { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+    { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+    { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+  ]}]}
+  ```
+- **Admin panel en sitio estático**: agregar en `vercel.json` un header `X-Robots-Tag: noindex, nofollow` + `Cache-Control: no-store` para la ruta `/admin.html` — evita que Google indexe el panel y que browsers cacheen la sesión
 
 ### PocketBase (validado en producción)
 - **Boolean `required: true` rompe toggles**: Go trata `false` como zero value → falla validación. Campos booleanos que se van a alternar entre `true`/`false` NUNCA deben tener `required: true` en el schema.
