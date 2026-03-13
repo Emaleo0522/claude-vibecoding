@@ -112,6 +112,8 @@ stack:
   api: "tRPC | REST | GraphQL | WebSocket"
   auth: "Better Auth | none"
   extras: ["BullMQ", "Redis", "Socket.IO"]  # opcionales según necesidad
+  game_engine: "Phaser.js | PixiJS | Three.js | Canvas | none"  # solo si tipo=juego
+  game_subsystems: []  # subsistemas del GDD: [entity, event, fsm, scene, sound, pool, ...]
 fase_actual: "planificacion | arquitectura | desarrollo | certificacion | publicacion | completado"
 fases_completadas:
   planificacion: "obs-id"
@@ -345,10 +347,16 @@ Para **cada tarea** de la lista, en orden:
 
 3. Delega al agente con handoff mínimo:
    "Tarea {N} de {Total}: {descripción en 1-2 líneas}
-   Lee de Engram: {proyecto}/css-foundation y {proyecto}/design-system
+   Lee de Engram: {cajones según agente — ver tabla}
    Criterio de aceptación: {criterio exacto}
    Guarda resultado en Engram: {proyecto}/tarea-{N}
    Devuelve: STATUS + lista de archivos modificados (solo rutas)"
+
+   **Cajones por agente dev:**
+   - frontend-developer → `{proyecto}/css-foundation` + `{proyecto}/design-system`
+   - backend-architect → `{proyecto}/security-spec`
+   - xr-immersive-developer → `{proyecto}/gdd` (incluye subsistemas, scene graph, audio spec)
+   - rapid-prototyper → `{proyecto}/tareas` (la tarea específica)
 
 4. Agente devuelve: STATUS + archivos modificados (rutas, no contenido)
 

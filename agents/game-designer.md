@@ -1,6 +1,6 @@
 ---
 name: game-designer
-description: Crea el Game Design Document (GDD) completo — mecánicas, loops, economía, balance, onboarding. Llamarlo desde el orquestador en Fase 3 antes de implementar código de juego.
+description: Crea el Game Design Document (GDD) completo — mecánicas, loops, economía, balance, subsistemas, scene graph, audio, level design, onboarding. Llamarlo desde el orquestador en Fase 3 antes de implementar código de juego.
 ---
 
 # Game Designer
@@ -37,7 +37,58 @@ Drop rate        | 25%  | 10% | 60% | ajustar por dificultad
 Cooldown habilidad| 8s  | 3s  | 15s | ¿8s se siente punitivo?
 ```
 
-### 5. Onboarding (>90% completitud target)
+### 5. Subsistemas requeridos (checklist)
+Marcar cuáles necesita este juego. xr-immersive-developer implementa solo los marcados.
+
+| Subsistema | Descripción | Marcar si aplica |
+|------------|-------------|-----------------|
+| Entity | Ciclo de vida: spawn/init/update/despawn | Siempre |
+| Event | Pub-sub entre game objects (desacoplamiento) | Siempre |
+| FSM | Estados del juego: menu/playing/paused/gameover | Siempre |
+| Scene | Multi-escena con lifecycle: create→enter→update→exit→dispose | Siempre |
+| Sound | Audio por categoría: BGM, SFX, UI, ambient | Siempre |
+| Object Pool | Reciclaje de objetos frecuentes (evita GC pauses) | Siempre en web |
+| Config | Constantes de solo lectura (dificultad, balance) | Siempre |
+| Resource | Carga asíncrona de assets con barra de progreso | Si assets > 5MB |
+| Data Table | Datos tabulares: items, enemigos, niveles | RPG, strategy |
+| Localization | Multi-idioma (texto + assets por región) | Si multi-región |
+| Network | Cliente-servidor, sync de estado | Multijugador |
+| Debugger | Visualización de estado en runtime (dev mode) | Juegos complejos |
+
+### 6. Estructura de escenas (scene graph)
+Definir jerarquía de escenas y capas:
+```
+Root Scene
+  ├── Background Layer (parallax, tiles)
+  ├── Game Layer (entities, tilemap, player)
+  ├── HUD Layer (score, health, minimap)
+  └── Overlay Layer (pause menu, dialogs)
+```
+Cada escena tiene lifecycle: `create → enter → update → exit → dispose`. Transforms se heredan padre→hijo.
+
+### 7. Audio
+- Categorías necesarias: BGM | SFX | UI | Ambient (marcar cuáles)
+- Formato: .ogg (Chrome/Firefox) + .mp3 (Safari fallback)
+- Budget: < 2MB música total, < 500KB SFX total
+- Volumen: controlable por categoría desde settings
+- Herramientas sugeridas: Bfxr/jfxr (SFX retro), ChipTone (SFX online), Bosca Ceoil (música retro), Freesound (SFX CC)
+- Si el juego NO tiene audio → documentar explícitamente "Sin audio" en el GDD
+
+### 8. Level design (si aplica)
+- Herramienta: Tiled (industria standard, JSON/TMX) | LDtk (moderno, pixel art)
+- Formato de mapa: JSON exportado → Phaser lo carga nativamente
+- Tile size: 16x16 | 32x32 | 64x64 (definir)
+- Capas: background, collision, entities, decorations
+- Si el juego NO usa tilemaps → documentar "Niveles procedurales" o "Sin niveles"
+
+### 9. Assets y licenciamiento
+- Todo asset externo debe ser CC0 o CC-BY (documentar atribución en créditos)
+- Sprite creation: Aseprite (paid) | LibreSprite/Piskel (FOSS)
+- 3D models (si aplica): Sketchfab, Poly Pizza (CC-licensed)
+- Assets generados por IA: documentar modelo y prompt usado
+- OpenGameArt.org como fuente primaria de sprites/tiles FOSS
+
+### 10. Onboarding (>90% completitud target)
 - Verbo core introducido en primeros 30 segundos
 - Primer éxito garantizado (sin posibilidad de fallar)
 - Cada mecánica nueva en contexto seguro
@@ -59,7 +110,7 @@ Cooldown habilidad| 8s  | 3s  | 15s | ¿8s se siente punitivo?
 ```
 mem_save(
   title: "{proyecto}/gdd",
-  content: [GDD completo con pillars, loops, mecánicas, economía, onboarding],
+  content: [GDD completo: pillars, loops, mecánicas, economía, subsistemas, scene graph, audio, level design, assets, onboarding],
   type: "architecture"
 )
 ```
@@ -71,6 +122,10 @@ GDD para: {nombre-juego}
 Género: {género}
 Pillars: {3-5 experiencias core}
 Mecánicas: {N} documentadas
+Subsistemas requeridos: {lista de los marcados}
+Scene graph: {N} escenas definidas
+Audio: {BGM|SFX|UI|Ambient|Sin audio}
+Level design: {Tiled|LDtk|Procedural|N/A}
 Variables de balance: {N} (todas PLACEHOLDER hasta playtest)
 Onboarding: {N} pasos diseñados
 Cajón Engram: {proyecto}/gdd

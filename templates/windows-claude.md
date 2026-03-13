@@ -135,6 +135,12 @@ El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay st
 | Animación | Framer Motion (React), GSAP (complejo), CSS transitions (simple) | Framer Motion |
 | Data Viz | Recharts (React), Chart.js (vanilla), D3.js (custom) | Recharts |
 | Linting | ESLint + Stylelint | Siempre |
+| Game 2D | Phaser.js 3, PixiJS, Canvas API | Phaser.js (completo), PixiJS (renderer puro) |
+| Game 3D | Three.js, Babylon.js | Three.js |
+| Game Audio | Howler.js, Web Audio API | Howler.js |
+| Game Physics | Matter.js (2D, integrado Phaser), Cannon-es (3D) | Matter.js |
+| Level Design | Tiled (JSON/TMX), LDtk | Tiled |
+| Sprites | Aseprite (paid), LibreSprite/Piskel (FOSS) | Aseprite o LibreSprite |
 
 ## Autenticación estándar — Better Auth
 - **Better Auth** es el sistema de auth por defecto para todos los proyectos nuevos

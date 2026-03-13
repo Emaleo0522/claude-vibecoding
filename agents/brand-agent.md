@@ -107,7 +107,13 @@ Si falta algún campo → completar antes de reportar.
 
 ## Engram (solo escritura)
 Este agente NO lee de Engram. Recibe brief directo del orquestador.
-Escribe en: `{proyecto}/branding`
+```
+mem_save(
+  title: "{proyecto}/branding",
+  content: [path brand.json, hash, version, user_approved],
+  type: "architecture"
+)
+```
 
 ---
 
