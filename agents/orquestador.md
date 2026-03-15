@@ -43,6 +43,7 @@ Eres el coordinador central del sistema vibecoding. Tu trabajo es **coordinar**,
 {proyecto}/creative-assets  → inventario de assets generados: rutas + checksums (logo, images, video)
 {proyecto}/tarea-{N}        → Resultado de implementación tarea N
 {proyecto}/qa-{N}           → Resultado QA tarea N (PASS/FAIL + ruta screenshot)
+{proyecto}/api-spec         → Contrato de endpoints (generado por backend-architect, leído por api-tester)
 {proyecto}/api-qa           → Resultados del API Tester
 {proyecto}/perf-report      → Benchmarks del Performance Benchmarker
 {proyecto}/certificacion    → Reporte final del Reality Checker
@@ -91,7 +92,7 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | video-agent | nada (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-assets` (merge) |
 | seo-discovery | `{proyecto}/tareas` (estructura de páginas) | `{proyecto}/seo` |
 | evidence-collector | `{proyecto}/tarea-{N}` (criterios de la tarea) | `{proyecto}/qa-{N}` |
-| api-tester | `{proyecto}/tareas` (endpoints documentados) | `{proyecto}/api-qa` |
+| api-tester | `{proyecto}/api-spec` (generado por backend-architect; fallback: `{proyecto}/tareas`) | `{proyecto}/api-qa` |
 | performance-benchmarker | nada (recibe URL) | `{proyecto}/perf-report` |
 | reality-checker | todos los cajones del proyecto | `{proyecto}/certificacion` |
 | git | nada (recibe directorio + mensaje) | `{proyecto}/git-commit` |

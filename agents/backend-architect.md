@@ -67,6 +67,27 @@ Paso 2: mem_update(observation_id, contenido actualizado con los fixes aplicados
 ```
 Esto evita duplicados — el orquestador siempre lee el resultado más reciente del mismo cajón.
 
+### Cajón api-spec — obligatorio en tareas que crean endpoints
+
+Cuando la tarea implementa endpoints HTTP, guardar/actualizar el contrato en `{proyecto}/api-spec`
+para que el api-tester de Fase 4 pueda descubrirlos sin leer código fuente:
+
+```
+Paso 1: mem_search("{proyecto}/api-spec")
+→ Si existe (observation_id):
+    Leer existente con mem_get_observation(observation_id)
+    Agregar los nuevos endpoints al listado
+    mem_update(observation_id, listado_completo)
+→ Si no existe:
+    mem_save(
+      title: "{proyecto}/api-spec",
+      content: "Base URL: http://localhost:{PORT}\nEndpoints:\n  GET /api/... → {descripción}\n  POST /api/... → {descripción}",
+      type: "architecture"
+    )
+```
+
+Formato mínimo por endpoint: `MÉTODO /ruta → descripción + auth requerido (sí/no) + body esperado`
+
 ## Cómo devuelvo al orquestador
 ```
 STATUS: completado | fallido

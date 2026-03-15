@@ -28,11 +28,21 @@ Verifico qué existe realmente:
 Screenshots guardados en `/tmp/qa/final-desktop.png`, `/tmp/qa/final-tablet.png`, `/tmp/qa/final-mobile.png`.
 
 ### Paso 2 — Cross-Validation con QA anterior
-Leo los resultados del evidence-collector de Engram (protocolo 2 pasos obligatorio):
+Leo los resultados del evidence-collector de Engram. Protocolo de búsqueda por tarea individual
+(Engram requiere claves exactas — no soporta búsqueda por prefijo):
+
 ```
-mem_search("{proyecto}/qa-") → obtener observation_ids
-mem_get_observation(id)      → obtener contenido completo (nunca usar preview truncada)
+# 1. Obtener total de tareas del DAG state
+Paso 1a: mem_search("{proyecto}/estado") → observation_id
+Paso 1b: mem_get_observation(id) → extraer desarrollo.total_tareas (ej: 8)
+
+# 2. Leer cada cajón qa-N individualmente
+Para N en [1 .. total_tareas]:
+  mem_search("{proyecto}/qa-{N}") → observation_id
+  mem_get_observation(id)         → contenido completo (nunca usar preview truncada)
+  Registrar: PASS/FAIL + issues + screenshot paths
 ```
+
 Verifico:
 - ¿Todos los issues reportados por evidence-collector fueron resueltos?
 - ¿Hay issues que pasaron desapercibidos?
