@@ -1,6 +1,6 @@
 # Claude Vibecoding — Sistema Multi-Agente
 
-21 agentes especializados que convierten ideas en aplicaciones web, juegos y APIs listas para produccion. Un orquestador central coordina un pipeline profesional de 5 fases: planificacion, arquitectura, desarrollo con QA visual, certificacion y deploy.
+22 agentes especializados que convierten ideas en aplicaciones web, móviles, juegos y APIs listas para produccion. Un orquestador central coordina un pipeline profesional de 5 fases: planificacion, arquitectura, desarrollo con QA visual, certificacion y deploy.
 
 Compatible con **Linux (Claude Code)** y **Windows (Claude Desktop)**.
 
@@ -97,6 +97,7 @@ FASE 5 — Publicacion (con confirmacion del usuario)
 | 2B | `logo-agent` | Logos SVG vectorizados (FLUX.1 + vtracer) |
 | 2B | `video-agent` | Videos de fondo (Replicate LTXVideo / fallback CSS) |
 | 3 | `frontend-developer` | React/Vue/TS, Tailwind, shadcn/ui, Zustand, TanStack Query |
+| 3 | `mobile-developer` | React Native + Expo, NativeWind 4, Expo Router, EAS Build |
 | 3 | `backend-architect` | Hono/Express, Drizzle/Prisma, tRPC, PostgreSQL, Better Auth |
 | 3 | `rapid-prototyper` | MVPs multi-stack para validacion rapida |
 | 3 | `game-designer` | Game Design Document: mecanicas, loops, economia, balance |

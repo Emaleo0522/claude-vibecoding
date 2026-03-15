@@ -45,6 +45,7 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 | frontend-developer | Read, Write, Edit, Bash, Engram MCP |
 | backend-architect | Read, Write, Edit, Bash, Engram MCP |
 | rapid-prototyper | Read, Write, Edit, Bash, Engram MCP |
+| mobile-developer | Read, Write, Edit, Bash, Engram MCP |
 | game-designer | Read, Write, Engram MCP |
 | xr-immersive-developer | Read, Write, Edit, Bash, Engram MCP |
 | evidence-collector | Read, Bash, Playwright MCP, Engram MCP |
@@ -87,6 +88,7 @@ El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay st
 | Jobs/Background | BullMQ, Inngest | BullMQ (si Redis), Inngest (serverless) |
 | Email | React Email + Resend | Siempre que haya transaccional |
 | Estructura | Single-repo, Monorepo (apps/+packages/) | Monorepo si frontend+backend separados |
+| Mobile | React Native + Expo SDK 52+, NativeWind 4, Expo Router | React Native + Expo (iOS + Android desde un repo) |
 | Animación | Framer Motion (React), GSAP (complejo), CSS transitions (simple) | Framer Motion |
 | Data Viz | Recharts (React), Chart.js (vanilla), D3.js (custom) | Recharts |
 | Linting | ESLint + Stylelint | Siempre |

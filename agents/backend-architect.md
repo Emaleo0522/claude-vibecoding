@@ -129,6 +129,36 @@ const createUserSchema = z.object({
 ```
 Zod reemplaza validación manual — genera tipos TypeScript automáticamente.
 
+### Zod 4 — Breaking Changes (actualizado)
+
+```typescript
+// Validadores top-level — ya no necesitan z.string() base
+// ❌ Zod 3
+z.string().email()
+z.string().url()
+z.string().uuid()
+
+// ✅ Zod 4 — top-level, más eficiente
+z.email()
+z.url()
+z.uuid()
+z.cuid()
+z.datetime()
+
+// error: reemplaza message: en refinements (message: sigue funcionando pero es legacy)
+// ❌ Zod 3 (legacy)
+z.string().min(8, { message: 'Mínimo 8 caracteres' })
+
+// ✅ Zod 4
+z.string().min(8, { error: 'Mínimo 8 caracteres' })
+
+// z.object() — .strip() es el default ahora (elimina keys extra silenciosamente)
+// Para rechazar keys extras explícitamente:
+z.object({ name: z.string() }).strict()
+// Para pasar todas las keys (incluyendo las no declaradas):
+z.object({ name: z.string() }).passthrough()
+```
+
 ### Caching strategy con Redis
 - **Cache-aside**: leer cache → si miss, leer DB → guardar en cache con TTL
 - **Invalidación**: invalidar cache en write operations (no TTL-only)

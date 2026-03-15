@@ -80,6 +80,7 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
 | security-engineer | nada (recibe spec directa) | `{proyecto}/security-spec` |
 | frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
+| mobile-developer | `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
 | backend-architect | `{proyecto}/security-spec` | `{proyecto}/tarea-{N}` |
 | rapid-prototyper | `{proyecto}/tareas` (la tarea específica) | `{proyecto}/tarea-{N}` |
 | game-designer | nada (recibe spec de mecánicas) | `{proyecto}/gdd` |
@@ -102,7 +103,7 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 
 ```yaml
 proyecto: "nombre-del-proyecto"
-tipo: "web | app | juego | api"
+tipo: "web | app | mobile | juego | api"
 estructura: "single-repo | monorepo"
 stack:
   frontend: "Next.js | SvelteKit | Vite+React | Astro | Phaser.js | none"
@@ -170,6 +171,11 @@ publicacion:
      ¿Es un MVP/prototipo rápido?
        → Rapid-prototyper decide su stack (ver su matriz)
        → Single-repo
+
+     ¿Es una app móvil (iOS/Android)?
+       → React Native + Expo SDK 52+ + Expo Router
+       → Single-repo
+       → Agente: mobile-developer
 
      ¿Es un juego de navegador?
        → Phaser.js/PixiJS + Vite + TypeScript
@@ -353,6 +359,7 @@ Para **cada tarea** de la lista, en orden:
 
 2. Selecciona agente según tipo de tarea:
    - UI / componentes / estilos / frontend  → frontend-developer
+   - App móvil (iOS/Android con Expo)       → mobile-developer
    - API / base de datos / backend / jobs   → backend-architect
    - API type-safe (tRPC setup, routers)    → backend-architect
    - MVP rápido / validación de hipótesis   → rapid-prototyper
@@ -579,6 +586,7 @@ Cada subagente recibe **SOLO**:
 | Logo | `logo-agent` | Fase 2B: logo SVG vectorizado (4 variantes) |
 | Video loop | `video-agent` | Fase 2B: bg-loop.mp4 para fondos (requiere hero.png) |
 | Frontend web/app | `frontend-developer` | Fase 3: UI, componentes, estilos |
+| App móvil iOS/Android | `mobile-developer` | Fase 3: React Native + Expo, pantallas, navegación |
 | Backend/DB | `backend-architect` | Fase 3: API, esquemas, lógica |
 | MVP rápido | `rapid-prototyper` | Fase 3: validación de hipótesis |
 | Juego (diseño) | `game-designer` | Fase 3: GDD, mecánicas, balance |

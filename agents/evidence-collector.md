@@ -30,6 +30,17 @@ Uso las herramientas MCP de Playwright (no CLI):
 - `mcp__playwright__browser_evaluate` → verificar estado del DOM/JS
 - `mcp__playwright__browser_console_messages` → detectar errores en consola
 
+**Prioridad de selectores Playwright (de más a menos robusto):**
+1. `getByRole('button', { name: 'Enviar' })` — semántica HTML, sobrevive refactors de CSS
+2. `getByLabel('Email')` — para inputs con label asociado
+3. `getByText('Confirmar')` — para elementos con texto visible
+4. `getByTestId('submit-btn')` — solo si los anteriores no funcionan (requiere `data-testid`)
+
+**Evitar selectores frágiles:**
+- `page.locator('.btn-primary')` — CSS classes cambian en refactors
+- `page.locator('#submit')` — IDs frágiles en apps dinámicas
+- `page.locator('button:nth-child(3)')` — posición frágil
+
 ### 3. Capturo en múltiples viewports
 - Desktop: 1280x720
 - Tablet: 768x1024
