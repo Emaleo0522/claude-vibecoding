@@ -216,6 +216,39 @@ else
   warn "No se pudo verificar SSH. Verifica manualmente con: ssh -T git@github.com"
 fi
 
+# -- 17. Opcional: Sistema visual de agentes (Pixel Bridge) --
+echo ""
+echo -e "${CYAN}============================================${NC}"
+echo -e "${CYAN}  Opcional: Sistema Visual de Agentes${NC}"
+echo -e "${CYAN}============================================${NC}"
+echo ""
+echo "  Muestra los 22 agentes como personajes en una oficina"
+echo "  pixel art en tiempo real (http://localhost:3456)."
+echo "  Cuando un agente trabaja, se sienta en su escritorio."
+echo "  Cuando termina, camina a reportarle al orquestador."
+echo "  Completamente opcional — el sistema funciona sin esto."
+echo ""
+read -p "  ¿Querés instalar el sistema visual de pixel art? (s/N): " INSTALL_PIXEL
+if [[ "$INSTALL_PIXEL" =~ ^[sS]$ ]]; then
+  echo ""
+  warn "Para instalar, reinicia Claude Code y en una nueva conversacion escribi:"
+  echo ""
+  echo '  "Instala el sistema visual de pixel art para Claude Code.'
+  echo '   Configuralo como servidor standalone Node.js+Express en'
+  echo '   ~/.claude/pixel-bridge/standalone/ (NO como extension de VS Code).'
+  echo '   El servidor debe leer ~/.claude/projects/*.jsonl en tiempo real'
+  echo '   y servir la UI en http://localhost:3456.'
+  echo '   Los 22 agentes del sistema de vibecoding deben estar siempre'
+  echo '   presentes en la oficina aunque esten inactivos.'
+  echo '   Basate en https://github.com/pablodelucca/pixel-agents para la'
+  echo '   arquitectura y descarga los assets (sprites, tiles, furniture,'
+  echo '   fonts) desde la carpeta assets/ de ese repo."'
+  echo ""
+  info "Instruccion lista. Pegala en Claude Code cuando reinicies."
+else
+  info "Sistema visual omitido. Podes instalarlo después — ver README.md para instrucciones."
+fi
+
 # -- Resumen --
 echo ""
 echo -e "${CYAN}============================================${NC}"

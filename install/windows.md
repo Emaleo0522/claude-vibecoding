@@ -269,3 +269,49 @@ El sistema se encarga del resto:
 ~/bin/
 |-- engram.exe                                   <- binario de Engram MCP
 ```
+
+---
+
+## Paso Opcional: Sistema Visual de Agentes (Pixel Art)
+
+Una oficina en pixel art donde los 22 agentes se mueven en tiempo real. Cuando uno recibe una tarea, camina a su escritorio y se pone a trabajar. Cuando termina, camina a reportarle al orquestador con una burbuja de chat, y vuelve a deambular.
+
+> **100% opcional.** El sistema de vibecoding funciona perfectamente sin esto.
+
+**Lo que necesita el sistema visual:**
+- Node.js (ya instalado en Paso 2)
+- Assets de sprites/tiles/furniture del repo [pixel-agents](https://github.com/pablodelucca/pixel-agents)
+- Un servidor local en `http://localhost:3456` (se instala automáticamente)
+
+**Cómo instalar:** En Claude Desktop, en una nueva conversación, pegá este mensaje:
+
+```
+Instala el sistema visual de pixel art para Claude Desktop.
+Creá un servidor standalone Node.js+Express en ~/.claude/pixel-bridge/standalone/
+que lea ~/.claude/projects/*.jsonl en tiempo real y sirva la UI en http://localhost:3456.
+Los 22 agentes del sistema de vibecoding deben estar siempre presentes
+en la oficina aunque estén inactivos.
+Bajá los assets (sprites, tiles, furniture, fonts) de la carpeta assets/
+de https://github.com/pablodelucca/pixel-agents
+```
+
+Claude va a:
+1. Crear el servidor Node.js+TypeScript con WebSocket
+2. Crear la UI React+Canvas con los personajes pixel art
+3. Descargar los assets (sprites, tiles, fuentes) del repo original
+4. Compilar todo y dejarlo listo
+
+Una vez instalado, para ver la oficina: abrí `http://localhost:3456` en el navegador.
+Para que arranque automáticamente, Claude puede configurar un entry en `~/.claude/launch.json`.
+
+**Troubleshooting:**
+
+**El servidor no arranca**
+→ Verificá que Node.js esté instalado: `node --version`
+→ Desde Git Bash: `cd ~/.claude/pixel-bridge/standalone && node dist/server/index.js`
+
+**No se ven los sprites / pantalla en negro**
+→ Los assets no se descargaron correctamente. Decile a Claude: `"Volvé a descargar los assets de pixel-bridge desde https://github.com/pablodelucca/pixel-agents"`
+
+**¿Qué es el proyecto original?**
+→ [pixel-agents](https://github.com/pablodelucca/pixel-agents) de [@pablodelucca](https://github.com/pablodelucca), diseñado como extensión de VS Code. Esta versión es una adaptación standalone que funciona en el navegador sin VS Code.
