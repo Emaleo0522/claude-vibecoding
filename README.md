@@ -143,12 +143,16 @@ Ningun asset creativo bloquea el pipeline. Si una API falla, hay cadena de fallb
 
 | Variable | Servicio | Costo | Usado por |
 |----------|----------|-------|-----------|
-| `HF_TOKEN` | [HuggingFace](https://huggingface.co) | Gratis | image-agent, logo-agent |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | ~$0.07/imagen | image-agent, logo-agent (opcional, primario si existe) |
+| `HF_TOKEN` | [HuggingFace](https://huggingface.co) | Gratis | image-agent, logo-agent (fallback o primario si no hay Gemini) |
 | `REPLICATE_API_TOKEN` | [Replicate](https://replicate.com) | ~$0.05/video | video-agent |
 
+**Elegis tu backend de imagenes**: Gemini (mejor calidad, ~$0.07/img) o HuggingFace (gratis). Si tenes ambas keys, Gemini se usa como primario con HuggingFace como fallback.
+
 ```bash
-export HF_TOKEN="hf_tu_token"
-export REPLICATE_API_TOKEN="r8_tu_token"
+export GEMINI_API_KEY="tu_api_key"        # Opcion A: Gemini (recomendado)
+export HF_TOKEN="hf_tu_token"             # Opcion B: HuggingFace (gratis)
+export REPLICATE_API_TOKEN="r8_tu_token"  # Solo para video-agent
 ```
 
 **vtracer** (opcional): mejora logos PNG a SVG vectorizado. Instalar con `cargo install vtracer` o desde [releases](https://github.com/visioncortex/vtracer/releases). Sin el, los logos se entregan como PNG.

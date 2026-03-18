@@ -27,7 +27,7 @@ Generar logos vectoriales escalables leyendo la identidad de marca de `brand.jso
 - Read: `{project_dir}/assets/brand/brand.json`
 - Write: `{project_dir}/assets/logo/` únicamente
 - Bash: `curl`, `mkdir`, `which`, `vtracer`, `inkscape`, `file`, `wc -c`
-- Env: `HF_TOKEN` (requerido)
+- Env: `GEMINI_API_KEY` (opcional, primario si existe) o `HF_TOKEN` (requerido si no hay Gemini)
 - Engram MCP: `mem_save`, `mem_search`, `mem_get_observation`
 
 ---
@@ -93,12 +93,36 @@ negative: {avoid_global}, photorealistic, complex details,
 gradients, shadows, text, letters, words, typography
 ```
 
-**Por qué fondo blanco**: facilita la vectorización y separación del símbolo.
+**Por qué fondo sólido**: facilita la vectorización y separación del símbolo.
+Si se va a vectorizar con vtracer → fondo blanco (contraste limpio para tracing).
+Si se necesita PNG con transparencia directa → fondo verde (green screen pipeline, ver Paso 4B).
 
 ### Paso 4 — Generar imagen base
 
-Endpoint primario: HuggingFace FLUX.1-schnell. Fallback: SDXL si rate limit.
+**Selección de backend** (misma lógica que image-agent):
+- Si `GEMINI_API_KEY` → Gemini como primario, HuggingFace como fallback
+- Si solo `HF_TOKEN` → FLUX.1-schnell, fallback SDXL
 Validar: tamaño > 10KB, `file` devuelve "PNG image".
+
+### Paso 4B — Green screen pipeline (alternativa para PNG transparente directo)
+
+Si el logo se necesita como PNG transparente y vtracer/Inkscape no están disponibles:
+
+1. **Regenerar con prompt de fondo verde**: agregar al prompt "solid bright green background (#00FF00), no shadows on background"
+2. **FFmpeg colorkey** (remover verde + despill de bordes):
+```bash
+# Detectar color verde exacto del fondo (sample esquina superior izquierda)
+BG_COLOR=$(magick logo-raw-green.png -crop 4x4+0+0 +repage -scale 1x1! -format "%[hex:u.p{0,0}]" info:)
+# Remover fondo verde con tolerancia + despill
+ffmpeg -i logo-raw-green.png -vf "colorkey=0x${BG_COLOR}:0.3:0.15,despill=type=green" -y logo-transparent.png
+```
+3. **ImageMagick trim** (recortar padding transparente):
+```bash
+magick logo-transparent.png -trim +repage logo-icon-clean.png
+```
+
+**Requiere**: FFmpeg + ImageMagick instalados. Si no están → usar PNG con fondo blanco y documentar.
+**Cuándo usar**: cuando vtracer no está disponible Y se necesita transparencia real (no solo para web con CSS background).
 
 ### Paso 5 — Vectorizar
 
@@ -145,23 +169,7 @@ Si npx disponible: `npx svgo --multipass` en cada SVG. Reduce tamaño 30-60%.
 Desde `logo-icon.svg`, generar: `favicon.svg` (copia), `favicon-32x32.png`, `apple-touch-icon.png` (180x180), `favicon.ico` — usando ImageMagick `convert` si disponible. Si no, documentar para generación manual.
 Estos archivos van a `public/` raíz (no `public/logo/`) — frontend-developer los copia.
 
-### Paso 9 — Guardar en Engram (UPSERT — merge sección logos)
-
-Protocolo obligatorio para evitar duplicados cuando image-agent corre en paralelo:
-
-```
-Paso 1: mem_search("{proyecto}/creative-assets")
-→ Si existe (observation_id):
-    Leer contenido existente con mem_get_observation(observation_id)
-    Mergear: agregar/reemplazar sección "logos" conservando "images" y "video" existentes
-    mem_update(observation_id, contenido_mergeado)
-→ Si no existe:
-    mem_save(
-      title: "{proyecto}/creative-assets",
-      content: { "logos": { "full": "...", "icon": "...", "dark": "...", "light": "...", "vectorizador": "...", "generated_at": "..." } },
-      type: "architecture"
-    )
-```
+### Paso 9 — Guardar en Engram
 
 ## Fuente de datos
 Lee `{project_dir}/assets/brand/brand.json` del **filesystem** (NO de Engram).

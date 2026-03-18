@@ -63,6 +63,7 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 | `{proyecto}/perf-report` | performance-benchmarker | reality-checker |
 | `{proyecto}/certificacion` | reality-checker | orquestador |
 | `{proyecto}/git-commit` | git | orquestador |
+| `{proyecto}/costs` | orquestador | orquestador (resumen de costos API del pipeline creativo) |
 | `{proyecto}/deploy-url` | deployer | orquestador |
 
 ## Herramientas por agente
@@ -176,9 +177,20 @@ Pipeline de generación de assets (logos, imágenes, videos) para proyectos web.
 - **+Texto**: `text, letters, words, typography, font, writing, watermark text`
 Cada agente agrega los suyos según contexto (SAFE/MEDIUM/RISKY en image-agent, motion artifacts en video-agent).
 
+### Cost tracking para agentes creativos
+El orquestador mantiene un cajón `{proyecto}/costs` con el costo estimado por invocación de API:
+- brand-agent: $0 (sin API externa)
+- image-agent (Gemini): ~$0.07/imagen | image-agent (HuggingFace): $0 (free tier)
+- logo-agent (Gemini): ~$0.07/logo | logo-agent (HuggingFace): $0 (free tier)
+- video-agent: ~$0.03-0.10/video (Replicate)
+Los agentes reportan el costo en su STATUS al orquestador. Máximo estimado del pipeline creativo completo: ~$0.50 (con 3 reintentos de video).
+
 ### Variables de entorno requeridas
-- `HF_TOKEN` — HuggingFace (registro gratis en hf.co) — para image-agent y logo-agent
+- `GEMINI_API_KEY` — Google Gemini (opcional, primario si existe) — para image-agent y logo-agent
+- `HF_TOKEN` — HuggingFace (registro gratis en hf.co) — para image-agent y logo-agent (fallback o primario si no hay Gemini)
 - `REPLICATE_API_TOKEN` — Replicate (registro gratis, free credits) — para video-agent
+
+**Resolución de env vars** (cascada de búsqueda): variable de entorno del sistema → `.env` en el proyecto → `~/.claude-agents/.env` (fallback global)
 
 ## Best Practices Cross-Cutting (validadas en producción)
 
