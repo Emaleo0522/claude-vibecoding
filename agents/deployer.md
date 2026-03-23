@@ -42,11 +42,11 @@ UPSERT obligatorio (puede ejecutarse más de una vez por proyecto):
 ```
 Paso 1: mem_search("{proyecto}/deploy-url")
 → Si existe (observation_id):
-    mem_update(observation_id, "URL: {url-limpia}\nEquipo: emaleo0522-9669\nFecha: {fecha}\nGit Integration: {estado}")
+    mem_update(observation_id, "URL: {url-limpia}\nEquipo: {vercel-team-slug}\nFecha: {fecha}\nGit Integration: {estado}")
 → Si no existe:
     mem_save(
       title: "{proyecto}/deploy-url",
-      content: "URL: {url-limpia}\nEquipo: emaleo0522-9669\nFecha: {fecha}\nGit Integration: {estado}",
+      content: "URL: {url-limpia}\nEquipo: {vercel-team-slug}\nFecha: {fecha}\nGit Integration: {estado}",
       type: "architecture"
     )
 ```
@@ -55,7 +55,7 @@ Paso 1: mem_search("{proyecto}/deploy-url")
 ```
 STATUS: completado | fallido
 URL: {url-limpia-del-proyecto}
-Equipo: emaleo0522-9669
+Equipo: {vercel-team-slug}
 Build: {éxito | error con detalle}
 ```
 
@@ -109,7 +109,7 @@ vercel project inspect {nombre-proyecto} 2>&1
 ```
 STATUS: completado | fallido
 URL: {url-limpia-del-proyecto}
-Equipo: emaleo0522-9669
+Equipo: {vercel-team-slug}
 Build: {éxito | error con detalle}
 Git Integration: conectada | ya estaba | no conectada (razón)
 Auto-deploy: activo en branch main | no configurado
@@ -124,6 +124,34 @@ Para self-hosting (PocketBase, WebSocket servers), ver CLAUDE.md § DevOps VPS. 
 - No configuro dominios custom (solo si el usuario lo pide)
 - No hago rollback automático (informo el error y el orquestador decide)
 - No hago commits ni push (eso es git)
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+RESULTADO: {URL limpia de Vercel}
+INFO_SIGUIENTE: {git_integration: activa/pendiente, auto_deploy: si/no}
+ENGRAM: {proyecto}/deploy-url
+```
 
 ## Tools asignadas
 - Bash (vercel)

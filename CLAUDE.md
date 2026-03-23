@@ -38,11 +38,45 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 ### Engram (memoria persistente — protege el contexto)
 - **Topic keys**: `{proyecto}/{tipo}` (ej: `mi-app/tareas`, `mi-app/qa-3`)
 - **Lectura siempre en 2 pasos**: `mem_search` → `mem_get_observation` (nunca usar preview truncada directamente)
-- **DAG State**: el orquestador guarda `{proyecto}/estado` después de cada fase (incluye stack, estructura, progreso)
+- **DAG State**: el orquestador guarda `{proyecto}/estado` despues de cada TAREA completada (no solo fases)
 - **Guardar completo, leer selectivo**: subagentes solo leen los cajones que necesitan, nunca todo
-- **No duplicar en contexto**: si la info está en Engram, pasar solo la ruta al cajón, no el contenido
-- **Retomar sin inventar**: al reanudar post-compactación, `{proyecto}/estado` tiene todo para continuar
-- **Actualizar, no duplicar**: si un cajón ya existe y se va a reescribir (ej: retry de tarea o QA), usar `mem_update(observation_id, nuevo_contenido)` — nunca crear dos entradas con el mismo topic_key. Buscar con `mem_search` primero para obtener el observation_id
+- **No duplicar en contexto**: si la info esta en Engram, pasar solo la ruta al cajon, no el contenido
+- **Retomar sin inventar**: al reanudar post-compactacion, `{proyecto}/estado` tiene todo para continuar
+- **Actualizar, no duplicar**: si un cajon ya existe y se va a reescribir (ej: retry de tarea o QA), usar `mem_update(observation_id, nuevo_contenido)` — nunca crear dos entradas con el mismo topic_key. Buscar con `mem_search` primero para obtener el observation_id
+- **Proactive saves**: subagentes guardan descubrimientos no obvios inmediatamente con `mem_save` (topic key: `{proyecto}/discovery-{descripcion}`)
+- **Dual-write critico**: `{proyecto}/estado` y `{proyecto}/tareas` se guardan SIEMPRE en Engram + disco (`{project_dir}/.pipeline/`)
+
+### Lectura Engram — bloque canonico (referencia para todos los agentes)
+```
+# Leer de Engram (2 pasos OBLIGATORIOS — nunca usar preview truncada)
+result = mem_search("{proyecto}/{cajon}")
+if result.observation_id:
+    full = mem_get_observation(result.observation_id)
+    # usar full.content — NUNCA result.preview
+else:
+    # cajon no existe — informar al orquestador
+```
+
+### Continuidad entre sesiones
+
+Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
+
+1. El orquestador busca `{proyecto}/estado` en Engram (Boot Sequence)
+2. Lee el DAG State completo (fase, stack, tareas, progreso)
+3. Presenta al usuario:
+   ```
+   Retomando {proyecto}
+   Fase: {fase_actual}
+   Tareas: {completadas}/{total}
+   Ultima actividad: {ultimo_save}
+
+   ¿Continuo desde donde quedo?
+   ```
+4. No re-ejecuta fases completadas ni re-pregunta decisiones ya tomadas
+5. Si hay una tarea en progreso que no llego a PASS, la re-intenta
+
+**Esto funciona porque TODO el estado esta en Engram, no en la conversacion.**
+**Cualquier persona (u otra sesion de Claude) puede retomar leyendo el DAG State.**
 
 ### Topic keys del sistema (referencia rápida)
 | Topic key | Generado por | Leído por |
@@ -236,7 +270,11 @@ Los agentes reportan el costo en su STATUS al orquestador. Máximo estimado del 
 - **listRule/viewRule deben diferenciar admin vs público**: si el admin panel necesita ver ítems ocultos, usar `published = true || @request.auth.collectionName = "admin_collection"`. Sin esto, el admin queda ciego a los registros ocultados.
 - **Siempre exponer `errBody.data` en errores de API**: el `message` top-level es genérico ("Failed to update record."). El detalle real (qué campo falla, qué código de validación) está en `errBody.data`. Loguear ambos al debuggear.
 - **Superadmin auth cambió en v0.23+**: el endpoint `/api/admins/auth-with-password` devuelve 404 en versiones nuevas. Usar `/api/collections/_superusers/auth-with-password` con el mismo body `{identity, password}`.
-- **Reglas de colección son independientes por operación**: create/list/update/delete pueden tener reglas distintas. Una colección puede permitir create a usuarios pero tener update en null (solo admin). Verificar las 4 reglas al debuggear 400/403.
+- **Reglas de coleccion son independientes por operacion**: create/list/update/delete pueden tener reglas distintas. Una coleccion puede permitir create a usuarios pero tener update en null (solo admin). Verificar las 4 reglas al debuggear 400/403.
+- **NULL vs empty string en rules**: `NULL` listRule = solo admins (403). `""` = acceso publico. Son distintos en SQLite — verificar con `QUOTE(listRule)`.
+- **Sort fields**: `sort=campo1,campo2` multi-campo retorna 400 en muchas versiones. `sort=-created` tambien puede fallar. Solucion segura: `sort=-id` (ULID-based, time-sortable desde v0.16+).
+- **PocketBase en Docker**: no tiene `sqlite3` dentro del container. Siempre `docker stop` antes de editar `.db` directamente.
+- **HTTPS obligatorio**: si frontend es HTTPS, backend DEBE ser HTTPS. Ver seccion "DevOps VPS" para soluciones.
 
 ### CSS Patterns (validados en producción)
 - **`::after` para background images**: mejor que un div extra. El pseudo-elemento va con `position: absolute; inset: 0; z-index: 0; pointer-events: none`. Los hijos del contenedor necesitan `position: relative; z-index: 1`.
@@ -286,5 +324,51 @@ sudo apt-get install -y nginx certbot python3-certbot-nginx
 sudo certbot --nginx -d MI-DOMINIO.sslip.io --non-interactive --agree-tos -m email@example.com
 ```
 
-## Herramientas de diseño
-- **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explícitamente
+## Overrides Windows — Diferencias con Linux/Claude Code
+
+### Servidores de desarrollo (agentes: frontend-developer, backend-architect, rapid-prototyper, xr-immersive-developer)
+
+**NUNCA** arrancar servidores con `npm run dev` via Bash directamente.
+**SIEMPRE** usar `preview_start` del Claude Preview MCP.
+
+Pasos obligatorios:
+1. Crear o verificar `.claude/launch.json` en el directorio de trabajo con la configuracion del proyecto
+2. Llamar `preview_start` con el nombre definido en `launch.json`
+3. Usar `preview_logs` para verificar que arranco sin errores
+4. Pasar la URL (`http://localhost:{puerto}`) al agente de QA
+
+Formato de `.claude/launch.json` en Windows:
+```json
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nombre-proyecto",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd nombre-proyecto && npm run dev"],
+      "port": 3000
+    }
+  ]
+}
+```
+
+> **Motivo**: En Claude Desktop/Windows, `npm` no esta disponible directamente en el PATH del entorno de herramientas. `cmd /c` resuelve el PATH correctamente.
+
+### Comandos de una sola vez (instalar deps, migrar DB, build)
+Estos si se ejecutan via Bash normal:
+```bash
+cd nombre-proyecto && npm install
+cd nombre-proyecto && npm run migrate
+cd nombre-proyecto && npm run build
+```
+
+### Puertos en Windows
+- Matar procesos: `netstat -ano | findstr :PORT` + `taskkill /PID <pid> /F`
+- Linux equivalente: `lsof -ti:PORT | xargs kill -9`
+
+### Next.js — Versiones
+- Usar **Next.js 15 o 16** (no 14)
+- Next.js 16+: `proxy.ts` en raiz del proyecto (no `middleware.ts`)
+
+## Herramientas de diseno
+- **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explicitamente

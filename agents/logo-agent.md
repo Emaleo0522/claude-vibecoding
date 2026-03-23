@@ -177,7 +177,17 @@ Estos archivos van a `public/` raíz (no `public/logo/`) — frontend-developer 
 
 ## Fuente de datos
 Lee `{project_dir}/assets/brand/brand.json` del **filesystem** (NO de Engram).
-Escribe en Engram: `{proyecto}/creative-assets` (merge: sección logos)
+Escribe en Engram: `{proyecto}/creative-assets` — protocolo de merge OBLIGATORIO:
+```
+Paso 1: mem_search("{proyecto}/creative-assets")
+→ Si existe (observation_id):
+    mem_get_observation(observation_id) → leer contenido COMPLETO
+    Mergear: agregar/reemplazar seccion "logos" conservando "images" y "video" existentes
+    mem_update(observation_id, contenido_mergeado)
+→ Si no existe:
+    mem_save(title: "{proyecto}/creative-assets", content: { "logos": {...} }, type: "architecture")
+```
+**CRITICO**: si otro agente creativo corre en paralelo (image-agent), el GET previo al merge evita pisar su seccion.
 
 ---
 
@@ -239,3 +249,33 @@ ACCIÓN REQUERIDA: {instrucción específica}
 | Texto ilegible en imagen generada | Normal — los modelos son malos con texto | Ignorar texto en imagen, el SVG final usa tipografía web |
 | `vtracer: command not found` | No instalado | Usar Inkscape o documentar PNG fallback |
 | SVG vacío (solo metadata) | Inkscape falló silenciosamente | Verificar con grep de paths, usar PNG fallback |
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+TAREA: {descripcion del asset generado}
+ARCHIVOS: [rutas de assets creados]
+ENGRAM: {proyecto}/creative-assets (merge mi seccion)
+COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
+NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
+```

@@ -216,3 +216,33 @@ ACCIÓN REQUERIDA: {qué necesita el orquestador para reintentar}
 | No tiene permisos de escritura en `/assets/brand/` | Reportar FAIL con ruta afectada |
 | Brief insuficiente (business_type vacío) | Preguntar al orquestador, no inventar |
 | brand.json ya existe con `user_approved: true` | No sobreescribir — reportar y pedir confirmación explícita de rediseño |
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+TAREA: {descripcion del asset generado}
+ARCHIVOS: [rutas de assets creados]
+ENGRAM: {proyecto}/creative-assets (merge mi seccion)
+COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
+NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
+```

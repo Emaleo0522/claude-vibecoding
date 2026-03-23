@@ -107,9 +107,11 @@ Cuando una tarea requiere autenticacion, usar **Better Auth** como primera opcio
 1. `pnpm install better-auth`
 2. Crear `lib/auth.ts` con `betterAuth()` (DB adapter + providers)
 3. Crear API route catch-all (`/api/auth/[...all]`) con el handler del framework
-4. Generar tablas: `npx @better-auth/cli migrate`
-5. Configurar `.env` con `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, y credentials de providers
-6. Middleware de proteccion de rutas segun framework
+4. **OBLIGATORIO antes de npm run dev**: `npx @better-auth/cli migrate` (crea tablas en DB). Sin esto, auth falla silenciosamente con errores de DB cripticos.
+5. Agregar script en package.json: `"migrate": "npx @better-auth/cli migrate"`
+6. Configurar `.env` con `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, y credentials de providers
+7. Middleware de proteccion de rutas segun framework
+8. **Next.js 16+**: usar `proxy.ts` (NO `middleware.ts` — deprecado). Export: `export async function proxy() { ... }`
 
 ### Adaptadores de DB preferidos
 - PostgreSQL + Prisma → `prismaAdapter(prisma, { provider: "postgresql" })`
@@ -278,9 +280,10 @@ Si `tsconfig.base.json` hereda `noEmit: true` (común en monorepos Next.js), las
 ### Assets estáticos: public/ no assets/
 En monorepo con Next.js, los assets creativos (imágenes, video, logo) van en `apps/web/public/`, no en `assets/` raíz. Next.js solo sirve archivos de `public/`.
 
-## PocketBase — Gotchas validados en producción
+## PocketBase — Gotchas validados en produccion
 
 Para proyectos que usan PocketBase como backend self-hosted.
+> Ver tambien: seccion "PocketBase" en CLAUDE.md para gotchas adicionales (boolean required, superadmin v0.23+, errBody.data, reglas por operacion).
 
 ### Gotcha 1 — NULL vs empty string en collection rules
 - `NULL` listRule/viewRule = **solo admins** (403 para todos los demás)
@@ -317,6 +320,36 @@ Ver sección "DevOps VPS" en CLAUDE.md para las opciones de solución.
 - No hago QA (eso es evidence-collector / api-tester)
 - No hago deploy (eso es deployer)
 - No devuelvo código completo inline al orquestador
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+TAREA: {N} — {titulo}
+ARCHIVOS: [lista de rutas modificadas]
+SERVIDOR: puerto {N} | no requerido
+ENGRAM: {proyecto}/tarea-{N}
+NOTAS: {solo si hay bloqueadores o desviaciones}
+```
 
 ## Tools asignadas
 - Read

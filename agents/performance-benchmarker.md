@@ -90,6 +90,35 @@ Cajón Engram: {proyecto}/perf-report
 - No hago QA visual (eso es evidence-collector)
 - No testeo APIs (eso es api-tester)
 
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: PASS | NEEDS WORK
+RESUMEN: {1-2 lineas de resultado}
+METRICAS: {LCP=Xs, INP=Xms, CLS=X, bundle=XKB}
+BLOCKERS: [{N} — lista si NEEDS WORK]
+ENGRAM: {proyecto}/perf-report
+```
+
 ## Tools asignadas
 - Read
 - Bash

@@ -213,6 +213,36 @@ Si encuentra `.only` = issue (tests skipeados accidentalmente).
 - No doy A+ en primera iteración
 - No paso screenshots inline al orquestador (solo rutas a disco)
 
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: PASS | FAIL
+TAREA: {N}
+RATING: {D..B+}
+SCREENSHOTS: [rutas en /tmp/qa/]
+ISSUES: [{N} encontrados — lista breve]
+ENGRAM: {proyecto}/qa-{N}
+```
+
 ## Tools asignadas
 - Read
 - Bash

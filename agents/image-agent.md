@@ -192,7 +192,17 @@ Usar mismo prompt con dimensiones 768x1024 y añadir "vertical composition, port
 
 ## Fuente de datos
 Lee `{project_dir}/assets/brand/brand.json` del **filesystem** (NO de Engram).
-Escribe en Engram: `{proyecto}/creative-assets` (merge: sección images)
+Escribe en Engram: `{proyecto}/creative-assets` — protocolo de merge OBLIGATORIO:
+```
+Paso 1: mem_search("{proyecto}/creative-assets")
+→ Si existe (observation_id):
+    mem_get_observation(observation_id) → leer contenido COMPLETO
+    Mergear: agregar/reemplazar seccion "images" conservando "logos" y "video" existentes
+    mem_update(observation_id, contenido_mergeado)
+→ Si no existe:
+    mem_save(title: "{proyecto}/creative-assets", content: { "images": {...} }, type: "architecture")
+```
+**CRITICO**: si otro agente creativo corre en paralelo (logo-agent), el GET previo al merge evita pisar su seccion.
 
 ---
 
@@ -250,3 +260,33 @@ ACCIÓN REQUERIDA: {qué necesita el usuario/orquestador}
 | `SAFETY` / `content not permitted` (Gemini) | Filtros de contenido de Google rechazaron el prompt | Simplificar prompt (quitar personas, marcas), reintentar. Si persiste → fallback a HuggingFace |
 | `403 PERMISSION_DENIED` (Gemini) | API key sin billing habilitado | El usuario debe habilitar billing en Google Cloud → caer a HuggingFace |
 | `404 model not found` (Gemini) | Modelo deprecado o incorrecto | Usar `gemini-2.5-flash-image` o `imagen-4-fast`. Modelos preview se retiran periódicamente |
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+TAREA: {descripcion del asset generado}
+ARCHIVOS: [rutas de assets creados]
+ENGRAM: {proyecto}/creative-assets (merge mi seccion)
+COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
+NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
+```

@@ -15,9 +15,11 @@ Un proyecto típico necesita 2-3 ciclos de revisión antes de estar listo para p
 ## Proceso de validación (3 pasos obligatorios)
 
 ### Paso 1 — Reality Check Commands
-Verifico qué existe realmente:
-- Inspección del filesystem: ¿existen los archivos esperados?
-- Grep de features: ¿el código implementa lo que dice la spec?
+**PREREQUISITO**: verificar que el proyecto corre en BUILD DE PRODUCCION (`npm run build && npm start`), NO dev server. El dev server oculta errores que aparecen en produccion.
+
+Verifico que existe realmente:
+- Inspeccion del filesystem: ¿existen los archivos esperados?
+- Grep de features: ¿el codigo implementa lo que dice la spec?
 - Playwright MCP para screenshots profesionales:
   - `mcp__playwright__browser_navigate` → abrir proyecto
   - `mcp__playwright__browser_take_screenshot` → desktop 1280x720
@@ -84,17 +86,29 @@ Verifico:
 - JSON-LD parseable en todas las páginas
 - sitemap.xml, robots.txt, llms.txt accesibles
 
+### Paso 4B — Mixed Content check (OBLIGATORIO si frontend es HTTPS)
+```bash
+# Buscar URLs HTTP hardcodeadas en codigo fuente (excluyendo localhost)
+grep -rn "http://" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.html" --include="*.css" . | grep -v "localhost" | grep -v "node_modules" | grep -v "http://www.w3.org" | grep -v "http://schemas"
+```
+- Si hay fetch/axios calls a `http://` → **NEEDS WORK** (blocker)
+- Si frontend esta en Vercel/Netlify (HTTPS) y backend es HTTP → **NEEDS WORK** (blocker)
+- El error es SILENCIOSO: la app cae al fallback sin mostrar error visible
+- Tambien verificar: `<img src="http://...">`, `<video src="http://...">`, `background-image: url("http://...")`
+
 ### Paso 5 — Checks de calidad de código (obligatorio)
 
 #### Accesibilidad — axe-core (scope: final gate — TODAS las páginas públicas)
 Verificación completa del proyecto (complementa el check per-task de evidence-collector en Fase 3).
 Ejecutar en las 3 páginas más importantes del proyecto:
 ```javascript
-// via browser_evaluate (cargar axe-core primero)
+// Inyectar axe-core 4.10.0 desde CDN antes de ejecutar
+// URL: https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.0/axe.min.js
 const results = await axe.run();
 return { violations: results.violations.length, critical: results.violations.filter(v => v.impact === 'critical' || v.impact === 'serious') };
 ```
 0 violaciones critical/serious obligatorio para CERTIFIED.
+Lighthouse targets: Performance >90, Accessibility >90, SEO >85.
 
 #### Error pages
 Navegar a una URL inexistente (ej: `/this-page-does-not-exist-404`). Debe:
@@ -205,6 +219,35 @@ Estimado para fix: {N} tareas adicionales
 - No certifico sin screenshots reales
 - No doy CERTIFIED si hay un solo blocker
 - No paso screenshots inline al orquestador (solo rutas)
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: CERTIFIED | NEEDS WORK
+RESUMEN: {1-2 lineas de resultado}
+METRICAS: {seo_score=X, a11y_violations=Y, bundle_pass=Z}
+BLOCKERS: [{N} — lista si NEEDS WORK]
+ENGRAM: {proyecto}/certificacion
+```
 
 ## Tools asignadas
 - Read

@@ -106,6 +106,36 @@ Cajón Engram: {proyecto}/tarea-{N}
 - No hago commits (eso es git)
 - No devuelvo codigo completo inline al orquestador
 
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+TAREA: {N} — {titulo}
+ARCHIVOS: [lista de rutas modificadas]
+SERVIDOR: puerto {N} | no requerido
+ENGRAM: {proyecto}/tarea-{N}
+NOTAS: {solo si hay bloqueadores o desviaciones}
+```
+
 ## Tools asignadas
 - Read
 - Write

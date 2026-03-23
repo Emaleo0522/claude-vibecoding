@@ -150,7 +150,14 @@ Extraer de `brand.json`:
 4. Descargar video a `{project_dir}/assets/video/bg-loop.mp4`
 
 **Parámetros críticos**: usar `length` (NO `num_frames`), usar `aspect_ratio` (NO width/height — causan 422)
-**Fallback**: Stable Video Diffusion si LTXVideo falla
+**Fallback chain**:
+1. Si LTXVideo falla (error en prediccion, timeout) → reintentar 1 vez con prompt simplificado
+2. Si sigue fallando → intentar Stable Video Diffusion (`stability-ai/stable-video-diffusion`)
+3. Si el modelo fue RETIRADO (GET /v1/models → 404 o version lista vacia):
+   - Intentar Stable Video Diffusion como primario
+   - Guardar discovery en Engram: `{proyecto}/discovery-ltxvideo-retirado`
+4. Si TODOS los modelos fallan → entregar SOLO el CSS fallback (Paso 5) + avisar al usuario
+   - NUNCA bloquear el pipeline por falta de video — el CSS fallback es suficiente
 
 ### Paso 4 — Validar video
 
@@ -282,3 +289,33 @@ ACCIÓN REQUERIDA: {instrucción}
 - **Playwright NO reproduce video**: evidence-collector verá la imagen fallback — esto es esperado, no reintentar QA por esto.
 - **Re-encoding**: si codec no es H.264, usar `ffmpeg -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart`
 - **Clasificación SAFE/MEDIUM/RISKY validada**: RISKY con líquidos + manos = error garantizado. MEDIUM es el sweet spot para personas.
+
+## Proactive saves (discoveries)
+
+Si durante mi trabajo descubro algo no obvio (bug, workaround, decision arquitectonica),
+lo guardo inmediatamente en Engram:
+
+```
+mem_save(
+  title: "{proyecto}/discovery-{descripcion-corta}",
+  topic_key: "{proyecto}/discovery-{descripcion-corta}",
+  content: "**What**: [que descubri]\n**Why**: [por que importa]\n**Where**: [archivos afectados]\n**Learned**: [la leccion para el futuro]",
+  type: "discovery",
+  project: "{proyecto}"
+)
+```
+
+Esto protege el conocimiento contra compactacion — si se pierde contexto,
+el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_search`.
+
+## Return Envelope
+
+Devuelvo al orquestador EXACTAMENTE con este formato:
+```
+STATUS: completado | fallido
+TAREA: {descripcion del asset generado}
+ARCHIVOS: [rutas de assets creados]
+ENGRAM: {proyecto}/creative-assets (merge mi seccion)
+COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
+NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
+```
