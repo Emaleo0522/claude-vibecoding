@@ -46,6 +46,13 @@ Usando Playwright MCP + evaluación en browser:
 - Fonts que bloquean render
 - API calls lentas en cascada
 
+### 6. Animaciones (si el proyecto usa GSAP)
+Si detecto `gsap` en el bundle (grep `node_modules/gsap` o `import.*gsap`):
+- **Bundle impact**: core (~33KB) + plugins. Si supera 60KB gzip en animacion sola → reportar
+- **ScrollTrigger count**: contar cuantos ScrollTrigger.create hay. Mas de 15 en una pagina → overhead en scroll events, recomendar agrupar con stagger
+- **will-change excesivo**: buscar `will-change` en CSS. Si hay mas de 5 elementos con will-change permanente → recomendar remover post-animacion
+- **Propiedades animadas**: verificar que NO se animan `width`, `height`, `top`, `left` (causan layout/paint). Solo `transform` y `opacity` son GPU-composited
+
 ## Herramientas que uso
 
 ### PageSpeed Insights API (metodo principal para sitios deployados)

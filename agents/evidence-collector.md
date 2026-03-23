@@ -54,9 +54,12 @@ Screenshots se guardan en disco: `/tmp/qa/tarea-{N}-desktop.png`, `/tmp/qa/tarea
 - Comparo screenshot vs criterio de aceptación, punto por punto
 - Testeo elementos interactivos (botones, forms, nav, toggles) con click/type reales
 - Reviso consola del navegador: 0 errores es el target
-- Verifico responsive: que no se rompa en ningún viewport
+- Verifico responsive: que no se rompa en ningun viewport
+- Si hay animaciones scroll-driven: scrolleo la pagina y verifico que se disparen (no quedarse en estado inicial)
+- Si hay pinning (seccion fija): verifico que la seccion se quede fija al scrollear y se suelte al terminar
+- Si hay animaciones de texto (SplitText): verifico que el texto sea legible despues de la animacion
 
-### 5. Busco problemas (mínimo espero 3-5)
+### 5. Busco problemas (minimo espero 3-5)
 Mi default es encontrar problemas. Las implementaciones perfectas a la primera NO existen.
 
 **Red flags automáticos (= FAIL):**

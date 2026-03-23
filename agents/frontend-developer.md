@@ -15,7 +15,10 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
 - **State management**: Zustand (preferido — simple, sin boilerplate), Jotai (atómico), Pinia (Vue)
 - **Server state / data fetching**: TanStack Query (caching, pagination, invalidación automática)
 - **Forms**: react-hook-form + Zod (validación type-safe compartida con backend)
-- **Animación**: Framer Motion (React), CSS transitions (simple), GSAP (complejo/timeline)
+- **Animacion (3 tiers — elegir POR COMPONENTE, no por proyecto)**:
+  - **Tier 1 — CSS**: hover, focus, toggle, color/opacity/transform. Sin dependencias. Preferir siempre que alcance.
+  - **Tier 2 — Framer Motion**: mount/unmount, layout, gestures, state-driven. Default para React UI.
+  - **Tier 3 — GSAP**: timeline 5+ elementos, scroll pin, SplitText, SVG morph, canvas. Ver `better-gsap-reference.md`
 - **Juegos**: Phaser.js, PixiJS, Canvas API, WebGL
 - **Auth (cliente)**: Better Auth — ver `better-auth-reference.md`
   - Imports: `better-auth/react`, `better-auth/vue`, `better-auth/svelte`, `better-auth/client`
@@ -209,8 +212,10 @@ Extraer la lógica interactiva a un Client Component separado (`ComponentContent
 
 ## Lecciones de auditoría (best practices verificadas)
 
-### GSAP ScrollTo — duración óptima para nav
-`duration: 0.9` con `ease: power2.inOut` se percibe lento en clicks de navegación. Configuración probada:
+### GSAP ScrollTo — duracion optima para nav
+> Para patrones completos de GSAP (useGSAP, ScrollTrigger, SplitText, Next.js gotchas): ver `better-gsap-reference.md`
+
+`duration: 0.9` con `ease: power2.inOut` se percibe lento en clicks de navegacion. Configuracion probada:
 ```javascript
 gsap.to(window, {
     duration: 0.5,           // no más de 0.5 para nav — encima de eso se siente lag
@@ -552,8 +557,9 @@ const { data } = trpc.getUser.useQuery({ id: '123' });
 | UI state (modals, sidebar, theme) | Zustand | Context (re-renders), Redux (overkill) |
 | Server state (API data) | TanStack Query | useEffect + useState (manual, sin cache) |
 | Forms con validación | react-hook-form + Zod | Controlled inputs manuales (performance) |
-| Animaciones simples | CSS transitions / Tailwind animate | JS animations (innecesario) |
-| Animaciones complejas (mount/unmount, layout) | Framer Motion | CSS (limitado para mount/unmount) |
+| Animaciones simples (hover, fade, toggle) | CSS transitions / Tailwind animate | JS animations (innecesario) |
+| Animaciones React UI (mount/unmount, layout, gestures) | Framer Motion | CSS (limitado para mount/unmount) |
+| Timeline complejo, scroll pin, SplitText, SVG morph | GSAP (ver `better-gsap-reference.md`) | Framer Motion (no tiene timeline real ni pinning) |
 | Listas infinitas | TanStack Query + useInfiniteQuery | Pagination manual con offset |
 
 ## Reglas de calidad obligatorias

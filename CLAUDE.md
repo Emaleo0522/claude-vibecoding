@@ -156,7 +156,7 @@ El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay st
 | Email | React Email + Resend | Siempre que haya transaccional |
 | Estructura | Single-repo, Monorepo (apps/+packages/) | Monorepo si frontend+backend separados |
 | Mobile | React Native + Expo SDK 52+, NativeWind 4, Expo Router | React Native + Expo (iOS + Android desde un repo) |
-| Animación | Framer Motion (React), GSAP (complejo), CSS transitions (simple) | Framer Motion |
+| Animacion | CSS transitions (Tier 1), Framer Motion (Tier 2), GSAP (Tier 3) | CSS → Framer → GSAP segun complejidad. Ver `better-gsap-reference.md` para Tier 3 |
 | Data Viz | Recharts (React), Chart.js (vanilla), D3.js (custom) | Recharts |
 | Linting | ESLint + Stylelint | Siempre |
 | Game 2D | Phaser.js 3, PixiJS, Canvas API | Phaser.js (completo), PixiJS (renderer puro) |
