@@ -207,6 +207,47 @@ function sendInitialData(ws: WebSocket): void {
   } else {
     ws.send(JSON.stringify({ type: "layoutLoaded", layout: null, version: 0 }))
   }
+
+  // ── STATE SNAPSHOT — send current activity of all agents ──
+  // This is critical for reconnection: without it, all agents appear idle
+  // even if they're actively working. Send tool state for every active agent.
+  for (const agent of agentList) {
+    // Send active tools
+    for (const [toolId, tool] of agent.activeTools) {
+      ws.send(JSON.stringify({
+        type: "agentToolStart",
+        id: agent.id,
+        toolId,
+        status: tool.status,
+      }))
+    }
+    // Send active subagent tools
+    for (const [parentToolId, toolIds] of agent.activeSubagentToolIds) {
+      const toolNames = agent.activeSubagentToolNames.get(parentToolId)
+      for (const toolId of toolIds) {
+        const status = toolNames?.get(toolId) || toolId
+        ws.send(JSON.stringify({
+          type: "subagentToolStart",
+          id: agent.id,
+          parentToolId,
+          toolId,
+          status,
+        }))
+      }
+    }
+    // Send permission state
+    if (agent.permissionSent) {
+      ws.send(JSON.stringify({ type: "agentToolPermission", id: agent.id }))
+    }
+    // Send activity status if not idle
+    if (agent.activity !== "idle") {
+      ws.send(JSON.stringify({
+        type: "agentStatus",
+        id: agent.id,
+        status: agent.activity === "typing" ? "working" : agent.activity,
+      }))
+    }
+  }
 }
 
 wss.on("connection", (ws) => {
@@ -218,6 +259,8 @@ wss.on("connection", (ws) => {
     try {
       const msg = JSON.parse(raw.toString())
       if (msg.type === "webviewReady" || msg.type === "ready") {
+        // Re-scan for active JSONL files that may have appeared while client was disconnected
+        watcher.rescan()
         sendInitialData(ws)
       } else if (msg.type === "saveLayout") {
         try {

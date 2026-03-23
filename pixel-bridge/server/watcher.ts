@@ -1,5 +1,5 @@
 import { watch } from "chokidar";
-import { statSync, readdirSync, openSync, readSync, closeSync } from "fs";
+import { statSync, readdirSync, openSync, readSync, closeSync, existsSync, writeFileSync, mkdirSync } from "fs";
 import { join, basename, dirname } from "path";
 import { homedir } from "os";
 import { EventEmitter } from "events";
@@ -7,6 +7,7 @@ import { EventEmitter } from "events";
 const CLAUDE_PROJECTS_DIR = join(homedir(), ".claude", "projects");
 const ACTIVE_THRESHOLD_MS = 600_000; // 10 minutes — Claude can think for 5+ min without writing
 const POLL_INTERVAL_MS = 1000;
+const OFFSETS_PATH = join(homedir(), ".pixel-agents", "file-offsets.json");
 
 export interface WatchedFile {
   path: string;
@@ -20,6 +21,34 @@ export class JsonlWatcher extends EventEmitter {
   private files = new Map<string, WatchedFile>();
   private watcher: ReturnType<typeof watch> | null = null;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
+  private persistedOffsets: Record<string, number> = {};
+
+  constructor() {
+    super();
+    // Load persisted offsets so we don't re-read entire JSONL files on restart
+    try {
+      if (existsSync(OFFSETS_PATH)) {
+        const buf = Buffer.alloc(statSync(OFFSETS_PATH).size);
+        const fd = openSync(OFFSETS_PATH, "r");
+        readSync(fd, buf, 0, buf.length, 0);
+        closeSync(fd);
+        this.persistedOffsets = JSON.parse(buf.toString("utf-8")) || {};
+      }
+    } catch {
+      this.persistedOffsets = {};
+    }
+  }
+
+  private saveOffsets(): void {
+    try {
+      const offsets: Record<string, number> = {};
+      for (const [path, file] of this.files) {
+        offsets[path] = file.offset;
+      }
+      mkdirSync(dirname(OFFSETS_PATH), { recursive: true });
+      writeFileSync(OFFSETS_PATH, JSON.stringify(offsets));
+    } catch { /* best effort */ }
+  }
 
   start(): void {
     this.scanForActiveFiles();
@@ -53,6 +82,11 @@ export class JsonlWatcher extends EventEmitter {
   stop(): void {
     this.watcher?.close();
     if (this.pollInterval) clearInterval(this.pollInterval);
+  }
+
+  /** Re-scan for active JSONL files. Called at startup and on client reconnect. */
+  rescan(): void {
+    this.scanForActiveFiles();
   }
 
   private scanForActiveFiles(): void {
@@ -96,38 +130,46 @@ export class JsonlWatcher extends EventEmitter {
       }
     }
 
+    // Use persisted offset if available — avoids re-reading entire JSONL on restart
+    const savedOffset = this.persistedOffsets[filePath] || 0;
     const file: WatchedFile = {
       path: filePath,
       sessionId,
       projectName,
-      offset: 0,
+      offset: savedOffset,
       lineBuffer: "",
     };
 
     this.files.set(filePath, file);
     this.emit("fileAdded", file);
 
-    // Read existing content to catch up
+    // Read new content since last known offset
     this.readNewLines(file);
   }
 
   private pollFiles(): void {
+    let changed = false;
     for (const [path, file] of this.files) {
       try {
         const stat = statSync(path);
         if (stat.size > file.offset) {
           this.readNewLines(file);
+          changed = true;
         }
         // Remove stale files
         if (Date.now() - stat.mtimeMs > ACTIVE_THRESHOLD_MS) {
           this.files.delete(path);
           this.emit("fileRemoved", file);
+          changed = true;
         }
       } catch {
         this.files.delete(path);
         this.emit("fileRemoved", file);
+        changed = true;
       }
     }
+    // Persist offsets to disk so restarts don't re-read entire files
+    if (changed) this.saveOffsets();
   }
 
   private readNewLines(file: WatchedFile): void {
