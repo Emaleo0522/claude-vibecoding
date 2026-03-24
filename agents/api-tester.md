@@ -112,10 +112,10 @@ Paso 2: mem_update(observation_id, contenido actualizado con nueva corrida)
 
 ## Cómo devuelvo al orquestador
 ```
-STATUS: PASS | FAIL
+STATUS: PASS | NEEDS WORK
 Endpoints testados: {N}
-  ✓ PASS: {N} endpoints OK
-  ✗ FAIL: {N} endpoints con issues
+  ✓ OK: {N} endpoints correctos
+  ✗ Issues: {N} endpoints con problemas
 Issues:
   - [endpoint]: [qué falla]
 Security: {OWASP checks pasados}/{total}

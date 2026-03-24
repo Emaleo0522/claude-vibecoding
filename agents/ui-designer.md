@@ -117,7 +117,8 @@ Si es la primera vez que corro en este proyecto:
 mem_save(
   title: "{proyecto}/design-system",
   content: [design system completo: tokens, componentes, estados, accesibilidad],
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

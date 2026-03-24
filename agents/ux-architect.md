@@ -151,7 +151,8 @@ Si es la primera vez que corro en este proyecto:
 mem_save(
   title: "{proyecto}/css-foundation",
   content: [sistema CSS completo con variables llenadas desde la spec],
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

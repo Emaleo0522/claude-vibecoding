@@ -126,7 +126,8 @@ Si es la primera planificación de este proyecto:
 mem_save(
   title: "{proyecto}/tareas",
   content: [lista completa de tareas en markdown],
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

@@ -19,6 +19,7 @@ Este sistema usa un **orquestador central** (1 coordinador + 21 subagentes = 22 
 ```
 Fase 1  Planificación   → project-manager-senior
 Fase 2  Arquitectura    → ux-architect → ui-designer + security-engineer (ux-arch primero, luego los otros en paralelo)
+Fase 2B Assets visuales → brand-agent → (pausa aprobación) → logo-agent + image-agent (paralelo) → video-agent
 Fase 3  Dev ↔ QA Loop  → dev-agents ↔ evidence-collector (3 reintentos)
 Fase 4  Certificación   → seo-discovery + api-tester + performance-benchmarker + reality-checker
 Fase 5  Publicación     → git (confirmación) → deployer (confirmación)
@@ -41,7 +42,7 @@ QA guarda screenshots en `/tmp/qa/` y pasa solo rutas, nunca imágenes inline.
 - **DAG State**: el orquestador guarda `{proyecto}/estado` despues de cada TAREA completada (no solo fases)
 - **Guardar completo, leer selectivo**: subagentes solo leen los cajones que necesitan, nunca todo
 - **No duplicar en contexto**: si la info esta en Engram, pasar solo la ruta al cajon, no el contenido
-- **Retomar sin inventar**: al reanudar post-compactacion, `{proyecto}/estado` tiene todo para continuar
+- **Retomar sin inventar**: al reanudar post-compactación, `{proyecto}/estado` tiene todo para continuar
 - **Actualizar, no duplicar**: si un cajon ya existe y se va a reescribir (ej: retry de tarea o QA), usar `mem_update(observation_id, nuevo_contenido)` — nunca crear dos entradas con el mismo topic_key. Buscar con `mem_search` primero para obtener el observation_id
 - **Proactive saves**: subagentes guardan descubrimientos no obvios inmediatamente con `mem_save` (topic key: `{proyecto}/discovery-{descripcion}`)
 - **Dual-write critico**: `{proyecto}/estado` y `{proyecto}/tareas` se guardan SIEMPRE en Engram + disco (`{project_dir}/.pipeline/`)
@@ -91,9 +92,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | `{proyecto}/qa-{N}` | evidence-collector | reality-checker |
 | `{proyecto}/gdd` | game-designer | xr-immersive-developer |
 | `{proyecto}/branding` | brand-agent + orquestador | orquestador, agentes creativos |
-| `{proyecto}/creative-images` | image-agent | orquestador |
-| `{proyecto}/creative-logos` | logo-agent | orquestador |
-| `{proyecto}/creative-video` | video-agent | orquestador |
+| `{proyecto}/creative-assets` | image-agent, logo-agent, video-agent (merge por seccion: images/logos/video) | orquestador |
 | `{proyecto}/seo` | seo-discovery | reality-checker |
 | `{proyecto}/api-qa` | api-tester | reality-checker |
 | `{proyecto}/perf-report` | performance-benchmarker | reality-checker |
@@ -101,6 +100,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | `{proyecto}/git-commit` | git | orquestador |
 | `{proyecto}/costs` | orquestador | orquestador (resumen de costos API del pipeline creativo) |
 | `{proyecto}/deploy-url` | deployer | orquestador |
+| `{proyecto}/discovery-{desc}` | cualquier subagente (proactive saves) | busqueda futura via mem_search |
 
 ## Herramientas por agente
 
@@ -158,7 +158,7 @@ El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay st
 | Email | React Email + Resend | Siempre que haya transaccional |
 | Estructura | Single-repo, Monorepo (apps/+packages/) | Monorepo si frontend+backend separados |
 | Mobile | React Native + Expo SDK 52+, NativeWind 4, Expo Router | React Native + Expo (iOS + Android desde un repo) |
-| Animacion | CSS transitions (Tier 1), Framer Motion (Tier 2), GSAP (Tier 3) | CSS → Framer → GSAP segun complejidad. Ver `better-gsap-reference.md` para Tier 3 |
+| Animación | CSS transitions (Tier 1), Framer Motion (Tier 2), GSAP (Tier 3) | CSS → Framer → GSAP segun complejidad. Ver `better-gsap-reference.md` para Tier 3 |
 | Data Viz | Recharts (React), Chart.js (vanilla), D3.js (custom) | Recharts |
 | Linting | ESLint + Stylelint | Siempre |
 | Game 2D | Phaser.js 3, PixiJS, Canvas API | Phaser.js (completo), PixiJS (renderer puro) |
@@ -201,11 +201,15 @@ Pipeline de generación de assets (logos, imágenes, videos) para proyectos web.
 
 ### Engram para proyectos creativos
 - `{proyecto}/branding` → path de brand.json, hash, version, user_approved, learned_preferences (escrito por brand-agent, actualizado por orquestador con user_approved)
-- `{proyecto}/creative-images` → inventario de imágenes (paths, dimensions, format, hash)
-- `{proyecto}/creative-logos` → inventario de logos (svg_path, png_path, hash)
-- `{proyecto}/creative-video` → inventario de video (path, duration, format, fallback_css)
+- `{proyecto}/creative-assets` → cajon unico con merge por seccion. Cada agente creativo hace UPSERT de su seccion (mem_search → get → merge → update) conservando las demas:
+  ```json
+  {
+    "images": { "hero": {"path": "...", "dimensions": "1920x1080", "format": "png", "hash": "..."}, "mobile": {...} },
+    "logos": { "primary": {"svg_path": "...", "png_path": "...", "hash": "..."}, "horizontal": {...}, "icon": {...}, "monochrome": {...} },
+    "video": { "hero_video": {"path": "...", "duration": "5s", "format": "mp4", "hash": "..."}, "fallback_css": {"path": "..."} }
+  }
+  ```
 - NO guardar binarios ni SVG completos en Engram — solo paths y metadata
-- Cada agente creativo escribe SOLO su cajón — sin race conditions
 
 ### Negative prompts base (referencia para agentes creativos)
 - **Base**: `blurry, pixelated, low quality, worst quality, deformed, watermark, oversaturated`
@@ -305,6 +309,8 @@ Los agentes reportan el costo en su STATUS al orquestador. Máximo estimado del 
 - **Referencia completa**: `~/.claude/agents/devops-vps-reference.md` — Mixed Content HTTPS, Oracle Cloud firewalls, nginx + Let's Encrypt
 
 ## Overrides Windows — Diferencias con Linux/Claude Code
+
+> **SOLO APLICA en Windows/Claude Desktop.** En Linux/Claude Code CLI, ignorar esta seccion completa.
 
 ### Servidores de desarrollo (agentes: frontend-developer, backend-architect, rapid-prototyper, xr-immersive-developer)
 

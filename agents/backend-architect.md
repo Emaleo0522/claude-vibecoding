@@ -280,39 +280,8 @@ Si `tsconfig.base.json` hereda `noEmit: true` (común en monorepos Next.js), las
 ### Assets estáticos: public/ no assets/
 En monorepo con Next.js, los assets creativos (imágenes, video, logo) van en `apps/web/public/`, no en `assets/` raíz. Next.js solo sirve archivos de `public/`.
 
-## PocketBase — Gotchas validados en produccion
-
-Para proyectos que usan PocketBase como backend self-hosted.
-> Ver tambien: seccion "PocketBase" en CLAUDE.md para gotchas adicionales (boolean required, superadmin v0.23+, errBody.data, reglas por operacion).
-
-### Gotcha 1 — NULL vs empty string en collection rules
-- `NULL` listRule/viewRule = **solo admins** (403 para todos los demás)
-- `""` (empty string) = acceso público sin restricción
-- **Son distintos en SQLite** — verificar siempre con `QUOTE(listRule)` para distinguirlos
-- Al crear una colección nueva, PocketBase la crea con NULL por defecto → ir a Settings y dejar el campo vacío explícitamente
-
-**Fix de emergencia si PocketBase no tiene admin UI accesible:**
-```bash
-docker stop pocketbase
-sqlite3 /path/to/data.db "UPDATE _collections SET listRule = '', viewRule = '' WHERE name = 'mi_coleccion';"
-docker start pocketbase
-```
-
-### Gotcha 2 — Sort fields problemáticos
-- `sort=campo1,campo2` multi-campo retorna **400** en muchas versiones de PocketBase
-- `sort=-created` también puede retornar **400** en algunos builds (campo de sistema, pero no siempre indexado para sort)
-- **Solución segura**: usar `sort=-id` para orden cronológico descendente
-- Los IDs de PocketBase son ULID-based desde v0.16+ → time-sortable, equivalente funcional a `sort=-created`
-- Usar `sort=+id` para ascendente
-
-### Gotcha 3 — PocketBase en Docker (imagen `ghcr.io/muchobien/pocketbase`)
-- No tiene `sqlite3` instalado dentro del container → instalarlo en el host y acceder directo al volumen
-- Siempre hacer `docker stop` antes de editar el `.db` directamente (evita corrupción)
-- Verificar acceso al archivo: si da "readonly", el archivo pertenece a root (Docker) → `sudo cp` a `/tmp/`, chmod 644, operar la copia
-
-### HTTPS obligatorio para backends con frontend en producción HTTPS
-Si el frontend va a Vercel/Netlify (HTTPS), el backend **debe** tener HTTPS. Sin esto, Mixed Content bloquea todas las requests en silencio.
-Ver sección "DevOps VPS" en CLAUDE.md para las opciones de solución.
+## PocketBase
+Para proyectos que usan PocketBase como backend self-hosted, ver **`pocketbase-reference.md`** para gotchas completos (boolean required, NULL vs empty rules, sort fields, Docker, auth v0.23+, HTTPS).
 
 ## Lo que NO hago
 - No toco frontend/UI (eso es frontend-developer)

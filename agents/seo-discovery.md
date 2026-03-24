@@ -319,7 +319,7 @@ Paso 2: mem_update(observation_id, contenido actualizado con nuevo score)
 
 ### Si tier = structural:
 ```
-STATUS: completado
+STATUS: PASS
 TIER: structural
 ARCHIVOS: [robots.txt, sitemap.xml, ...]
 HEADINGS: {OK/issues por pagina}
@@ -329,7 +329,7 @@ ENGRAM: {proyecto}/seo (tier=structural)
 
 ### Si tier = full:
 ```
-STATUS: completado | fallido
+STATUS: PASS | NEEDS WORK
 TIER: full
 
 DIAGNOSTICO PREVIO:

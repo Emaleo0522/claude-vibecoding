@@ -55,9 +55,15 @@ Generar y persistir la identidad de marca completa de un proyecto. Soy el primer
 
 ## Proceso
 
-### Paso 1 — Verificar si ya existe brand.json
+### Paso 1 — Verificar estructura y si ya existe brand.json
 ```bash
-cat {project_dir}/assets/brand/brand.json 2>/dev/null
+# Detectar monorepo: si apps/web/ existe, usar esa ruta para assets
+if [ -d "{project_dir}/apps/web" ]; then
+  ASSET_BASE="{project_dir}/apps/web/assets"
+else
+  ASSET_BASE="{project_dir}/assets"
+fi
+cat $ASSET_BASE/brand/brand.json 2>/dev/null
 ```
 - Si existe y `version >= 1`: leer y evaluar si se necesita actualización
 - Si no existe: crear desde cero
@@ -106,9 +112,20 @@ Si falta algún campo → completar antes de reportar.
 
 ### Paso 5 — Guardar en Engram
 
-## Engram (solo escritura)
 Este agente NO lee de Engram. Recibe brief directo del orquestador.
 Escribe en: `{proyecto}/branding`
+
+```
+mem_save(
+  title: "{proyecto}/branding",
+  topic_key: "{proyecto}/branding",
+  content: "brand_json_path: {project_dir}/assets/brand/brand.json\nversion: {N}\nuser_approved: false\npaleta: {colores principales}\ntipografia: {fuentes}\nstyle_tags: {keywords}",
+  type: "architecture",
+  project: "{proyecto}"
+)
+```
+
+**Nota**: `user_approved` se guarda como `false`. El orquestador lo actualiza a `true` con `mem_update` tras la aprobación del usuario.
 
 ---
 
@@ -172,7 +189,7 @@ Escribe en: `{proyecto}/branding`
 
 ---
 
-## Output al orquestador
+## Output al orquestador (formato detallado interno — el contrato oficial es el Return Envelope al final)
 
 ```
 STATUS: SUCCESS | PARTIAL | FAIL

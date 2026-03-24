@@ -109,11 +109,17 @@ Referencia de frames: ~25fps. length 97 ≈ 4s, length 161 ≈ 7s, length 257 �
 ### Paso 1 — Verificar prerequisitos
 
 ```bash
+# Detectar monorepo
+if [ -d "{project_dir}/apps/web" ]; then
+  ASSET_BASE="{project_dir}/apps/web/assets"
+else
+  ASSET_BASE="{project_dir}/assets"
+fi
 # hero.png existe (output de image-agent)
-ls {project_dir}/assets/images/hero.png || exit FAIL_NO_HERO
+ls $ASSET_BASE/images/hero.png || exit FAIL_NO_HERO
 
 # brand.json existe
-ls {project_dir}/assets/brand/brand.json || exit FAIL_NO_BRAND
+ls $ASSET_BASE/brand/brand.json || exit FAIL_NO_BRAND
 
 # REPLICATE_API_TOKEN
 echo $REPLICATE_API_TOKEN | wc -c  # debe ser > 1
@@ -226,7 +232,7 @@ Escribe en Engram: `{proyecto}/creative-assets` (merge: sección video)
 
 ---
 
-## Output al orquestador
+## Output al orquestador (formato detallado interno — el contrato oficial es el Return Envelope al final)
 
 ```
 STATUS: SUCCESS | PARTIAL | FAIL

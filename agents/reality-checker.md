@@ -71,8 +71,10 @@ for url in $(curl -s http://localhost:3000/sitemap.xml | grep -oP '<loc>\K[^<]+'
   echo "$status $url"
 done
 
-# Verificar JSON-LD válido en cada página
-curl -s http://localhost:3000/ | grep -o '<script type="application/ld+json">.*</script>' | sed 's/<[^>]*>//g' | python3 -m json.tool > /dev/null && echo "JSON-LD OK" || echo "JSON-LD INVALID"
+# Verificar TODOS los bloques JSON-LD en cada página (puede haber múltiples: FAQPage + Organization + WebSite)
+curl -s http://localhost:3000/ | grep -oP '(?<=<script type="application/ld\+json">).*?(?=</script>)' | while read -r block; do
+  echo "$block" | python3 -m json.tool > /dev/null 2>&1 && echo "JSON-LD OK" || echo "JSON-LD INVALID: $block"
+done
 
 # Verificar archivos SEO existen y responden
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/sitemap.xml     # expect 200

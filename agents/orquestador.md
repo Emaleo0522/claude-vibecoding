@@ -116,7 +116,7 @@ El subagente puede saltar `mem_search` e ir directo a `mem_get_observation(id)`.
 
 ### Nombres de cajones (topic keys)
 > Ver tabla completa en CLAUDE.md § "Topic keys del sistema". Cajones más usados por el orquestador:
-> `{proyecto}/estado`, `{proyecto}/tareas`, `{proyecto}/branding`, `{proyecto}/creative-images`, `{proyecto}/creative-logos`, `{proyecto}/creative-video`, `{proyecto}/certificacion`, `{proyecto}/costs`
+> `{proyecto}/estado`, `{proyecto}/tareas`, `{proyecto}/branding`, `{proyecto}/creative-assets`, `{proyecto}/certificacion`, `{proyecto}/costs`
 
 ### Protocolo de Engram — Proteger el contexto
 
@@ -153,9 +153,9 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | game-designer | nada (recibe spec de mecánicas) | `{proyecto}/gdd` |
 | xr-immersive-developer | `{proyecto}/gdd` | `{proyecto}/tarea-{N}` |
 | brand-agent | nada (recibe brief directo) | `{proyecto}/branding` |
-| logo-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-logos` |
-| image-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-images` |
-| video-agent | nada (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-video` |
+| logo-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-assets` (merge seccion logos) |
+| image-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-assets` (merge seccion images) |
+| video-agent | nada (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-assets` (merge seccion video) |
 | seo-discovery | `{proyecto}/tareas` (estructura de páginas) | `{proyecto}/seo` |
 | evidence-collector | `{proyecto}/tarea-{N}` (criterios de la tarea) | `{proyecto}/qa-{N}` |
 | api-tester | `{proyecto}/api-spec` (generado por backend-architect; fallback: `{proyecto}/tareas`) | `{proyecto}/api-qa` |
@@ -185,7 +185,7 @@ mem_save(
 )
 ```
 
-Los discoveries sobreviven compactacion y quedan disponibles para:
+Los discoveries sobreviven compactación y quedan disponibles para:
 - Futuras sesiones del mismo proyecto
 - Otros usuarios que retomen el proyecto
 - El reality-checker para validar que no se repitan errores conocidos
@@ -220,7 +220,7 @@ fases_completadas:
   assets_creativos:
     necesarios: false             # true si el proyecto tiene landing/logo/hero
     branding: "pendiente"         # "pendiente" | observation_id
-    image_backend: "huggingface"  # "gemini" | "huggingface" (G2: campo faltante corregido)
+    image_backend: "huggingface"  # "gemini" | "huggingface"
     logo: "pendiente"             # "pendiente" | "listo" | "no-requerido"
     images: "pendiente"           # "pendiente" | "listo" | "no-requerido"
     video: "pendiente"            # "pendiente" | "listo" | "no-requerido"
@@ -246,9 +246,9 @@ publicacion:
 # Campos de estado del sistema
 drawer_ids: {}                    # cache de observation_ids pre-resueltos (ver Session Lifecycle)
 backup_disk: ""                   # ruta al backup en disco (ver Dual-Write)
-recovered: false                  # true si esta sesion retomo tras crash/compactacion (G2)
-qa_mode: "full"                   # "full" | "code-only" (si Playwright no disponible) (G2)
-engram_degraded: false            # true si Engram tuvo fallas en esta sesion (G2)
+recovered: false                  # true si esta sesion retomo tras crash/compactación
+qa_mode: "full"                   # "full" | "code-only" (si Playwright no disponible)
+engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 ```
 
 **Cuando guardar DAG State (mem_update):**
@@ -389,6 +389,7 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
 
 3. **(paralelo)** logo-agent + image-agent — ambos reciben `{ "project_dir": "...", "backend": "gemini|huggingface" }`, leen brand.json del filesystem
    - logo → `{project_dir}/assets/logo/` | image → `{project_dir}/assets/images/`
+   - **Nota merge**: ambos escriben en `{proyecto}/creative-assets` con merge por sección. El GET previo al merge mitiga conflictos, pero en paralelo existe riesgo de last-write-wins. Si se detectan datos perdidos tras el merge, re-ejecutar el agente afectado.
 
 4. **Consultar video** al usuario (NO auto-generar): "¿Video de fondo para hero? (~$0.03-0.10 en Replicate)"
    → Sí: video-agent → `{project_dir}/assets/video/` | No: marcar DAG `video → "no-requerido"`
@@ -521,7 +522,7 @@ evidence-collector verifica assets para artefactos obvios (extremidades de mas, 
 **Phase Gate → Fase 4**: verificar antes de empezar:
 - Todas las tareas tienen `{proyecto}/qa-{N}` con PASS (o aceptadas con ⚠)
 - Si hay tareas backend: `{proyecto}/api-spec` existe (si no, pedir a backend-architect que lo genere)
-- Servidor de producción (`npm run build && npm start`) levantado y accesible
+- Servidor de producción levantado y accesible: `npm run build && npm start` → verificar con `curl -s -o /dev/null -w '%{http_code}' http://localhost:{puerto}` (expect 200)
 
 ### FASE 4 — SEO + Certificacion Final (secuencia con tiers)
 
@@ -659,10 +660,10 @@ Si detectas que no hay historial de conversacion pero el usuario menciona un pro
 3. Informar al usuario que se retomo
 4. Continuar — NO re-preguntar decisiones ya tomadas
 
-Si el Boot Sequence no se ejecuto (ej: la compactacion fue mid-conversacion y hay algo de historial):
+Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion y hay algo de historial):
 1. `mem_search("{proyecto}/estado")` → `mem_get_observation(id)`
 2. Comparar DAG State con lo que recuerdas del contexto
-3. Guardar session summary de lo que se hizo ANTES de la compactacion
+3. Guardar session summary de lo que se hizo ANTES de la compactación
 4. Continuar desde la tarea/fase indicada en DAG State
 
 ## Return Envelope Standard (todos los subagentes)
@@ -797,7 +798,7 @@ Antes de spawnear un subagente, verificar estos 3 puntos (~50 tokens):
 | Design system | `ui-designer` | Fase 2: componentes y visual |
 | Seguridad | `security-engineer` | Fase 2: threat model y OWASP |
 | Identidad visual | `brand-agent` | Fase 2B: brand.json con paleta, tipografía, prompts IA |
-| Imágenes | `image-agent` | Fase 2B: hero.png, thumbnail.png via HuggingFace |
+| Imágenes | `image-agent` | Fase 2B: hero.png, thumbnail.png via Gemini/HuggingFace |
 | Logo | `logo-agent` | Fase 2B: logo SVG vectorizado (4 variantes) |
 | Video loop | `video-agent` | Fase 2B: bg-loop.mp4 para fondos (requiere hero.png) |
 | Frontend web/app | `frontend-developer` | Fase 3: UI, componentes, estilos |

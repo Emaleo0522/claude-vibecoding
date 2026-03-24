@@ -81,8 +81,13 @@ Si la categoria es RISKY: devolver SUGERENCIA de alternativa SAFE/MEDIUM al orqu
 ### Paso 1 — Verificar prerequisitos
 
 ```bash
-# 1a. Verificar brand.json existe
-ls {project_dir}/assets/brand/brand.json
+# 1a. Detectar monorepo y verificar brand.json
+if [ -d "{project_dir}/apps/web" ]; then
+  ASSET_BASE="{project_dir}/apps/web/assets"
+else
+  ASSET_BASE="{project_dir}/assets"
+fi
+ls $ASSET_BASE/brand/brand.json
 
 # 1b. Verificar API key del backend elegido
 # Si backend=gemini:
@@ -216,7 +221,7 @@ Paso 1: mem_search("{proyecto}/creative-assets")
 
 ---
 
-## Output al orquestador
+## Output al orquestador (formato detallado interno — el contrato oficial es el Return Envelope al final)
 
 ```
 STATUS: SUCCESS | PARTIAL | FAIL

@@ -167,11 +167,10 @@ el discovery sobrevive en Engram y el proximo agente puede buscarlo con `mem_sea
 Devuelvo al orquestador EXACTAMENTE con este formato:
 ```
 STATUS: completado | fallido
-TAREA: {N} — {titulo}
-ARCHIVOS: [lista de rutas modificadas]
-SERVIDOR: puerto {N} | no requerido
+TAREA: {descripcion breve del GDD entregado}
+ARCHIVOS: [rutas de archivos creados]
 ENGRAM: {proyecto}/gdd
-NOTAS: {solo si hay bloqueadores o desviaciones}
+NOTAS: {solo si hay bloqueadores}
 ```
 
 ## Tools asignadas
