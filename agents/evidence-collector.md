@@ -48,6 +48,7 @@ Uso las herramientas MCP de Playwright (no CLI):
 - Mobile: 375x667
 
 Screenshots se guardan en disco: `/tmp/qa/tarea-{N}-desktop.png`, `/tmp/qa/tarea-{N}-mobile.png`, etc.
+En Windows: `%TEMP%/qa/` (ej: `C:/Users/.../AppData/Local/Temp/qa/`).
 **NUNCA paso screenshots inline al orquestador.** Solo rutas.
 
 ### 4. Verifico contra la spec
@@ -126,8 +127,10 @@ FEEDBACK PARA DEV:
 ### Gestión de puertos
 Antes de levantar el servidor para testing, verificar si el puerto está ocupado y liberarlo:
 ```bash
-# Verificar si el puerto 3000 (o el que use el proyecto) está ocupado
+# Verificar si el puerto está ocupado — Linux:
 lsof -ti:3000 && kill $(lsof -ti:3000) || true
+# Windows (ver CLAUDE.md § Overrides Windows):
+# netstat -ano | findstr :3000 → taskkill /PID <pid> /F
 ```
 Si hay un proceso anterior corriendo, matarlo antes de levantar el nuevo.
 

@@ -90,8 +90,10 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | `{proyecto}/tarea-{N}` | dev agents (frontend, backend, etc.) | evidence-collector |
 | `{proyecto}/qa-{N}` | evidence-collector | reality-checker |
 | `{proyecto}/gdd` | game-designer | xr-immersive-developer |
-| `{proyecto}/branding` | brand-agent | orquestador |
-| `{proyecto}/creative-assets` | image-agent, logo-agent, video-agent | orquestador |
+| `{proyecto}/branding` | brand-agent + orquestador | orquestador, agentes creativos |
+| `{proyecto}/creative-images` | image-agent | orquestador |
+| `{proyecto}/creative-logos` | logo-agent | orquestador |
+| `{proyecto}/creative-video` | video-agent | orquestador |
 | `{proyecto}/seo` | seo-discovery | reality-checker |
 | `{proyecto}/api-qa` | api-tester | reality-checker |
 | `{proyecto}/perf-report` | performance-benchmarker | reality-checker |
@@ -198,16 +200,12 @@ Pipeline de generación de assets (logos, imágenes, videos) para proyectos web.
 - video-agent entrega siempre un `fallback.css` aunque el video falle
 
 ### Engram para proyectos creativos
-- `{proyecto}/branding` → path de brand.json, hash, version, user_approved, learned_preferences
-- `{proyecto}/creative-assets` → inventario con estructura:
-  ```json
-  {
-    "images": { "hero": {"path": "...", "dimensions": "1920x1080", "format": "png", "hash": "..."}, "mobile": {...} },
-    "logos": { "primary": {"svg_path": "...", "png_path": "...", "hash": "..."}, "horizontal": {...}, "icon": {...}, "monochrome": {...} },
-    "video": { "hero_video": {"path": "...", "duration": "5s", "format": "mp4", "hash": "..."}, "fallback_css": {"path": "..."} }
-  }
-  ```
+- `{proyecto}/branding` → path de brand.json, hash, version, user_approved, learned_preferences (escrito por brand-agent, actualizado por orquestador con user_approved)
+- `{proyecto}/creative-images` → inventario de imágenes (paths, dimensions, format, hash)
+- `{proyecto}/creative-logos` → inventario de logos (svg_path, png_path, hash)
+- `{proyecto}/creative-video` → inventario de video (path, duration, format, fallback_css)
 - NO guardar binarios ni SVG completos en Engram — solo paths y metadata
+- Cada agente creativo escribe SOLO su cajón — sin race conditions
 
 ### Negative prompts base (referencia para agentes creativos)
 - **Base**: `blurry, pixelated, low quality, worst quality, deformed, watermark, oversaturated`
@@ -235,7 +233,7 @@ Los agentes reportan el costo en su STATUS al orquestador. Máximo estimado del 
 
 **Al menos una key de imagen es obligatoria**: `GEMINI_API_KEY` o `HF_TOKEN`. Si ambas están, Gemini es primario con HuggingFace como fallback.
 
-**Resolución de env vars** (cascada de búsqueda): variable de entorno del sistema → `.env` en el proyecto → `~/.claude-agents/.env` (fallback global)
+**Resolución de env vars** (cascada de búsqueda): variable de entorno del sistema → `.env` en el proyecto → `~/.claude/.env` (fallback global)
 
 ## Best Practices Cross-Cutting (validadas en producción)
 
