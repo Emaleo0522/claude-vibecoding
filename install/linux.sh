@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v2
-# 22 agentes + 1 referencia (Better Auth) | Pipeline de 5 fases
+# 26 agentes + 4 referencias | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,7 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v2${NC}"
-echo -e "${CYAN}  22 agentes + Better Auth ref | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  26 agentes + 4 referencias | Pipeline de 5 fases${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -99,7 +99,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 21 agentes + better-auth-reference en ~/.claude/agents/ --
+# -- 8. Instalar 26 agentes + 4 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
@@ -111,6 +111,11 @@ fi
 
 AGENT_COUNT=$(ls "$CLAUDE_AGENTS/"*.md 2>/dev/null | wc -l)
 info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
+
+# -- 8b. Crear boveda CodePen --
+CODEPEN_VAULT="$HOME/.claude/codepen-vault"
+mkdir -p "$CODEPEN_VAULT"
+info "Boveda CodePen creada en $CODEPEN_VAULT"
 
 # -- 9. Instalar CLAUDE.md global (instrucciones del sistema) --
 GLOBAL_CLAUDE="$HOME/CLAUDE.md"
@@ -228,19 +233,27 @@ info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
 info "MCPs:      Engram (memoria) configurado en settings.json"
 info "Permisos:  settings.local.json con permisos para todos los agentes"
 info "CLAUDE.md: $GLOBAL_CLAUDE (instrucciones del sistema)"
+info "Boveda:    $CODEPEN_VAULT (efectos CodePen)"
 echo ""
 echo -e "${YELLOW}IMPORTANTE: Reinicia Claude Code para activar los MCPs.${NC}"
 echo ""
 echo "Para empezar, abri Claude Code y escribi:"
 echo "  @orquestador quiero crear [tu idea]"
 echo ""
-echo "Agentes disponibles (22 + better-auth-reference):"
+echo "Agentes disponibles (26 agentes + 4 referencias):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"
 echo "  Fase 3: frontend-developer, backend-architect, rapid-prototyper,"
 echo "          mobile-developer, game-designer, xr-immersive-developer"
+echo "          codepen-explorer (busca/extrae efectos de CodePen)"
 echo "  Fase 3 QA: evidence-collector"
 echo "  Fase 4: seo-discovery, api-tester, performance-benchmarker, reality-checker"
 echo "  Fase 5: git, deployer"
+echo "  Protocolo: agent-protocol (reglas compartidas para todos)"
+echo "  Referencias: better-auth, better-gsap, react-patterns, redis-patterns"
+echo ""
+echo "Repos hermanos (opcionales):"
+echo "  codepen-vault: git clone https://github.com/Emaleo0522/codepen-vault ~/.claude/codepen-vault"
+echo "  engram-sync:   git clone https://github.com/Emaleo0522/engram-sync ~/.engram"
 echo ""

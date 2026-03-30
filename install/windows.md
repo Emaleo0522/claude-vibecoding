@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **22 agentes de Claude + 1 referencia**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, etc.) + `better-auth-reference.md` (guia de autenticacion)
+- **26 agentes de Claude + 4 referencias**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + referencias (better-auth, better-gsap, react-patterns, redis-patterns)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
@@ -71,24 +71,27 @@ git config --global init.defaultBranch main
 
 ---
 
-## Paso 6: Copiar los 22 agentes
+## Paso 6: Copiar los agentes y crear la boveda
 
 En Git Bash, desde la carpeta donde clonaste este repo:
 ```bash
-# Crear la carpeta de agentes
+# Crear las carpetas
 mkdir -p ~/.claude/agents/skills
+mkdir -p ~/.claude/codepen-vault
 
-# Copiar los 22 agentes
+# Copiar los 30 archivos (26 agentes + 4 referencias)
 cp agents/*.md ~/.claude/agents/
 
 # Copiar skills si hay
 cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
 
 # Verificar
-ls ~/.claude/agents/
+ls ~/.claude/agents/ | wc -l
 ```
 
-Deberias ver **23 archivos .md**: los 22 agentes (`orquestador.md`, `project-manager-senior.md`, `mobile-developer.md`, `frontend-developer.md`, etc.) + `better-auth-reference.md`.
+Deberias ver **30 archivos .md**:
+- 26 agentes: orquestador, project-manager-senior, frontend-developer, backend-architect, rapid-prototyper, mobile-developer, game-designer, xr-immersive-developer, ux-architect, ui-designer, security-engineer, evidence-collector, reality-checker, seo-discovery, api-tester, performance-benchmarker, brand-agent, image-agent, logo-agent, video-agent, git, deployer, codepen-explorer, agent-protocol
+- 4 referencias: better-auth-reference, better-gsap-reference, react-patterns-reference, redis-patterns-reference
 
 ---
 
@@ -187,7 +190,7 @@ Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proye
 
 En Git Bash:
 ```bash
-# Agentes instalados (deben ser 23: 22 agentes + better-auth-reference)
+# Agentes instalados (deben ser 30: 26 agentes + 4 referencias)
 ls ~/.claude/agents/*.md | wc -l
 
 # CLAUDE.md global
@@ -236,8 +239,8 @@ El sistema se encarga del resto:
 **Claude no reconoce los agentes**
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
-**No aparecen los 22 agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **23** (22 agentes + better-auth-reference.md).
+**No aparecen todos los agentes**
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **30** (26 agentes + 4 referencias).
 
 **MCPs no aparecen en Claude Desktop**
 -> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.
@@ -260,14 +263,32 @@ El sistema se encarga del resto:
 ~/.claude/
 |-- launch.json                                  <- configuracion de preview servers
 |-- agents/
-|   |-- orquestador.md
+|   |-- orquestador.md                           <- coordinador central
+|   |-- agent-protocol.md                        <- protocolo compartido
+|   |-- codepen-explorer.md                      <- extractor de CodePen
 |   |-- project-manager-senior.md
-|   |-- ... (21 agentes)
-|   |-- better-auth-reference.md
+|   |-- ... (23 agentes mas)
+|   |-- better-auth-reference.md                 <- referencia auth
+|   |-- better-gsap-reference.md                 <- referencia GSAP
+|   |-- react-patterns-reference.md              <- referencia React/Next.js
+|   |-- redis-patterns-reference.md              <- referencia Redis
+|-- codepen-vault/                               <- boveda de efectos CodePen
 %APPDATA%\Claude\
 |-- claude_desktop_config.json                   <- MCPs (Engram, Context7, Playwright)
 ~/bin/
 |-- engram.exe                                   <- binario de Engram MCP
+```
+
+### Repos hermanos (opcionales)
+
+Si quieres sincronizar la boveda de CodePen o hacer backup de Engram entre PCs:
+
+```bash
+# Boveda CodePen (efectos extraidos y aprobados)
+git clone https://github.com/Emaleo0522/codepen-vault ~/.claude/codepen-vault
+
+# Engram sync (backup de memoria persistente)
+git clone https://github.com/Emaleo0522/engram-sync ~/.engram
 ```
 
 ---

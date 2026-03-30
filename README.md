@@ -61,7 +61,7 @@ Una vez instalado, tenes dos modos:
 
 **Modo normal** — Claude responde como siempre. Preguntas, fixes, chat tecnico.
 
-**Modo pipeline** — Claude activa los 22 agentes y construye tu proyecto completo:
+**Modo pipeline** — Claude activa los 26 agentes y construye tu proyecto completo:
 
 ```
 modo orquestador — quiero crear una app de delivery de comida para mi barrio
@@ -136,7 +136,7 @@ FASE 5 — Publicacion (con tu confirmacion)
 
 ---
 
-## Los 22 agentes
+## Los 26 agentes
 
 | Fase | Agente | Que hace |
 |:----:|--------|---------|
@@ -245,7 +245,7 @@ El sistema no asume que todo va a salir bien. Tiene mecanismos para cada escenar
 ## Estructura del repositorio
 
 ```
-agents/                         22 agentes + referencia Better Auth
+agents/                         26 agentes + referencia Better Auth
   orquestador.md                Coordinador central (nunca programa)
   project-manager-senior.md     Planificacion
   ux-architect.md               Fundacion CSS
@@ -277,7 +277,7 @@ templates/
   windows-claude.md             CLAUDE.md para Windows
   windows-launch.json           Config de preview servers
   settings.json                 Config de MCPs (Engram)
-  settings.local.json           Permisos para los 22 agentes
+  settings.local.json           Permisos para los 26 agentes
 CLAUDE.md                       Instrucciones del sistema
 ```
 
