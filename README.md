@@ -1,6 +1,6 @@
 # Claude Vibecoding
 
-Un equipo de 22 agentes de IA que convierte tus ideas en aplicaciones listas para produccion. Vos describis lo que queres, ellos planifican, disenan, programan, testean y publican.
+Un equipo de 26 agentes de IA que convierte tus ideas en aplicaciones listas para produccion. Vos describis lo que queres, ellos planifican, disenan, programan, testean y publican.
 
 **No necesitas saber programar.** Tampoco necesitas supervisar cada paso. El sistema maneja todo el proceso con un pipeline profesional de 5 fases y te pide aprobacion solo en los momentos clave.
 
@@ -338,6 +338,17 @@ description: Que hace este agente
 | Auth | Better Auth | Siempre para proyectos nuevos |
 | Mobile | React Native + Expo SDK 52+ | NativeWind 4, Expo Router |
 | Juegos 2D | Phaser.js 3 | PixiJS, Canvas API |
+
+---
+
+## Repos hermanos
+
+Este sistema usa repos separados para datos que tienen ciclo de vida propio:
+
+| Repo | Que contiene | Para que |
+|------|-------------|---------|
+| [`codepen-vault`](https://github.com/Emaleo0522/codepen-vault) | Efectos extraidos de CodePen (original.json + README + preview) | `codepen-explorer` guarda aca, `frontend-developer` lee de aca |
+| [`engram-sync`](https://github.com/Emaleo0522/engram-sync) | Chunks comprimidos de la memoria persistente (Engram) | Backup y sync multi-PC de toda la memoria del sistema |
 
 ---
 

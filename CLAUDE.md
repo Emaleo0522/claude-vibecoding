@@ -92,7 +92,9 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | `{proyecto}/qa-{N}` | evidence-collector | reality-checker |
 | `{proyecto}/gdd` | game-designer | xr-immersive-developer |
 | `{proyecto}/branding` | brand-agent + orquestador | orquestador, agentes creativos |
-| `{proyecto}/creative-assets` | image-agent, logo-agent, video-agent (merge por seccion: images/logos/video) | orquestador |
+| `{proyecto}/creative-images` | image-agent | orquestador |
+| `{proyecto}/creative-logos` | logo-agent | orquestador |
+| `{proyecto}/creative-video` | video-agent | orquestador |
 | `{proyecto}/seo` | seo-discovery | reality-checker |
 | `{proyecto}/api-qa` | api-tester | reality-checker |
 | `{proyecto}/perf-report` | performance-benchmarker | reality-checker |
@@ -100,6 +102,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | `{proyecto}/git-commit` | git | orquestador |
 | `{proyecto}/costs` | orquestador | orquestador (resumen de costos API del pipeline creativo) |
 | `{proyecto}/deploy-url` | deployer | orquestador |
+| `codepen-vault/{slug}` | codepen-explorer | codepen-explorer, frontend-developer |
 | `{proyecto}/discovery-{desc}` | cualquier subagente (proactive saves) | busqueda futura via mem_search |
 
 ## Herramientas por agente
@@ -128,6 +131,48 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | video-agent | Read, Write, Bash, Engram MCP |
 | git | Bash (git, gh), Engram MCP |
 | deployer | Bash (vercel), Engram MCP |
+| codepen-explorer | Chrome MCP (navigate, javascript_tool, get_page_text), Engram MCP |
+
+## Protocolo compartido de subagentes
+- **Referencia completa**: `~/.claude/agents/agent-protocol.md`
+- Todo subagente DEBE seguir los patrones definidos ahí (Engram 2-pasos, topic_key obligatorio, Return Envelope estándar)
+- No duplicar esos patrones en los archivos de agente — solo referenciar
+
+### Return Envelope estándar (todos los subagentes)
+```
+STATUS: completado | fallido | PASS | FAIL | CERTIFIED | NEEDS WORK
+TAREA: {descripción corta}
+ARCHIVOS: [paths creados/modificados]
+ENGRAM: {proyecto}/{cajon} (topic_key)
+SERVIDOR: puerto {N} (si aplica)
+BLOQUEADORES: [lista] (si hay)
+NOTAS: {máx 3 líneas}
+```
+
+### Coordinación cross-agent (quién lee qué antes de empezar)
+| Agente | DEBE leer antes de empezar | Produce |
+|--------|---------------------------|---------|
+| project-manager-senior | spec del usuario | `{proyecto}/tareas` |
+| ux-architect | `{proyecto}/tareas` | `{proyecto}/css-foundation` |
+| ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
+| security-engineer | `{proyecto}/tareas` | `{proyecto}/security-spec` |
+| frontend-developer | `css-foundation`, `design-system`, `security-spec`, `tareas` | `{proyecto}/tarea-{N}` |
+| backend-architect | `security-spec`, `tareas` | `{proyecto}/tarea-{N}`, `{proyecto}/api-spec` |
+| rapid-prototyper | `tareas` | `{proyecto}/tarea-{N}` |
+| mobile-developer | `design-system`, `tareas` | `{proyecto}/tarea-{N}` |
+| game-designer | `tareas` | `{proyecto}/gdd` |
+| xr-immersive-developer | `gdd`, `css-foundation` | `{proyecto}/tarea-{N}` |
+| evidence-collector | `tarea-{N}` del dev | `{proyecto}/qa-{N}` |
+| seo-discovery | build de producción | `{proyecto}/seo` |
+| api-tester | `api-spec` | `{proyecto}/api-qa` |
+| performance-benchmarker | URL del servidor | `{proyecto}/perf-report` |
+| reality-checker | `qa-{N}`, `seo`, `api-qa`, `perf-report` | `{proyecto}/certificacion` |
+| brand-agent | spec del usuario | `{proyecto}/branding` |
+| image-agent | `branding` (filesystem: brand.json) | `{proyecto}/creative-images` |
+| logo-agent | `branding` (filesystem: brand.json) | `{proyecto}/creative-logos` |
+| video-agent | `branding`, hero.png | `{proyecto}/creative-video` |
+| git | archivos del proyecto | `{proyecto}/git-commit` |
+| deployer | build del proyecto | `{proyecto}/deploy-url` |
 
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram
@@ -138,6 +183,9 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 - git y deployer actúan **solo con confirmación del usuario**
 - Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
 - **El orquestador NO activa git hasta que evidence-collector retorna PASS** — nunca saltear QA antes de push, aunque el tiempo apremia. Los bugs silenciosos (Mixed Content, fallback invisible) solo se detectan con QA.
+- **codepen-explorer solo busca y extrae** — nunca adapta ni construye. Guarda código temporal en `{project_dir}/.codepen-temp/{slug}/`. frontend-developer lee de ahí y adapta al proyecto/brand.
+- **Bóveda CodePen** (`~/.claude/codepen-vault/`) — solo guarda efectos aprobados por el usuario. Engram tiene metadata buscable (`codepen-vault/{slug}`), disco tiene el código.
+- **Checkpoint post-efectos en Fase 3** — si se usaron efectos de CodePen, mostrar página completa al usuario antes de pasar a Fase 4 para que pueda pedir cambios.
 
 ## Stack adaptable por proyecto
 
@@ -201,14 +249,10 @@ Pipeline de generación de assets (logos, imágenes, videos) para proyectos web.
 
 ### Engram para proyectos creativos
 - `{proyecto}/branding` → path de brand.json, hash, version, user_approved, learned_preferences (escrito por brand-agent, actualizado por orquestador con user_approved)
-- `{proyecto}/creative-assets` → cajon unico con merge por seccion. Cada agente creativo hace UPSERT de su seccion (mem_search → get → merge → update) conservando las demas:
-  ```json
-  {
-    "images": { "hero": {"path": "...", "dimensions": "1920x1080", "format": "png", "hash": "..."}, "mobile": {...} },
-    "logos": { "primary": {"svg_path": "...", "png_path": "...", "hash": "..."}, "horizontal": {...}, "icon": {...}, "monochrome": {...} },
-    "video": { "hero_video": {"path": "...", "duration": "5s", "format": "mp4", "hash": "..."}, "fallback_css": {"path": "..."} }
-  }
-  ```
+- `{proyecto}/creative-images` → inventario de imágenes generadas (paths, dimensions, format, hash)
+- `{proyecto}/creative-logos` → inventario de logos (svg_path, png_path, hash, variantes)
+- `{proyecto}/creative-video` → inventario de video (path, duration, format, fallback_css)
+- Cada agente creativo escribe SOLO su cajón — sin race conditions ni merge paralelo
 - NO guardar binarios ni SVG completos en Engram — solo paths y metadata
 
 ### Negative prompts base (referencia para agentes creativos)

@@ -9,6 +9,8 @@ description: Coordinador central del sistema vibecoding. Activarlo para CUALQUIE
 
 ---
 
+> **Protocolo de subagentes**: Ver `agent-protocol.md` para el formato estándar de Return Envelope, Engram, y reglas que siguen todos los subagentes.
+
 ## Boot Sequence (PRIMERA accion de CADA interaccion)
 
 **Ejecutar SIEMPRE al inicio, antes de cualquier otra cosa:**
@@ -86,37 +88,13 @@ mem_session_summary(
 
 **Esto permite que CUALQUIER persona (u otra sesion de Claude) retome el proyecto leyendo el session summary + DAG State.**
 
-### Pre-resolucion de topic keys (cache de IDs)
-
-Despues de leer DAG State al arrancar, resolver los observation_ids de los cajones que se van a necesitar:
-
-```
-# Ejemplo para Fase 3
-drawer_ids = {}
-for key in ["{proyecto}/tareas", "{proyecto}/css-foundation",
-            "{proyecto}/design-system", "{proyecto}/security-spec"]:
-    result = mem_search(key)
-    if result.observation_id:
-        drawer_ids[key] = result.observation_id
-
-# Guardar en DAG State para no repetir
-estado.drawer_ids = drawer_ids
-mem_update(estado_id, estado_actualizado)
-```
-
-Al pasar contexto a subagentes, incluir el observation_id:
-`"Lee de Engram: {proyecto}/css-foundation (obs_id: {id})"`
-
-El subagente puede saltar `mem_search` e ir directo a `mem_get_observation(id)`.
-**Fallback**: si `mem_get_observation(id)` falla → hacer `mem_search(key)` normal.
-
 ---
 
 ## Sistema de Memoria — Cajones Engram
 
 ### Nombres de cajones (topic keys)
-> Ver tabla completa en CLAUDE.md § "Topic keys del sistema". Cajones más usados por el orquestador:
-> `{proyecto}/estado`, `{proyecto}/tareas`, `{proyecto}/branding`, `{proyecto}/creative-assets`, `{proyecto}/certificacion`, `{proyecto}/costs`
+> Cajones más usados por el orquestador:
+> `{proyecto}/estado`, `{proyecto}/tareas`, `{proyecto}/branding`, `{proyecto}/creative-images`, `{proyecto}/creative-logos`, `{proyecto}/creative-video`, `{proyecto}/certificacion`, `{proyecto}/costs`
 
 ### Protocolo de Engram — Proteger el contexto
 
@@ -146,16 +124,16 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | ux-architect | `{proyecto}/tareas` | `{proyecto}/css-foundation` |
 | ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
 | security-engineer | nada (recibe spec directa) | `{proyecto}/security-spec` |
-| frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
+| frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system`, `codepen-vault/*` (consulta boveda) | `{proyecto}/tarea-{N}` |
 | mobile-developer | `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
 | backend-architect | `{proyecto}/security-spec` | `{proyecto}/tarea-{N}` |
 | rapid-prototyper | `{proyecto}/tareas` (la tarea específica) | `{proyecto}/tarea-{N}` |
 | game-designer | nada (recibe spec de mecánicas) | `{proyecto}/gdd` |
 | xr-immersive-developer | `{proyecto}/gdd` | `{proyecto}/tarea-{N}` |
 | brand-agent | nada (recibe brief directo) | `{proyecto}/branding` |
-| logo-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-assets` (merge seccion logos) |
-| image-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-assets` (merge seccion images) |
-| video-agent | nada (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-assets` (merge seccion video) |
+| logo-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-logos` |
+| image-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-images` |
+| video-agent | nada (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-video` |
 | seo-discovery | `{proyecto}/tareas` (estructura de páginas) | `{proyecto}/seo` |
 | evidence-collector | `{proyecto}/tarea-{N}` (criterios de la tarea) | `{proyecto}/qa-{N}` |
 | api-tester | `{proyecto}/api-spec` (generado por backend-architect; fallback: `{proyecto}/tareas`) | `{proyecto}/api-qa` |
@@ -163,6 +141,7 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | reality-checker | todos los cajones del proyecto | `{proyecto}/certificacion` |
 | git | nada (recibe directorio + mensaje) | `{proyecto}/git-commit` |
 | deployer | nada (recibe directorio + nombre) | `{proyecto}/deploy-url` |
+| codepen-explorer | `codepen-vault/*` (consulta boveda) | `codepen-vault/{slug}` (solo al guardar en boveda) |
 
 **NUNCA pasar al subagente**: contenido de otros subagentes, historico de conversacion, resultados de QA anteriores, codigo inline.
 
@@ -244,7 +223,6 @@ publicacion:
   git_commit: null                # observation_id del git-commit
   deploy_url: null                # observation_id del deploy-url
 # Campos de estado del sistema
-drawer_ids: {}                    # cache de observation_ids pre-resueltos (ver Session Lifecycle)
 backup_disk: ""                   # ruta al backup en disco (ver Dual-Write)
 recovered: false                  # true si esta sesion retomo tras crash/compactación
 qa_mode: "full"                   # "full" | "code-only" (si Playwright no disponible)
@@ -262,6 +240,18 @@ engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 
 ## Pipeline: 5 Fases + Fase 2B
 
+### Phase Gates (qué debe existir antes de cada fase)
+- **Fase 2 requiere**: `{proyecto}/tareas` en Engram
+- **Fase 2B requiere**: `{proyecto}/css-foundation`, `{proyecto}/design-system`, `{proyecto}/security-spec` en Engram
+- **Fase 3 requiere**: Los cajones de Fase 2 + brand aprobado (si aplica)
+- **Fase 4 requiere**: TODAS las `{proyecto}/tarea-{N}` con STATUS: PASS en `{proyecto}/qa-{N}`
+- **Fase 5 requiere**: `{proyecto}/certificacion` con STATUS: CERTIFIED
+
+Para verificar un phase gate:
+1. Buscar el cajon requerido con `mem_search("{proyecto}/{cajon-requerido}")`
+2. Si NO retorna observation_id → FASE BLOQUEADA, no continuar
+3. Si retorna → verificar que el contenido tiene el STATUS esperado via `mem_get_observation`
+
 ### FASE 1 — Planificación (incluye decisión de stack)
 
 1. Busca proyecto en progreso: `mem_search("{proyecto}/estado")`
@@ -270,7 +260,7 @@ engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 
    **Decisión de stack** (el orquestador decide, NO el PM):
    - Si el usuario especificó stack → usar ese
-   - Si no → aplicar tabla resumen (detalle completo en CLAUDE.md § "Stack adaptable por proyecto"):
+   - Si no → aplicar tabla resumen:
 
      | Tipo proyecto | Stack base | Estructura |
      |--------------|-----------|------------|
@@ -388,8 +378,8 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
    → En proyectos futuros, si hay key guardada, preguntar: "La última vez usaste {backend}. ¿Seguimos con ese?"
 
 3. **(paralelo)** logo-agent + image-agent — ambos reciben `{ "project_dir": "...", "backend": "gemini|huggingface" }`, leen brand.json del filesystem
-   - logo → `{project_dir}/assets/logo/` | image → `{project_dir}/assets/images/`
-   - **Nota merge**: ambos escriben en `{proyecto}/creative-assets` con merge por sección. El GET previo al merge mitiga conflictos, pero en paralelo existe riesgo de last-write-wins. Si se detectan datos perdidos tras el merge, re-ejecutar el agente afectado.
+   - logo → `{project_dir}/assets/logo/` (guarda en `{proyecto}/creative-logos`) | image → `{project_dir}/assets/images/` (guarda en `{proyecto}/creative-images`)
+   - Sin conflictos: cada agente escribe en su propio cajon de Engram.
 
 4. **Consultar video** al usuario (NO auto-generar): "¿Video de fondo para hero? (~$0.03-0.10 en Replicate)"
    → Sí: video-agent → `{project_dir}/assets/video/` | No: marcar DAG `video → "no-requerido"`
@@ -398,7 +388,7 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
    Opciones: a) Aprobar todas, b) Aprobar/rechazar selectivo, c) Rechazar todas
    **Si rechaza**: máx 3 reintentos por imagen (1: ajustar prompt, 2: cambiar composición, 3: alternativa completamente diferente o placeholder)
 
-6. Actualizar Engram `{proyecto}/creative-assets` con UPSERT (cada agente mergea solo su sección: logos/images/video)
+6. Verificar cajones en Engram: `{proyecto}/creative-logos`, `{proyecto}/creative-images`, `{proyecto}/creative-video` (cada uno actualizado por su agente)
 
 7. **COPIAR a public/** — assets/ → public/ (frameworks solo sirven desde public/)
    - Monorepo: `cp -r assets/{images,logo,video}/* apps/web/public/{images,logo,video}/`
@@ -409,7 +399,6 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
 ```
 
 **Si brand.json ya existe con `user_approved: true`** → saltar pasos 1-2.
-Merge strategy: cada agente creativo hace UPSERT interno (`mem_search` → merge su sección → `mem_update` o `mem_save`).
 
 **Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram con costo estimado acumulado. Los agentes creativos reportan el costo en su STATUS. Formato: `"images: $0.04 (Gemini), logo: $0 (HF), video: $0.05 (Replicate) — total: $0.09"`
 
@@ -417,8 +406,9 @@ Merge strategy: cada agente creativo hace UPSERT interno (`mem_search` → merge
 
 **Phase Gate → Fase 2B** (si assets creativos fueron solicitados):
 - `{proyecto}/branding` debe existir con `user_approved: true`
-- `{proyecto}/creative-assets` debe tener al menos las secciones solicitadas (logos, images)
-- Si video fue solicitado: verificar que existe seccion video O fallback CSS
+- `{proyecto}/creative-logos` debe existir (si logo fue solicitado)
+- `{proyecto}/creative-images` debe existir (si imagenes fueron solicitadas)
+- Si video fue solicitado: `{proyecto}/creative-video` debe existir O tener fallback CSS
 - Assets copiados a public/ (verificar que existen en filesystem)
 Si alguno falta, NO avanzar. Resolver primero.
 
@@ -449,7 +439,7 @@ Para **cada tarea** de la lista, en orden:
    ```
    TAREA: {N}/{Total} — {titulo}
    PROYECTO: {nombre} @ {directorio}
-   LEE: {cajon} (obs_id: {id pre-resuelto} | fallback: mem_search)
+   LEE: {cajon} (usar mem_search → mem_get_observation)
    CRITERIO: {criterio exacto — 1-2 lineas}
    GUARDA: {proyecto}/tarea-{N}
    DEVUELVE: Return Envelope Dev (ver seccion Return Envelope Standard)
@@ -519,9 +509,50 @@ evidence-collector verifica assets para artefactos obvios (extremidades de mas, 
 
 ---
 
+### Flujo CodePen en Fase 3
+
+Cuando el usuario pide un efecto de CodePen o el orquestador detecta una URL de CodePen:
+
+```
+1. BUSQUEDA (si no hay URL directa):
+   → spawn codepen-explorer (search): "busca efecto de {descripcion}"
+   → recibe 3 opciones (recomendada + 2 alternativas)
+   → presenta al usuario → usuario elige
+
+2. EXTRACCION:
+   → spawn codepen-explorer (extract): "{url_elegida}, project_dir={dir}"
+   → recibe STATUS + EXTRACTED_TO path + DEPS + NOTES
+
+3. APROBACION PRE-IMPLEMENTACION:
+   → mostrar al usuario: link al pen original + deps + notas
+   → si hay brand.json: "Adapto colores/fonts al brand manteniendo la mecanica?"
+   → si NO hay brand: "Lo implemento tal cual o queres ajustes?"
+   → solo tras aprobacion → pasar a frontend-developer
+
+4. IMPLEMENTACION:
+   → spawn frontend-developer: "integra efecto de {path_temp}, adapta al brand, deps: {lista}"
+   → frontend-developer lee de disco, adapta, implementa
+   → evidence-collector valida (como cualquier otra tarea)
+
+4. CHECKPOINT POST-EFECTOS (al terminar TODOS los efectos CodePen):
+   → mostrar pagina completa al usuario
+   → "Todos los efectos de CodePen estan aplicados. Queres cambiar alguno antes de certificar?"
+   → si el usuario quiere cambiar uno → solo rehacer ese (busqueda → extraccion → implementacion)
+
+5. BOVEDA (post-checkpoint, si el usuario aprueba):
+   → "Te gustaron estos efectos? Cuales guardamos en la boveda?"
+   → spawn codepen-explorer (vault-save) para los aprobados
+   → frontend-developer guarda adapted.json en la boveda
+```
+
+Deteccion de URLs de CodePen en mensajes del usuario:
+- Si el usuario dice "usa este pen: codepen.io/..." → saltar paso 1, ir directo a extraccion
+- Regex: `codepen\.io\/[\w-]+\/pen\/[\w]+`
+
 **Phase Gate → Fase 4**: verificar antes de empezar:
 - Todas las tareas tienen `{proyecto}/qa-{N}` con PASS (o aceptadas con ⚠)
 - Si hay tareas backend: `{proyecto}/api-spec` existe (si no, pedir a backend-architect que lo genere)
+- Si se usaron efectos CodePen: checkpoint post-efectos completado
 - Servidor de producción levantado y accesible: `npm run build && npm start` → verificar con `curl -s -o /dev/null -w '%{http_code}' http://localhost:{puerto}` (expect 200)
 
 ### FASE 4 — SEO + Certificacion Final (secuencia con tiers)
@@ -656,15 +687,13 @@ Actualiza DAG State: fase_actual → "completado"
 
 Si detectas que no hay historial de conversacion pero el usuario menciona un proyecto:
 1. Ejecutar Boot Sequence → buscar DAG State en Engram
-2. Pre-resolver drawer_ids para la fase actual
-3. Informar al usuario que se retomo
+2. Informar al usuario que se retomo
 4. Continuar — NO re-preguntar decisiones ya tomadas
 
-Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion y hay algo de historial):
-1. `mem_search("{proyecto}/estado")` → `mem_get_observation(id)`
-2. Comparar DAG State con lo que recuerdas del contexto
-3. Guardar session summary de lo que se hizo ANTES de la compactación
-4. Continuar desde la tarea/fase indicada en DAG State
+Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion):
+1. Ejecutar Boot Sequence completo — no intentar recordar contexto previo.
+2. `mem_search("{proyecto}/estado")` → `mem_get_observation(id)` → leer DAG State
+3. Continuar desde la tarea/fase indicada en DAG State
 
 ## Return Envelope Standard (todos los subagentes)
 
@@ -694,7 +723,7 @@ NOTAS: {solo si hay bloqueadores o desviaciones}
 STATUS: completado | fallido
 TAREA: {descripcion del asset generado}
 ARCHIVOS: [rutas de assets creados]
-ENGRAM: {proyecto}/branding | {proyecto}/creative-assets (merge seccion)
+ENGRAM: {proyecto}/branding | {proyecto}/creative-images | {proyecto}/creative-logos | {proyecto}/creative-video
 COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
 NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
 ```
@@ -727,6 +756,14 @@ ENGRAM: {proyecto}/{cajon}
 ```
 
 **Regla**: si un agente devuelve algo que NO sigue este formato, el orquestador pide que lo reformatee antes de procesar.
+
+### Validación post-retorno de subagente
+Después de que un subagente retorna su envelope:
+1. Verificar que STATUS es uno de: [completado, fallido, PASS, FAIL, CERTIFIED, NEEDS WORK]
+2. Si ARCHIVOS listados → verificar que existen ([ -f path ])
+3. Si ENGRAM reportado → confirmar con mem_search que la observación fue guardada
+4. Si alguna validación falla → pedir al subagente que reformatee/reintente
+5. Solo ENTONCES actualizar DAG State
 
 ---
 
@@ -763,12 +800,12 @@ Opciones:
 
 Cada subagente recibe **SOLO**:
 - Su tarea especifica (maximo 3 lineas)
-- Rutas a cajones de Engram con observation_ids pre-resueltos (no el contenido)
+- Topic keys de Engram que debe leer (no el contenido)
 - Criterios de aceptacion exactos
 - Donde guardar su resultado (topic key de Engram)
 - Referencia a su Return Envelope (ver seccion "Return Envelope Standard")
 
-**Template de handoff** (ver Fase 3, paso 3 para el formato exacto con obs_ids).
+**Template de handoff** (ver Fase 3, paso 3 para el formato exacto).
 
 **NUNCA pasar:** historico de conversacion, resultados completos de otros agentes, codigo inline, contenido de archivos.
 
@@ -782,8 +819,6 @@ Antes de spawnear un subagente, verificar estos 3 puntos (~50 tokens):
    → Si no: hacer `mem_update` del DAG State ANTES de delegar la siguiente tarea
 2. **Tarea actual marcada**: ¿la tarea que voy a delegar esta en `tareas_en_progreso` del DAG?
    → Si no: actualizar DAG State con `tarea_actual: {N}`
-3. **Drawer IDs vigentes**: ¿tengo los observation_ids cacheados en `drawer_ids`?
-   → Si no: pre-resolver los cajones necesarios para esta tarea
 
 **Este check previene el caso critico**: delego tarea 6, olvido registrar que tarea 5 completo, la sesion se compacta → tarea 5 se pierde. Con el health check, tarea 5 SIEMPRE esta guardada antes de que tarea 6 arranque.
 
@@ -807,6 +842,7 @@ Antes de spawnear un subagente, verificar estos 3 puntos (~50 tokens):
 | MVP rápido | `rapid-prototyper` | Fase 3: validación de hipótesis |
 | Juego (diseño) | `game-designer` | Fase 3: GDD, mecánicas, balance |
 | Juego (código) | `xr-immersive-developer` | Fase 3: canvas, WebGL, game loop |
+| Efectos CodePen | `codepen-explorer` | Fase 3: buscar/extraer efectos de CodePen a disco |
 | QA por tarea | `evidence-collector` | Fase 3: validación con screenshots |
 | SEO & AI Discovery | `seo-discovery` | Fase 4: meta tags, JSON-LD, sitemap, llms.txt, robots.txt |
 | QA APIs | `api-tester` | Fase 4: cobertura de endpoints |
