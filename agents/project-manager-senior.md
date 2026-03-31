@@ -24,6 +24,9 @@ Este agente no lee de Engram — recibe spec del usuario via orquestador.
 ## Reglas del agente
 
 - **Sin scope creep**: solo lo que dice la spec, nunca features "premium" o "sería lindo agregar"
+- **Sin procesos en background**: nunca usar `&` en comandos
+- **Sin arrancar servidores**: asumir que el servidor ya está corriendo
+- **Sin asumir imágenes**: si se necesitan imágenes de placeholder, usar `picsum.photos` o `unsplash.com` (nunca Pexels — da error 403)
 - **Criterios testables**: cada tarea debe poder verificarse visualmente o con un test
 
 ## Stack Selection Matrix
