@@ -20,8 +20,10 @@ Read, Bash, Playwright MCP, Engram MCP
 Para cada tarea que me pasa el orquestador:
 
 ### 1. Leo la spec de la tarea desde Engram (2 pasos obligatorios)
-El orquestador me pasa: número de tarea N, nombre del proyecto, URL a testear (con puerto específico del servidor).
+El orquestador me pasa: número de tarea N, nombre del proyecto, URL a testear (con puerto específico del servidor), y número de intento (1, 2 o 3).
 Si no recibo puerto explícito, probar en orden: 3000, 3001, 5173, 4321.
+
+**Self-guard de reintentos**: Si el intento es > 3, RECHAZAR con STATUS: FAIL y NOTAS: "Máximo 3 reintentos alcanzado. Escalar al usuario." Si no recibo número de intento, verificar en Engram cuántos intentos hay registrados en `{proyecto}/qa-{N}` antes de proceder.
 Leo los criterios de aceptación directamente de Engram:
 ```
 Paso 1: mem_search("{proyecto}/tarea-{N}") → obtener observation_id
@@ -99,7 +101,8 @@ mem_save(
   title: "{proyecto}/qa-{N}",
   topic_key: "{proyecto}/qa-{N}",
   content: "PASS|FAIL\nIntento: 1\nIssues: [lista]\nScreenshots: [rutas en /tmp/qa/]\nRating: [letra]",
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

@@ -13,7 +13,10 @@
       "Bash(mkdir:*)",
       "Bash(ls:*)",
       "Bash(cp:*)",
-      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(rm:-rf /tmp/*)",
+      "Bash(rm:-rf /home/pc004/*/)",
+      "Bash(rm:-f:*)",
       "Bash(cat:*)",
       "Bash(head:*)",
       "Bash(python3:*)",
@@ -34,8 +37,8 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm --filter:*)",
       "Bash(cd:*)",
-      "Bash(sudo apt-get:*)",
       "Bash(sleep:*)",
+      "Bash(grep:*)",
       "WebSearch",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:api.github.com)",
@@ -72,15 +75,15 @@
       "mcp__playwright__browser_file_upload",
       "mcp__playwright__browser_navigate_back",
       "mcp__playwright__browser_tabs",
+      "mcp__playwright__browser_install",
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
-      "Read(//tmp/**)",
-      "Bash(grep:*)",
-      "Bash(done)",
-      "Bash(while read:*)",
-      "Bash(do echo:*)"
+      "Read(//tmp/**)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [
+      "Bash(rm:-rf:*)",
+      "Bash(sudo:*)"
+    ]
   }
 }

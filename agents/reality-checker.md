@@ -193,7 +193,8 @@ mem_save(
   title: "{proyecto}/certificacion",
   topic_key: "{proyecto}/certificacion",
   content: "CERTIFIED|NEEDS WORK\nBlockers: [lista]\nScreenshots: [rutas]\nPerf: [resumen]",
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

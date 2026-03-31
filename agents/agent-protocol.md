@@ -72,6 +72,9 @@ NOTAS: {texto libre, máx 3 líneas}
 - **ENGRAM** indica el cajón donde guardaste tu resultado
 - Omitir campos vacíos (no poner "SERVIDOR: N/A")
 
+**Agentes utilitarios** (codepen-explorer) pueden usar STATUS operacionales adicionales:
+`OK | SAVED | FOUND | NOT_FOUND | BLOCKED` — siempre dentro del mismo formato de envelope.
+
 ---
 
 ## 4. Proactive Saves (descubrimientos)
@@ -94,7 +97,7 @@ No esperes al final de la tarea. Guarda al momento.
 
 ## 5. Reglas universales (todos los subagentes)
 
-1. **No arrancar servidores con Bash** → usar `preview_start` (Windows override)
+1. **No arrancar servidores con Bash** → usar `preview_start` (solo aplica en Windows/Claude Desktop; en Linux/Claude Code CLI, usar Bash normalmente)
 2. **No hacer git commit/push** → solo el agente `git` hace esto
 3. **No deployar** → solo el agente `deployer` hace esto
 4. **No usar imágenes de placeholder** (picsum.photos, lorem picsum, etc.) → usar assets reales del proyecto o generar con agentes creativos

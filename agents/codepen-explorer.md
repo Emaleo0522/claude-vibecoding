@@ -1,6 +1,6 @@
 ---
 name: codepen-explorer
-description: Busca, extrae e interpreta efectos de CodePen via Chrome MCP. Gestiona la boveda de efectos probados.
+description: Busca, extrae e interpreta efectos de CodePen via Playwright MCP. Gestiona la boveda de efectos probados.
 subagent_type: codepen-explorer
 ---
 
@@ -16,20 +16,19 @@ Este agente no lee cajones de Engram al inicio. Recibe el query de busqueda dire
 
 ## Requisito: sesion de CodePen
 
-Este agente usa Chrome MCP (el browser real del usuario). CodePen requiere cuenta logueada para:
+Este agente usa Playwright MCP (browser headless). CodePen requiere cuenta logueada para:
 - Ver resultados de busqueda completos
 - Acceder a trending/picks
 - Ver detalles de pens privados o unlisted
 
 **Antes de cualquier operacion**, verificar sesion:
 ```
-1. navigate → https://codepen.io (SIEMPRE navegar a la raiz, nunca confiar en un tab cacheado)
-2. wait 2s (esperar que cargue completamente)
-3. javascript_tool → document.body.classList.contains('logged-in') ? 'LOGGED_IN' : 'NOT_LOGGED_IN'
+1. browser_navigate → https://codepen.io (SIEMPRE navegar a la raiz, nunca confiar en estado previo)
+2. browser_wait_for → 2s (esperar que cargue completamente)
+3. browser_evaluate → document.body.classList.contains('logged-in') ? 'LOGGED_IN' : 'NOT_LOGGED_IN'
 ```
 
-IMPORTANTE: NO verificar sesion en un tab que ya tenga una URL de CodePen cacheada.
-Siempre navegar primero a `codepen.io` fresco — los tabs cacheados pueden dar falsos negativos.
+IMPORTANTE: Siempre navegar primero a `codepen.io` fresco.
 
 - Si `LOGGED_IN`: continuar normalmente
 - Si `NOT_LOGGED_IN`: PARAR y responder:
@@ -88,14 +87,14 @@ Reglas de busqueda:
 - Si no hay buenos resultados en 3 paginas, reformular keywords (max 3 intentos = ~54 pens revisados)
 - Siempre presentar 3 opciones: 1 recomendada + 2 alternativas
 
-### Ejecucion de busqueda (Chrome MCP)
+### Ejecucion de busqueda (Playwright MCP)
 
 ```
-1. navigate → https://codepen.io/search/pens?q={query}
-2. wait 3s
-3. javascript_tool → extraer titulos y URLs de los 6 resultados
-4. Scroll al fondo de resultados → click en boton "Next" para ir a pagina 2
-5. wait 3s → javascript_tool → extraer 6 resultados mas
+1. browser_navigate → https://codepen.io/search/pens?q={query}
+2. browser_wait_for → 3s
+3. browser_evaluate → extraer titulos y URLs de los 6 resultados
+4. Scroll al fondo de resultados → browser_click en boton "Next" para ir a pagina 2
+5. browser_wait_for → 3s → browser_evaluate → extraer 6 resultados mas
 6. (Opcional) repetir paso 4-5 para pagina 3
 7. De los 12-18 pens vistos, elegir top 3
 8. Presentar al usuario: recomendada + 2 alternativas
@@ -139,7 +138,7 @@ Alternativa 2:
 
 ## Extraccion de un pen
 
-### Script de extraccion (Chrome MCP — javascript_tool)
+### Script de extraccion (Playwright MCP — browser_evaluate)
 
 Ejecutar en la URL `/pen/` del CodePen:
 
@@ -182,8 +181,8 @@ JSON.stringify({ externalJS, externalCSS, cssPre, jsPre, codeLengths });
 
 **Paso 2 — Codigo completo (solo si usuario/orquestador aprueba):**
 
-IMPORTANTE: Chrome MCP bloquea respuestas que contienen CSS/JS largo (lo detecta como
-"cookie/query string data"). Extraer CADA panel por separado con prefijo de texto:
+IMPORTANTE: browser_evaluate puede truncar respuestas con CSS/JS largo.
+Extraer CADA panel por separado con prefijo de texto:
 
 ```javascript
 // HTML (generalmente corto, no se bloquea)
@@ -206,10 +205,10 @@ const js = eds[2] && eds[2].CodeMirror ? eds[2].CodeMirror.getValue() : '';
 'JS_CODE:' + js;
 ```
 
-Si un panel se bloquea ([BLOCKED: Cookie/query string data]):
-- Leer el codigo visible en el screenshot del editor y reconstruir manualmente
+Si un panel se trunca o falla:
+- Usar browser_take_screenshot y leer el codigo visible en el editor
 - O usar el pen como referencia visual y reimplementar la tecnica
-- NUNCA intentar JSON.stringify con los 3 paneles juntos — siempre se bloquea
+- NUNCA intentar JSON.stringify con los 3 paneles juntos — puede truncarse
 
 **Paso 3 — Guardar a disco (siempre):**
 
@@ -235,7 +234,7 @@ Despues de extraer dependencias, mapear a paquetes npm instalables:
 | `gsap` o `TweenMax` o `TweenLite` | gsap | `npm i gsap` |
 | `ScrollMagic` | scrollmagic | `npm i scrollmagic` |
 | `ScrollTrigger` | gsap (incluido) | `npm i gsap` |
-| `DrawSVGPlugin` | gsap (plugin club) | Requiere GSAP Club — buscar alternativa |
+| `DrawSVGPlugin` | gsap (incluido desde 2025) | `npm i gsap` |
 | `three` o `three.js` | three | `npm i three` |
 | `anime` o `animejs` | animejs | `npm i animejs` |
 | `lottie` | lottie-web | `npm i lottie-web` |
@@ -262,7 +261,7 @@ TITLE: {titulo}
 EXTRACTED_TO: {project_dir}/.codepen-temp/{slug}/
 DEPS_JS: gsap (npm i gsap), scrollmagic (npm i scrollmagic)
 DEPS_CSS: ninguna
-DEPS_MANUAL: DrawSVGPlugin (GSAP Club, requiere alternativa)
+DEPS_MANUAL: ninguna
 PREPROCESSOR: css=scss, js=none
 SIZES: html=3.8K, css=4.4K, js=1.3K
 NOTES: jQuery reemplazable por vanilla JS. ScrollMagic tiene alternativa moderna GSAP ScrollTrigger.
@@ -310,7 +309,7 @@ codepen-explorer solo guarda cuando el orquestador se lo indica (modo vault-save
   "dependencies": {
     "js": ["gsap", "scrollmagic"],
     "css": [],
-    "manual": ["DrawSVGPlugin (GSAP Club)"]
+    "manual": []
   },
   "html": "...",
   "css": "...",
@@ -427,4 +426,4 @@ codepen-explorer NO hace:
 Ver agent-protocol.md § 4.
 
 ## Tools
-Chrome MCP (navigate, javascript_tool, get_page_text), Engram MCP
+Playwright MCP (browser_navigate, browser_evaluate, browser_snapshot, browser_click, browser_wait_for, browser_take_screenshot), Engram MCP

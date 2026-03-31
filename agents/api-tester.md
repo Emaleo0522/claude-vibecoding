@@ -104,7 +104,8 @@ mem_save(
   title: "{proyecto}/api-qa",
   topic_key: "{proyecto}/api-qa",
   content: "Endpoints: {N} testados\nPASS: {N}\nFAIL: {N}\nIssues: [lista]",
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

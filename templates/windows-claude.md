@@ -13,7 +13,7 @@ Cuando se activa el modo orquestador, Claude adopta el comportamiento definido e
 
 ## Arquitectura
 
-Este sistema usa un **orquestador central** (1 coordinador + 21 subagentes = 22 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
+Este sistema usa un **orquestador central** (1 coordinador + 22 subagentes = 23 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
 
 ### Pipeline (5 fases)
 ```
@@ -131,7 +131,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | video-agent | Read, Write, Bash, Engram MCP |
 | git | Bash (git, gh), Engram MCP |
 | deployer | Bash (vercel), Engram MCP |
-| codepen-explorer | Chrome MCP (navigate, javascript_tool, get_page_text), Engram MCP |
+| codepen-explorer | Playwright MCP (browser_navigate, browser_evaluate, browser_snapshot, browser_click, browser_wait_for, browser_take_screenshot), Engram MCP |
 
 ## Protocolo compartido de subagentes
 - **Referencia completa**: `~/.claude/agents/agent-protocol.md`
@@ -140,7 +140,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 
 ### Return Envelope estándar (todos los subagentes)
 ```
-STATUS: completado | fallido | PASS | FAIL | CERTIFIED | NEEDS WORK
+STATUS: completado | fallido | PASS | FAIL | CERTIFIED | NEEDS WORK | OK | SAVED | FOUND | NOT_FOUND | BLOCKED (últimos 5: solo agentes utilitarios)
 TAREA: {descripción corta}
 ARCHIVOS: [paths creados/modificados]
 ENGRAM: {proyecto}/{cajon} (topic_key)
@@ -173,6 +173,18 @@ NOTAS: {máx 3 líneas}
 | video-agent | `branding`, hero.png | `{proyecto}/creative-video` |
 | git | archivos del proyecto | `{proyecto}/git-commit` |
 | deployer | build del proyecto | `{proyecto}/deploy-url` |
+| codepen-explorer | query del orquestador | `codepen-vault/{slug}` |
+
+## Referencias técnicas (archivos no-agente en `~/.claude/agents/`)
+| Archivo | Usado por | Contenido |
+|---------|-----------|-----------|
+| `agent-protocol.md` | todos los subagentes | Engram 2-pasos, Return Envelope, reglas universales |
+| `better-auth-reference.md` | backend-architect, frontend-developer, rapid-prototyper | Better Auth 1.5 + Supabase + Vercel |
+| `better-gsap-reference.md` | frontend-developer | GSAP Tier 3 para React/Next.js |
+| `react-patterns-reference.md` | frontend-developer | React 19, Next.js 15/16, Tailwind 4, Zustand 5 |
+| `redis-patterns-reference.md` | backend-architect | Cache-aside, Pub/Sub, HyperLogLog, cursor pagination |
+| `pocketbase-reference.md` | backend-architect | Boolean fields, rules, auth, sort, Docker, HTTPS |
+| `devops-vps-reference.md` | deployer | Mixed Content HTTPS, Oracle Cloud, nginx, Let's Encrypt |
 
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram

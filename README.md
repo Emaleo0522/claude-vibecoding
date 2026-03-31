@@ -1,6 +1,6 @@
 # Claude Vibecoding
 
-Un equipo de 26 agentes de IA que convierte tus ideas en aplicaciones listas para produccion. Vos describis lo que queres, ellos planifican, disenan, programan, testean y publican.
+Un equipo de 23 agentes de IA que convierte tus ideas en aplicaciones listas para produccion. Vos describis lo que queres, ellos planifican, disenan, programan, testean y publican.
 
 **No necesitas saber programar.** Tampoco necesitas supervisar cada paso. El sistema maneja todo el proceso con un pipeline profesional de 5 fases y te pide aprobacion solo en los momentos clave.
 
@@ -59,9 +59,9 @@ Segui la guia paso a paso en [`install/windows.md`](install/windows.md).
 
 Una vez instalado, tenes dos modos:
 
-**Modo normal** — Claude responde como siempre. Preguntas, fixes, chat tecnico.
+**Modo normal** -- Claude responde como siempre. Preguntas, fixes, chat tecnico.
 
-**Modo pipeline** — Claude activa los 26 agentes y construye tu proyecto completo:
+**Modo pipeline** -- Claude activa los 23 agentes y construye tu proyecto completo:
 
 ```
 modo orquestador — quiero crear una app de delivery de comida para mi barrio
@@ -90,7 +90,7 @@ El sistema se encarga del resto. Te va a pedir aprobacion en estos momentos:
 | Juego browser | Platformer, puzzle, arcade | Phaser.js + TypeScript |
 | API | REST, GraphQL, WebSocket | Hono + Drizzle + tRPC |
 
-El stack no es fijo — el sistema elige la mejor combinacion segun tu proyecto. Si queres usar algo especifico, mencionalo y lo respeta.
+El stack no es fijo -- el sistema elige la mejor combinacion segun tu proyecto. Si queres usar algo especifico, mencionalo y lo respeta.
 
 ---
 
@@ -112,13 +112,16 @@ FASE 2 — Arquitectura
   v
 FASE 2B — Assets creativos (opcional)
   brand-agent  --> identidad de marca (paleta, tipografia, tono)
-  image-agent  --> hero images (Gemini o HuggingFace)
-  logo-agent   --> logos SVG vectorizados
-  video-agent  --> videos de fondo (o CSS fallback)
+     [pausa: vos aprobas la marca]
+  image-agent  --> hero images (Gemini o HuggingFace)  \
+  logo-agent   --> logos SVG vectorizados               > en paralelo
+  video-agent  --> videos de fondo (o CSS fallback)    /
   |
   v
 FASE 3 — Desarrollo + QA
-  dev-agent --> implementa --> evidence-collector valida con screenshots
+  dev-agent         --> implementa la tarea
+  codepen-explorer  --> busca/extrae efectos visuales de CodePen (opcional)
+  evidence-collector --> valida con screenshots en 3 dispositivos
   (si falla, reintenta hasta 3 veces con feedback especifico)
   |
   v
@@ -136,10 +139,11 @@ FASE 5 — Publicacion (con tu confirmacion)
 
 ---
 
-## Los 26 agentes
+## Los 23 agentes
 
 | Fase | Agente | Que hace |
 |:----:|--------|---------|
+| * | `orquestador` | Coordina todo. Nunca programa, solo delega |
 | 1 | `project-manager-senior` | Convierte tu idea en tareas concretas con criterios de aceptacion |
 | 2 | `ux-architect` | Crea la base CSS: tokens de diseno, layout, tema claro/oscuro |
 | 2 | `ui-designer` | Disena componentes visuales con accesibilidad WCAG AA |
@@ -154,6 +158,7 @@ FASE 5 — Publicacion (con tu confirmacion)
 | 3 | `mobile-developer` | Desarrolla apps iOS/Android con React Native + Expo |
 | 3 | `game-designer` | Crea el documento de diseno del juego (mecanicas, balance) |
 | 3 | `xr-immersive-developer` | Implementa juegos con Phaser.js, PixiJS o Three.js |
+| 3 | `codepen-explorer` | Busca y extrae efectos visuales de CodePen |
 | 3 | `evidence-collector` | Testea cada tarea con screenshots en 3 dispositivos |
 | 4 | `seo-discovery` | Optimiza SEO y visibilidad en buscadores e IAs |
 | 4 | `api-tester` | Valida endpoints contra OWASP API Top 10 |
@@ -161,7 +166,44 @@ FASE 5 — Publicacion (con tu confirmacion)
 | 4 | `reality-checker` | Auditoria final (por defecto dice "necesita trabajo") |
 | 5 | `git` | Hace commit y push a GitHub |
 | 5 | `deployer` | Publica en Vercel con auto-deploy |
-| * | `orquestador` | Coordina todo. Nunca programa, solo delega |
+
+### Arquitectura hub-and-spoke
+
+```
+                    +--- project-manager-senior
+                    +--- ux-architect
+                    +--- ui-designer
+    Tu idea ---> ORQUESTADOR --+--- frontend-developer
+                    |          +--- backend-architect
+                    |          +--- evidence-collector
+                    |          +--- ...22 agentes mas
+                    |
+            (nunca programa,
+             solo coordina)
+```
+
+**Regla de oro**: el orquestador NUNCA lee ni escribe codigo. Cada token que consume en trabajo real infla el contexto y acerca la compactacion. Solo coordina.
+
+Los subagentes nunca se comunican entre si -- todo pasa por el orquestador.
+
+---
+
+## Coordinacion entre agentes
+
+Cada agente sabe exactamente que necesita leer antes de empezar y que produce al terminar:
+
+| Agente | Lee antes de empezar | Produce |
+|--------|---------------------|---------|
+| project-manager-senior | spec del usuario | tareas |
+| ux-architect | tareas | css-foundation |
+| ui-designer | css-foundation | design-system |
+| security-engineer | tareas | security-spec |
+| frontend-developer | css-foundation, design-system, security-spec, tareas | tarea-{N} |
+| backend-architect | security-spec, tareas | tarea-{N}, api-spec |
+| evidence-collector | tarea-{N} del dev | qa-{N} |
+| reality-checker | qa-{N}, seo, api-qa, perf-report | certificacion |
+
+La lista completa esta en `CLAUDE.md` (seccion "Coordinacion cross-agent").
 
 ---
 
@@ -173,8 +215,29 @@ El sistema esta disenado para no perder tu progreso, incluso si la sesion se cor
 - **Engram**: memoria persistente que sobrevive entre sesiones. Todo el estado del proyecto se guarda aca.
 - **DAG State**: despues de cada tarea completada, el orquestador guarda un snapshot completo del progreso.
 - **Boot Sequence**: al iniciar, el sistema busca automaticamente si hay un proyecto en curso para retomarlo.
-- **Dual-write**: los datos criticos se guardan en Engram Y en disco, por si uno falla.
+- **Dual-write**: los datos criticos se guardan en Engram Y en disco (`{project_dir}/.pipeline/`), por si uno falla.
 - **Proactive saves**: los agentes guardan descubrimientos importantes inmediatamente, no al final.
+
+### Cajones Engram (topic keys)
+
+El sistema organiza la informacion en 21 cajones con roles definidos:
+
+| Topic key | Generado por | Leido por |
+|-----------|-------------|-----------|
+| `{proyecto}/estado` | orquestador | orquestador (retomar) |
+| `{proyecto}/tareas` | project-manager-senior | todos los dev |
+| `{proyecto}/css-foundation` | ux-architect | frontend-developer |
+| `{proyecto}/design-system` | ui-designer | frontend-developer |
+| `{proyecto}/security-spec` | security-engineer | backend-architect |
+| `{proyecto}/tarea-{N}` | dev agents | evidence-collector |
+| `{proyecto}/qa-{N}` | evidence-collector | reality-checker |
+| `{proyecto}/branding` | brand-agent | agentes creativos |
+| `{proyecto}/creative-images` | image-agent | orquestador |
+| `{proyecto}/creative-logos` | logo-agent | orquestador |
+| `{proyecto}/creative-video` | video-agent | orquestador |
+| `codepen-vault/{slug}` | codepen-explorer | frontend-developer |
+
+La tabla completa con los 21 cajones esta en `CLAUDE.md`.
 
 **Retomar un proyecto:**
 Abri una conversacion nueva y deci:
@@ -239,13 +302,14 @@ El sistema no asume que todo va a salir bien. Tiene mecanismos para cada escenar
 | Playwright no esta disponible | Hace QA solo con checks de codigo (sin screenshots) |
 | Un asset creativo falla | Cadena de fallback (ej: Gemini falla --> HuggingFace --> placeholder) |
 | reality-checker no aprueba | Vuelve a Fase 3 solo para las tareas con problemas |
+| Deploy rompe produccion | git revierte, deployer promueve version anterior |
 
 ---
 
 ## Estructura del repositorio
 
 ```
-agents/                         26 agentes + referencia Better Auth
+agents/                         23 agentes + 7 referencias = 30 archivos
   orquestador.md                Coordinador central (nunca programa)
   project-manager-senior.md     Planificacion
   ux-architect.md               Fundacion CSS
@@ -257,6 +321,7 @@ agents/                         26 agentes + referencia Better Auth
   mobile-developer.md           Apps mobile
   game-designer.md              Diseno de juegos
   xr-immersive-developer.md     Implementacion de juegos
+  codepen-explorer.md           Busca/extrae efectos de CodePen
   evidence-collector.md         QA visual por tarea
   reality-checker.md            Certificacion final
   api-tester.md                 Testing de APIs
@@ -268,7 +333,13 @@ agents/                         26 agentes + referencia Better Auth
   video-agent.md                Videos de fondo
   git.md                        Git + GitHub
   deployer.md                   Vercel deploy
-  better-auth-reference.md      Guia de autenticacion
+  agent-protocol.md             Protocolo compartido (Engram, Return Envelope, reglas)
+  better-auth-reference.md      Guia de autenticacion (Better Auth)
+  better-gsap-reference.md      Guia de animaciones GSAP
+  react-patterns-reference.md   Patrones React 19 / Next.js 15-16 / Tailwind 4
+  redis-patterns-reference.md   Patrones Redis (cache, pub/sub, HyperLogLog)
+  pocketbase-reference.md       Gotchas de PocketBase
+  devops-vps-reference.md       DevOps VPS, HTTPS, Oracle Cloud, nginx
 install/
   linux.sh                      Instalacion automatica (Linux/macOS)
   windows.md                    Guia paso a paso (Windows)
@@ -277,36 +348,23 @@ templates/
   windows-claude.md             CLAUDE.md para Windows
   windows-launch.json           Config de preview servers
   settings.json                 Config de MCPs (Engram)
-  settings.local.json           Permisos para los 26 agentes
-CLAUDE.md                       Instrucciones del sistema
+  settings.local.json           Permisos para los 23 agentes
+docs/
+  game-dev-improvements.md      Mejoras de game dev recopiladas
+CLAUDE.md                       Instrucciones del sistema (fuente de verdad)
 ```
-
----
-
-## Requisitos
-
-| Plataforma | Necesitas |
-|------------|-----------|
-| Linux / macOS | Claude Code instalado. El script instala Node.js, Vercel CLI y GitHub CLI |
-| Windows | Git for Windows + Claude Desktop. La guia te lleva paso a paso |
 
 ---
 
 ## Para desarrolladores
 
-### Arquitectura
+### Protocolo compartido
 
-El sistema usa un patron **hub-and-spoke**: 1 orquestador (hub) + 21 subagentes (spokes). Los subagentes nunca se comunican entre si — todo pasa por el orquestador.
-
-**Regla de oro**: el orquestador NUNCA lee ni escribe codigo. Cada token que consume en trabajo real infla el contexto y acerca la compactacion. Solo coordina.
-
-### Contexto y tokens
-
-- **Handoffs minimos**: subagentes devuelven solo STATUS + archivos + issues, nunca codigo completo
-- **Engram con topic keys**: 19 cajones con roles definidos (quien escribe, quien lee)
-- **DAG State granular**: se guarda despues de cada TAREA completada (no solo fases)
-- **Pre-resolucion de IDs**: el orquestador cachea observation_ids al inicio para evitar busquedas repetidas
-- **Dual-write**: estado y tareas se guardan en Engram + disco como respaldo
+Todos los subagentes siguen el protocolo definido en `agents/agent-protocol.md`:
+- **Engram 2-pasos**: lectura obligatoria con `mem_search` → `mem_get_observation` (nunca usar el preview truncado)
+- **Return Envelope**: formato estandar de respuesta al orquestador (STATUS, TAREA, ARCHIVOS, ENGRAM, NOTAS)
+- **Proactive saves**: descubrimientos se guardan inmediatamente con topic key `{proyecto}/discovery-{desc}`
+- **Topic key obligatorio**: todo `mem_save` lleva `topic_key` y `project` para evitar duplicados
 
 ### Modificar agentes
 
@@ -318,13 +376,29 @@ name: nombre-agente
 description: Que hace este agente
 ---
 
+> **Protocolo compartido**: Ver agent-protocol.md
+
+## Inputs de Engram
 ## Lo que hago
-## Como leo de Engram
 ## Como guardo resultado
-## Proactive saves (discoveries)
+## Proactive saves
 ## Return Envelope
 ## Tools asignadas
 ```
+
+### Herramientas por agente
+
+| Agente | Tools |
+|--------|-------|
+| orquestador | Agent (spawn subagentes), Engram MCP |
+| frontend-developer, backend-architect, rapid-prototyper, mobile-developer, xr-immersive-developer | Read, Write, Edit, Bash, Engram MCP |
+| project-manager-senior, ux-architect, ui-designer, security-engineer, game-designer | Read, Write, Engram MCP |
+| evidence-collector | Read, Bash, Playwright MCP, Engram MCP |
+| reality-checker | Read, Bash, Glob, Grep, Playwright MCP, Engram MCP |
+| codepen-explorer | Playwright MCP, Engram MCP |
+| seo-discovery | Read, Write, Edit, Bash, Engram MCP |
+| git | Bash (git, gh), Engram MCP |
+| deployer | Bash (vercel), Engram MCP |
 
 ### Stack adaptable
 
@@ -338,6 +412,16 @@ description: Que hace este agente
 | Auth | Better Auth | Siempre para proyectos nuevos |
 | Mobile | React Native + Expo SDK 52+ | NativeWind 4, Expo Router |
 | Juegos 2D | Phaser.js 3 | PixiJS, Canvas API |
+| Animacion | CSS (Tier 1) → Framer Motion (Tier 2) → GSAP (Tier 3) | Segun complejidad |
+
+---
+
+## Requisitos
+
+| Plataforma | Necesitas |
+|------------|-----------|
+| Linux / macOS | Claude Code instalado. El script instala Node.js, Vercel CLI y GitHub CLI |
+| Windows | Git for Windows + Claude Desktop. La guia te lleva paso a paso |
 
 ---
 
@@ -355,6 +439,6 @@ Este sistema usa repos separados para datos que tienen ciclo de vida propio:
 ## Creditos
 
 Inspirado en:
-- [Agency Agents](https://github.com/msitarzewski/agency-agents) — agentes especializados con metricas
-- [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) — SDD, Engram, context management patterns
-- [pixel-agents](https://github.com/pablodelucca/pixel-agents) — visualizacion pixel art de agentes
+- [Agency Agents](https://github.com/msitarzewski/agency-agents) -- agentes especializados con metricas
+- [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) -- SDD, Engram, context management patterns
+- [pixel-agents](https://github.com/pablodelucca/pixel-agents) -- visualizacion pixel art de agentes

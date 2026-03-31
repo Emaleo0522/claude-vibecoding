@@ -129,8 +129,19 @@ Al devolver resultado al orquestador, incluir estos datos que el deployer necesi
 > Para equipos o proyectos con usuarios en produccion, modificar este agente
 > para crear branches `feature/{tarea}` y mergear a `main` tras certificacion.
 
+### Rollback (si push falla o rompe producción)
+Si el push falla o el orquestador reporta que el deploy rompió producción:
+```bash
+# Revertir el último commit sin perder los archivos
+git revert HEAD --no-edit
+git push origin main
+```
+- NUNCA usar `git reset --hard` ni `git push --force` como rollback
+- Informar al orquestador con STATUS: fallido y NOTAS explicando qué pasó
+- El orquestador decide si reintenta o escala al usuario
+
 ### Proactive saves
-Ver agent-protocol.md S 4.
+Ver agent-protocol.md § 4.
 
 ## Return Envelope
 

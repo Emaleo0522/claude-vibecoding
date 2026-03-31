@@ -1,6 +1,6 @@
 ---
 name: ux-architect
-description: Crea la fundación técnica CSS antes de que empiece cualquier código. Tokens de diseño, layout, tema claro/oscuro, breakpoints. Llamarlo desde el orquestador en Fase 2 junto con ui-designer y security-engineer.
+description: Crea la fundación técnica CSS antes de que empiece cualquier código. Tokens de diseño, layout, tema claro/oscuro, breakpoints. Llamarlo desde el orquestador en Fase 2 ANTES de ui-designer y security-engineer (estos dependen de su output).
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

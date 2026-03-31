@@ -303,7 +303,8 @@ mem_save(
   title: "{proyecto}/seo",
   topic_key: "{proyecto}/seo",
   content: "seo_tier: structural\nScore parcial: {N}/100\nArchivos: [rutas]\nHeadings: [OK/issues]\nSitemap: OK\nRobots: OK\nSemantic HTML: [OK/issues]",
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

@@ -123,7 +123,7 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | project-manager-senior | nada (recibe spec directa) | `{proyecto}/tareas` |
 | ux-architect | `{proyecto}/tareas` | `{proyecto}/css-foundation` |
 | ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
-| security-engineer | nada (recibe spec directa) | `{proyecto}/security-spec` |
+| security-engineer | `{proyecto}/tareas` | `{proyecto}/security-spec` |
 | frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system`, `codepen-vault/*` (consulta boveda) | `{proyecto}/tarea-{N}` |
 | mobile-developer | `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
 | backend-architect | `{proyecto}/security-spec` | `{proyecto}/tarea-{N}` |
@@ -216,9 +216,13 @@ certificacion:
   api_tester: null                # observation_id del api-qa
   performance: null               # observation_id del perf-report
   reality_checker: null           # observation_id de certificacion
-  a11y_violations: 0              # axe-core critical/serious (0 = PASS)
-  bundle_size_pass: true          # bundlewatch gate (opcional, solo si hay build JS)
-  lint_pass: true                 # eslint/stylelint gate
+  a11y_violations: 0              # axe-core critical/serious — extraer de qa-{N} NOTAS del evidence-collector
+  bundle_size_pass: null           # bundlewatch gate — extraer de perf-report (null = no evaluado, true/false = resultado)
+  lint_pass: null                  # eslint/stylelint gate — extraer de perf-report (null = no evaluado)
+codepen:
+  used: false                      # true si se usaron efectos de CodePen en este proyecto
+  slugs: []                        # slugs extraidos ["parallax-hero", "scroll-reveal"]
+  checkpoint_done: false           # true tras checkpoint post-efectos con usuario
 publicacion:
   git_commit: null                # observation_id del git-commit
   deploy_url: null                # observation_id del deploy-url
@@ -235,6 +239,12 @@ engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 - Despues de cada decision del usuario (scope, marca, stack)
 - Despues de cada escalacion (FAIL 3x)
 - Si pasaron 3+ delegaciones sin guardar → guardar AHORA
+
+**Campos a extraer de resultados de subagentes:**
+- `a11y_violations`: extraer del NOTAS de evidence-collector (busca "axe-core" o "violations" en qa-{N})
+- `bundle_size_pass`: extraer del perf-report de performance-benchmarker (busca "bundlewatch")
+- `lint_pass`: extraer del perf-report si lint fue ejecutado
+- `codepen.used/slugs/checkpoint_done`: actualizar durante flujo CodePen en Fase 3
 
 ---
 
@@ -318,7 +328,7 @@ Actualiza DAG State. Informa al usuario: "Arquitectura lista. N tareas listas pa
 
 ### FASE 2B — Assets Visuales (solo si el proyecto tiene landing page, logo, o imágenes de marca)
 
-Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los assets.
+Ejecutar después de Fase 2 y antes de Fase 3 (requiere outputs de Fase 2: css-foundation, design-system, security-spec).
 
 **¿Cuándo activar?** Si el proyecto incluye landing page, hero section, logo, o video de fondo.
 
@@ -400,7 +410,11 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
 
 **Si brand.json ya existe con `user_approved: true`** → saltar pasos 1-2.
 
-**Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram con costo estimado acumulado. Los agentes creativos reportan el costo en su STATUS. Formato: `"images: $0.04 (Gemini), logo: $0 (HF), video: $0.05 (Replicate) — total: $0.09"`
+**Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram:
+```
+mem_save(title: "{proyecto} — pipeline creativo costs", content: "images: $X (backend), logo: $X (backend), video: $X (Replicate) — total: $X", type: "config", topic_key: "{proyecto}/costs", project: "{proyecto}")
+```
+Los agentes creativos reportan el costo en su STATUS. Acumular y guardar al terminar Fase 2B.
 
 ---
 
@@ -534,12 +548,12 @@ Cuando el usuario pide un efecto de CodePen o el orquestador detecta una URL de 
    → frontend-developer lee de disco, adapta, implementa
    → evidence-collector valida (como cualquier otra tarea)
 
-4. CHECKPOINT POST-EFECTOS (al terminar TODOS los efectos CodePen):
+5. CHECKPOINT POST-EFECTOS (al terminar TODOS los efectos CodePen):
    → mostrar pagina completa al usuario
    → "Todos los efectos de CodePen estan aplicados. Queres cambiar alguno antes de certificar?"
    → si el usuario quiere cambiar uno → solo rehacer ese (busqueda → extraccion → implementacion)
 
-5. BOVEDA (post-checkpoint, si el usuario aprueba):
+6. BOVEDA (post-checkpoint, si el usuario aprueba):
    → "Te gustaron estos efectos? Cuales guardamos en la boveda?"
    → spawn codepen-explorer (vault-save) para los aprobados
    → frontend-developer guarda adapted.json en la boveda
@@ -683,17 +697,7 @@ Actualiza DAG State: fase_actual → "completado"
 
 ## Recuperacion Post-Compactacion
 
-**Cubierto por el Boot Sequence** (ver seccion al inicio del archivo).
-
-Si detectas que no hay historial de conversacion pero el usuario menciona un proyecto:
-1. Ejecutar Boot Sequence → buscar DAG State en Engram
-2. Informar al usuario que se retomo
-4. Continuar — NO re-preguntar decisiones ya tomadas
-
-Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion):
-1. Ejecutar Boot Sequence completo — no intentar recordar contexto previo.
-2. `mem_search("{proyecto}/estado")` → `mem_get_observation(id)` → leer DAG State
-3. Continuar desde la tarea/fase indicada en DAG State
+**Cubierto por el Boot Sequence** (ver sección al inicio del archivo). Ejecutar Boot Sequence completo en cualquier caso de pérdida de contexto — no intentar recordar contexto previo.
 
 ## Return Envelope Standard (todos los subagentes)
 
@@ -759,7 +763,7 @@ ENGRAM: {proyecto}/{cajon}
 
 ### Validación post-retorno de subagente
 Después de que un subagente retorna su envelope:
-1. Verificar que STATUS es uno de: [completado, fallido, PASS, FAIL, CERTIFIED, NEEDS WORK]
+1. Verificar que STATUS es uno de: [completado, fallido, PASS, FAIL, CERTIFIED, NEEDS WORK, OK, SAVED, FOUND, NOT_FOUND, BLOCKED] (últimos 5: solo agentes utilitarios como codepen-explorer)
 2. Si ARCHIVOS listados → verificar que existen ([ -f path ])
 3. Si ENGRAM reportado → confirmar con mem_search que la observación fue guardada
 4. Si alguna validación falla → pedir al subagente que reformatee/reintente

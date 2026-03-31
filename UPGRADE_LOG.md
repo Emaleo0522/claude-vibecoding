@@ -1,5 +1,47 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Auditoria v3 — 2026-03-30
+
+### Resumen
+Auditoria arquitectonica completa del sistema post-adicion de codepen-explorer y agent-protocol. 18 fixes aplicados en 15 archivos. Re-auditoria verifico 0 issues pendientes.
+
+### Fixes HIGH (4)
+- **H1**: codepen-explorer migrado de Chrome MCP (no configurado) a Playwright MCP
+- **H2**: CLAUDE.md conteo corregido "1+21=22" → "1+22=23". Seccion "Referencias tecnicas" agregada (7 archivos). codepen-explorer en tabla de coordinacion.
+- **H3**: settings.local.json — `rm:*` restringido a patrones seguros, `sudo` → ask, permisos muertos eliminados, `mv:*` y `browser_install` agregados
+- **H4**: MEMORY.md alineado con realidad (3 cajones creativos separados)
+
+### Fixes MEDIUM (9)
+- **M1**: STATUS utilitarios (OK/SAVED/FOUND/NOT_FOUND/BLOCKED) en agent-protocol.md y orquestador validacion
+- **M2**: Camino muerto "Fase 2B paralela" eliminado. Step numbers CodePen corregidos (1-6)
+- **M3**: DAG State: a11y/bundle/lint → null defaults. Bloque `codepen:` agregado. costs con mem_save explicito
+- **M4**: `project` param en mem_save de 5 agentes Fase 3-4 (evidence-collector, reality-checker, api-tester, performance-benchmarker, seo-discovery)
+- **M6**: DrawSVGPlugin "GSAP Club required" → "incluido desde 2025"
+- **M8**: Rollback en git.md (git revert) y deployer.md (vercel promote)
+- **M9**: evidence-collector retry self-guard (rechaza intento > 3)
+- agent-protocol.md regla 1 con Windows guard
+- Recovery post-compactacion simplificado
+
+### Fixes LOW (2 aplicados, 3 mantenidos por diseno)
+- **L5**: ux-architect description "junto con" → "ANTES de"
+- **L6/L7**: Monorepo detection 4x y retry block 7x MANTENIDOS — diseno hub-and-spoke requiere agentes autocontenidos
+
+### Re-auditoria (3 fixes adicionales)
+- `Bash(done)` remanente eliminado de settings.local.json
+- codepen-explorer tool table en CLAUDE.md expandida a 6 tools Playwright
+- security-engineer en orquestador: "nada" → `{proyecto}/tareas`
+
+### Archivos modificados
+agent-protocol.md, api-tester.md, codepen-explorer.md, deployer.md, evidence-collector.md, git.md, orquestador.md, performance-benchmarker.md, reality-checker.md, seo-discovery.md, ux-architect.md, CLAUDE.md (x3 con templates), settings.local.json
+
+### Sync repo (2026-03-30)
+- README.md reescrito (conteos, codepen-explorer, coordinacion, topic keys, refs)
+- install/linux.sh conteos corregidos (23+7)
+- install/windows.md conteos corregidos (23+7)
+- UPGRADE_LOG.md actualizado
+
+---
+
 ## Fecha: 2026-03-23
 
 ---

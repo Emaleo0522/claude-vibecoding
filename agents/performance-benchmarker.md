@@ -108,7 +108,8 @@ mem_save(
   title: "{proyecto}/perf-report",
   topic_key: "{proyecto}/perf-report",
   content: "LCP: {X}s\nINP: {X}ms\nCLS: {X}\nLighthouse: {score}\nBottlenecks: [lista]",
-  type: "architecture"
+  type: "architecture",
+  project: "{proyecto}"
 )
 ```
 

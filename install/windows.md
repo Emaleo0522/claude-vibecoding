@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **26 agentes de Claude + 4 referencias**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + referencias (better-auth, better-gsap, react-patterns, redis-patterns)
+- **23 agentes de Claude + 7 referencias**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + referencias (better-auth, better-gsap, react-patterns, redis-patterns, pocketbase, devops-vps, agent-protocol)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
@@ -79,7 +79,7 @@ En Git Bash, desde la carpeta donde clonaste este repo:
 mkdir -p ~/.claude/agents/skills
 mkdir -p ~/.claude/codepen-vault
 
-# Copiar los 30 archivos (26 agentes + 4 referencias)
+# Copiar los 30 archivos (23 agentes + 7 referencias)
 cp agents/*.md ~/.claude/agents/
 
 # Copiar skills si hay
@@ -90,8 +90,8 @@ ls ~/.claude/agents/ | wc -l
 ```
 
 Deberias ver **30 archivos .md**:
-- 26 agentes: orquestador, project-manager-senior, frontend-developer, backend-architect, rapid-prototyper, mobile-developer, game-designer, xr-immersive-developer, ux-architect, ui-designer, security-engineer, evidence-collector, reality-checker, seo-discovery, api-tester, performance-benchmarker, brand-agent, image-agent, logo-agent, video-agent, git, deployer, codepen-explorer, agent-protocol
-- 4 referencias: better-auth-reference, better-gsap-reference, react-patterns-reference, redis-patterns-reference
+- 23 agentes: orquestador, project-manager-senior, frontend-developer, backend-architect, rapid-prototyper, mobile-developer, game-designer, xr-immersive-developer, ux-architect, ui-designer, security-engineer, evidence-collector, reality-checker, seo-discovery, api-tester, performance-benchmarker, brand-agent, image-agent, logo-agent, video-agent, git, deployer, codepen-explorer
+- 7 referencias: agent-protocol, better-auth-reference, better-gsap-reference, react-patterns-reference, redis-patterns-reference, pocketbase-reference, devops-vps-reference
 
 ---
 
@@ -190,7 +190,7 @@ Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proye
 
 En Git Bash:
 ```bash
-# Agentes instalados (deben ser 30: 26 agentes + 4 referencias)
+# Agentes instalados (deben ser 30: 23 agentes + 7 referencias)
 ls ~/.claude/agents/*.md | wc -l
 
 # CLAUDE.md global
@@ -240,7 +240,7 @@ El sistema se encarga del resto:
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
 **No aparecen todos los agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **30** (26 agentes + 4 referencias).
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **30** (23 agentes + 7 referencias).
 
 **MCPs no aparecen en Claude Desktop**
 -> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.

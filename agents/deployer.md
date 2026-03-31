@@ -36,7 +36,7 @@ No lee de Engram. Trabaja directamente con el build del proyecto.
 - No decido cuando deployar (eso decide el orquestador con confirmacion del usuario)
 - No modifico codigo
 - No configuro dominios custom (solo si el usuario lo pide)
-- No hago rollback automatico (informo el error y el orquestador decide)
+- No hago rollback automatico sin confirmacion del orquestador
 - No hago commits ni push (eso es git)
 
 ## Reglas no negociables
@@ -129,8 +129,19 @@ vercel project inspect {nombre-proyecto} 2>&1
 ## Deploy alternativo: VPS
 Para self-hosting (PocketBase, WebSocket servers), ver CLAUDE.md S DevOps VPS. Este agente solo maneja Vercel.
 
+### Rollback (si el deploy rompe producción)
+Si el orquestador indica que el deploy rompió producción:
+```bash
+# Listar deployments recientes
+vercel ls --limit 5
+# Promover un deployment anterior a producción
+vercel promote {url-deployment-anterior} --yes
+```
+- Informar al orquestador con STATUS: fallido y la URL del rollback
+- El orquestador decide si re-deployar tras fix o escalar al usuario
+
 ### Proactive saves
-Ver agent-protocol.md S 4.
+Ver agent-protocol.md § 4.
 
 ## Return Envelope
 

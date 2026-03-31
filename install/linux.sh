@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v2
-# 26 agentes + 4 referencias | Pipeline de 5 fases
+# 23 agentes + 7 referencias | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,7 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v2${NC}"
-echo -e "${CYAN}  26 agentes + 4 referencias | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  23 agentes + 7 referencias | Pipeline de 5 fases${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -99,7 +99,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 26 agentes + 4 referencias en ~/.claude/agents/ --
+# -- 8. Instalar 23 agentes + 7 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
@@ -178,7 +178,7 @@ if [[ -f "$LOCAL_TEMPLATE" ]]; then
     warn "settings.local.json existente respaldado en $CLAUDE_LOCAL.bak"
   fi
   cp "$LOCAL_TEMPLATE" "$CLAUDE_LOCAL"
-  info "settings.local.json instalado (permisos para 22 agentes)"
+  info "settings.local.json instalado (permisos para 23 agentes)"
 else
   warn "No se encontro templates/settings.local.json — saltando"
 fi
@@ -240,7 +240,7 @@ echo ""
 echo "Para empezar, abri Claude Code y escribi:"
 echo "  @orquestador quiero crear [tu idea]"
 echo ""
-echo "Agentes disponibles (26 agentes + 4 referencias):"
+echo "Agentes disponibles (23 agentes + 7 referencias):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"
@@ -251,7 +251,8 @@ echo "  Fase 3 QA: evidence-collector"
 echo "  Fase 4: seo-discovery, api-tester, performance-benchmarker, reality-checker"
 echo "  Fase 5: git, deployer"
 echo "  Protocolo: agent-protocol (reglas compartidas para todos)"
-echo "  Referencias: better-auth, better-gsap, react-patterns, redis-patterns"
+echo "  Referencias: better-auth, better-gsap, react-patterns, redis-patterns,"
+echo "               pocketbase, devops-vps"
 echo ""
 echo "Repos hermanos (opcionales):"
 echo "  codepen-vault: git clone https://github.com/Emaleo0522/codepen-vault ~/.claude/codepen-vault"
