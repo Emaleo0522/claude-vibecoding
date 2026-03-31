@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
-# Claude Code — Vibecoding Agent System v2
-# 23 agentes + 7 referencias | Pipeline de 5 fases
+# Claude Code — Vibecoding Agent System v3
+# 23 agentes + 7 referencias = 30 archivos | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -19,8 +19,8 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 
 echo ""
 echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  Claude Code — Vibecoding Agent System v2${NC}"
-echo -e "${CYAN}  23 agentes + 7 referencias | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  Claude Code — Vibecoding Agent System v3${NC}"
+echo -e "${CYAN}  23 agentes + 7 referencias = 30 archivos | Pipeline de 5 fases${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -111,11 +111,6 @@ fi
 
 AGENT_COUNT=$(ls "$CLAUDE_AGENTS/"*.md 2>/dev/null | wc -l)
 info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
-
-# -- 8b. Crear boveda CodePen --
-CODEPEN_VAULT="$HOME/.claude/codepen-vault"
-mkdir -p "$CODEPEN_VAULT"
-info "Boveda CodePen creada en $CODEPEN_VAULT"
 
 # -- 9. Instalar CLAUDE.md global (instrucciones del sistema) --
 GLOBAL_CLAUDE="$HOME/CLAUDE.md"
@@ -221,6 +216,73 @@ else
   warn "No se pudo verificar SSH. Verifica manualmente con: ssh -T git@github.com"
 fi
 
+# -- 17. Instalar Pixel Bridge (sistema visual de agentes) --
+echo ""
+read -p "  Instalar Pixel Bridge (oficina pixel art de agentes)? [Y/n]: " INSTALL_PIXEL
+INSTALL_PIXEL="${INSTALL_PIXEL:-Y}"
+
+if [[ "$INSTALL_PIXEL" =~ ^[Yy]$ ]]; then
+  PIXEL_DEST="$HOME/.claude/pixel-bridge"
+  if [[ -d "$REPO_ROOT/pixel-bridge" ]]; then
+    cp -r "$REPO_ROOT/pixel-bridge" "$PIXEL_DEST"
+    chmod +x "$PIXEL_DEST/start.sh" 2>/dev/null
+
+    # Install and build
+    cd "$PIXEL_DEST"
+    npm install --silent 2>/dev/null
+    cd webview-ui && npm install --silent 2>/dev/null && cd ..
+    npm run build 2>/dev/null
+
+    # Download assets from pixel-agents
+    echo "  Descargando assets de pixel-agents..."
+    git clone --depth=1 https://github.com/pablodelucca/pixel-agents /tmp/pixel-agents-src 2>/dev/null
+    if [[ -d "/tmp/pixel-agents-src/webview-ui/public/assets" ]]; then
+      ASSETS_SRC="/tmp/pixel-agents-src/webview-ui/public/assets"
+      ASSETS_DEST="$PIXEL_DEST/webview-ui/public/assets"
+      cp -r "$ASSETS_SRC/characters" "$ASSETS_DEST/" 2>/dev/null
+      cp -r "$ASSETS_SRC/floors" "$ASSETS_DEST/" 2>/dev/null
+      cp -r "$ASSETS_SRC/walls" "$ASSETS_DEST/" 2>/dev/null
+      cp -r "$ASSETS_SRC/furniture" "$ASSETS_DEST/" 2>/dev/null
+      cp "$ASSETS_SRC"/default-layout*.json "$ASSETS_DEST/" 2>/dev/null
+      # Rename layout if needed
+      [[ -f "$ASSETS_DEST/default-layout-1.json" && ! -f "$ASSETS_DEST/default-layout.json" ]] && \
+        cp "$ASSETS_DEST/default-layout-1.json" "$ASSETS_DEST/default-layout.json"
+      # Fonts
+      cp /tmp/pixel-agents-src/webview-ui/public/fonts/*.ttf "$ASSETS_DEST/" 2>/dev/null
+      rm -rf /tmp/pixel-agents-src
+    fi
+
+    # Rebuild with assets
+    npm run build 2>/dev/null
+
+    # Add SessionStart hook to settings.json
+    python3 - <<'PYEOF'
+import json, os
+settings_path = os.path.expanduser("~/.claude/settings.json")
+with open(settings_path) as f:
+    s = json.load(f)
+s.setdefault("hooks", {})
+s["hooks"]["SessionStart"] = [{
+    "matcher": "",
+    "hooks": [{
+        "type": "command",
+        "command": "bash ~/.claude/pixel-bridge/start.sh"
+    }]
+}]
+with open(settings_path, "w") as f:
+    json.dump(s, f, indent=2)
+PYEOF
+
+    info "Pixel Bridge instalado en $PIXEL_DEST"
+    info "Auto-inicio configurado via SessionStart hook"
+    info "Abrir http://localhost:3456 para ver la oficina"
+  else
+    warn "No se encontro pixel-bridge/ en el repo — saltando"
+  fi
+else
+  info "Pixel Bridge saltado"
+fi
+
 # -- Resumen --
 echo ""
 echo -e "${CYAN}============================================${NC}"
@@ -233,28 +295,22 @@ info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
 info "MCPs:      Engram (memoria) configurado en settings.json"
 info "Permisos:  settings.local.json con permisos para todos los agentes"
 info "CLAUDE.md: $GLOBAL_CLAUDE (instrucciones del sistema)"
-info "Boveda:    $CODEPEN_VAULT (efectos CodePen)"
 echo ""
 echo -e "${YELLOW}IMPORTANTE: Reinicia Claude Code para activar los MCPs.${NC}"
 echo ""
 echo "Para empezar, abri Claude Code y escribi:"
 echo "  @orquestador quiero crear [tu idea]"
 echo ""
-echo "Agentes disponibles (23 agentes + 7 referencias):"
+echo "Agentes disponibles (23 agentes + 7 referencias = 30 archivos):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"
 echo "  Fase 3: frontend-developer, backend-architect, rapid-prototyper,"
-echo "          mobile-developer, game-designer, xr-immersive-developer"
-echo "          codepen-explorer (busca/extrae efectos de CodePen)"
+echo "          mobile-developer, game-designer, xr-immersive-developer,"
+echo "          codepen-explorer"
 echo "  Fase 3 QA: evidence-collector"
 echo "  Fase 4: seo-discovery, api-tester, performance-benchmarker, reality-checker"
 echo "  Fase 5: git, deployer"
-echo "  Protocolo: agent-protocol (reglas compartidas para todos)"
-echo "  Referencias: better-auth, better-gsap, react-patterns, redis-patterns,"
-echo "               pocketbase, devops-vps"
-echo ""
-echo "Repos hermanos (opcionales):"
-echo "  codepen-vault: git clone https://github.com/Emaleo0522/codepen-vault ~/.claude/codepen-vault"
-echo "  engram-sync:   git clone https://github.com/Emaleo0522/engram-sync ~/.engram"
+echo "  Refs: agent-protocol, better-auth, better-gsap, react-patterns,"
+echo "        redis-patterns, pocketbase, devops-vps"
 echo ""

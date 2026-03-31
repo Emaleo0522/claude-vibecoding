@@ -1,96 +1,43 @@
-# Claude Vibecoding
+# Claude Vibecoding — Sistema Multi-Agente
 
-Un equipo de 23 agentes de IA que convierte tus ideas en aplicaciones listas para produccion. Vos describis lo que queres, ellos planifican, disenan, programan, testean y publican.
-
-**No necesitas saber programar.** Tampoco necesitas supervisar cada paso. El sistema maneja todo el proceso con un pipeline profesional de 5 fases y te pide aprobacion solo en los momentos clave.
+23 agentes especializados + 7 referencias tecnicas (30 archivos) que convierten ideas en aplicaciones web, apps moviles, juegos y APIs listas para produccion. Un orquestador central coordina un pipeline profesional de 5 fases: planificacion, arquitectura, desarrollo con QA visual, certificacion y deploy.
 
 Compatible con **Linux (Claude Code)** y **Windows (Claude Desktop)**.
 
 ---
 
-## Que hace exactamente
-
-Imaginate que tenes un equipo de desarrollo completo trabajando para vos:
-
-1. Un **project manager** que entiende tu idea y la convierte en tareas concretas
-2. **Arquitectos** que disenan la base visual y la seguridad
-3. **Desarrolladores** especializados en frontend, backend, mobile y juegos
-4. **Inspectores de calidad** que revisan cada pieza con capturas de pantalla reales
-5. Un **equipo de certificacion** que audita SEO, performance, accesibilidad y seguridad
-6. Un **equipo de publicacion** que sube tu codigo a GitHub y lo publica en internet
-
-Todo esto pasa automaticamente. Vos solo decis que queres y aprobas los resultados.
-
----
-
 ## Instalacion
 
-### Opcion 1: Decile a Claude que se instale
+### Linux (Claude Code)
 
-Si ya tenes Claude Code o Claude Desktop funcionando, abri una conversacion nueva y pega esto:
-
-```
-Clona https://github.com/Emaleo0522/claude-vibecoding e instala el sistema
-siguiendo las instrucciones en install/linux.sh (Linux) o install/windows.md (Windows)
-```
-
-Claude lee las instrucciones y se instala solo.
-
-### Opcion 2: Instalacion manual
-
-**Linux / macOS (Claude Code):**
 ```bash
 git clone https://github.com/Emaleo0522/claude-vibecoding.git
 cd claude-vibecoding
 bash install/linux.sh
 ```
+
 Reinicia Claude Code cuando termine.
 
-**Windows (Claude Desktop):**
+### Windows (Claude Desktop)
+
 ```bash
 git clone https://github.com/Emaleo0522/claude-vibecoding.git
 cd claude-vibecoding
 ```
-Segui la guia paso a paso en [`install/windows.md`](install/windows.md).
+
+Segui la guia paso a paso en [`install/windows.md`](install/windows.md), o abri Claude Desktop en la carpeta del repo y decile:
+
+> "Instalate el sistema de este repo siguiendo install/windows.md"
 
 ---
 
 ## Uso
 
-Una vez instalado, tenes dos modos:
-
-**Modo normal** -- Claude responde como siempre. Preguntas, fixes, chat tecnico.
-
-**Modo pipeline** -- Claude activa los 23 agentes y construye tu proyecto completo:
-
 ```
-modo orquestador — quiero crear una app de delivery de comida para mi barrio
+@orquestador quiero crear [tu idea]
 ```
 
-Tambien funciona con:
-```
-activa el pipeline — landing page para mi estudio de yoga
-nuevo proyecto completo: juego de naves espacial para el navegador
-```
-
-El sistema se encarga del resto. Te va a pedir aprobacion en estos momentos:
-- Despues de planificar (para que revises las tareas y el stack)
-- Despues de disenar la marca (si tu proyecto necesita logo/imagenes)
-- Antes de publicar en GitHub y Vercel
-
----
-
-## Que puede construir
-
-| Tipo | Ejemplo | Stack tipico |
-|------|---------|-------------|
-| Landing page | Portfolio, pagina de restaurante | Vite + React + Tailwind |
-| App web | Dashboard, SaaS, e-commerce | Next.js + Hono + PostgreSQL |
-| App mobile | iOS + Android desde un repo | React Native + Expo |
-| Juego browser | Platformer, puzzle, arcade | Phaser.js + TypeScript |
-| API | REST, GraphQL, WebSocket | Hono + Drizzle + tRPC |
-
-El stack no es fijo -- el sistema elige la mejor combinacion segun tu proyecto. Si queres usar algo especifico, mencionalo y lo respeta.
+El sistema se encarga del resto: planifica, diseña, implementa con QA visual, certifica y publica.
 
 ---
 
@@ -98,347 +45,247 @@ El stack no es fijo -- el sistema elige la mejor combinacion segun tu proyecto. 
 
 ```
 Tu idea
-  |
-  v
+  │
+  ▼
 FASE 1 — Planificacion
-  project-manager-senior --> tareas con criterios de aceptacion
-  |
-  v
-FASE 2 — Arquitectura
-  ux-architect      --> fundacion CSS, tokens, breakpoints (PRIMERO)
-  ui-designer       --> design system, componentes, WCAG AA
-  security-engineer --> threat model, headers OWASP
-  |
-  v
-FASE 2B — Assets creativos (opcional)
-  brand-agent  --> identidad de marca (paleta, tipografia, tono)
-     [pausa: vos aprobas la marca]
-  image-agent  --> hero images (Gemini o HuggingFace)  \
-  logo-agent   --> logos SVG vectorizados               > en paralelo
-  video-agent  --> videos de fondo (o CSS fallback)    /
-  |
-  v
-FASE 3 — Desarrollo + QA
-  dev-agent         --> implementa la tarea
-  codepen-explorer  --> busca/extrae efectos visuales de CodePen (opcional)
-  evidence-collector --> valida con screenshots en 3 dispositivos
-  (si falla, reintenta hasta 3 veces con feedback especifico)
-  |
-  v
+  project-manager-senior ──► tareas granulares con criterios de aceptacion
+  │
+  ▼
+FASE 2 — Arquitectura (secuencial → paralelo)
+  ux-architect      ──► fundacion CSS, tokens, breakpoints (PRIMERO)
+  ui-designer       ──► design system, componentes, WCAG AA (despues de ux-architect)
+  security-engineer ──► threat model STRIDE, headers OWASP (paralelo con ui-designer)
+  │
+  ▼
+FASE 2B — Assets Creativos (opcional, paralelo)
+  brand-agent  ──► identidad de marca (brand.json)
+  image-agent  ──► hero images (HuggingFace FLUX.1)
+  logo-agent   ──► logos SVG vectorizados (FLUX.1 + vtracer)
+  video-agent  ──► videos de fondo (Replicate LTXVideo / fallback CSS)
+  │
+  ▼
+FASE 3 — Desarrollo ↔ QA Loop
+  dev-agent         ──► implementa ──► evidence-collector valida (max 3 reintentos)
+  codepen-explorer  ──► busca/extrae efectos visuales de CodePen (Playwright MCP)
+  │
+  ▼
 FASE 4 — Certificacion
-  seo-discovery           --> SEO + AI discovery (score 100pts)
-  api-tester              --> endpoints, OWASP API Top 10
-  performance-benchmarker --> Core Web Vitals, Lighthouse
-  reality-checker         --> gate final (default: NEEDS WORK)
-  |
-  v
-FASE 5 — Publicacion (con tu confirmacion)
-  git      --> commit + push a GitHub
-  deployer --> deploy a Vercel
+  seo-discovery          ──► SEO audit + AI discovery (score 100pts)
+  api-tester             ──► endpoints, OWASP API Top 10
+  performance-benchmarker ──► Core Web Vitals, Lighthouse
+  reality-checker        ──► gate final (default: NEEDS WORK)
+  │
+  ▼
+FASE 5 — Publicacion (con confirmacion del usuario)
+  git      ──► commit + push a GitHub
+  deployer ──► deploy a Vercel + Git Integration
 ```
 
 ---
 
-## Los 23 agentes
+## Agentes
 
-| Fase | Agente | Que hace |
+| Fase | Agente | Funcion |
 |:----:|--------|---------|
-| * | `orquestador` | Coordina todo. Nunca programa, solo delega |
-| 1 | `project-manager-senior` | Convierte tu idea en tareas concretas con criterios de aceptacion |
-| 2 | `ux-architect` | Crea la base CSS: tokens de diseno, layout, tema claro/oscuro |
-| 2 | `ui-designer` | Disena componentes visuales con accesibilidad WCAG AA |
-| 2 | `security-engineer` | Analiza amenazas y define headers de seguridad |
-| 2B | `brand-agent` | Genera identidad de marca: paleta, tipografia, tono |
-| 2B | `image-agent` | Crea imagenes con IA (Gemini o HuggingFace FLUX.1) |
-| 2B | `logo-agent` | Genera logos SVG vectorizados |
-| 2B | `video-agent` | Crea videos de fondo (o CSS animado como fallback) |
-| 3 | `frontend-developer` | Implementa la interfaz: React, Tailwind, shadcn/ui |
-| 3 | `backend-architect` | Construye APIs, base de datos, autenticacion |
-| 3 | `rapid-prototyper` | Arma MVPs rapidos para validar ideas |
-| 3 | `mobile-developer` | Desarrolla apps iOS/Android con React Native + Expo |
-| 3 | `game-designer` | Crea el documento de diseno del juego (mecanicas, balance) |
-| 3 | `xr-immersive-developer` | Implementa juegos con Phaser.js, PixiJS o Three.js |
-| 3 | `codepen-explorer` | Busca y extrae efectos visuales de CodePen |
-| 3 | `evidence-collector` | Testea cada tarea con screenshots en 3 dispositivos |
-| 4 | `seo-discovery` | Optimiza SEO y visibilidad en buscadores e IAs |
-| 4 | `api-tester` | Valida endpoints contra OWASP API Top 10 |
-| 4 | `performance-benchmarker` | Mide Core Web Vitals y analiza bundles |
-| 4 | `reality-checker` | Auditoria final (por defecto dice "necesita trabajo") |
-| 5 | `git` | Hace commit y push a GitHub |
-| 5 | `deployer` | Publica en Vercel con auto-deploy |
+| 1 | `project-manager-senior` | Convierte ideas en tareas granulares con criterios de aceptacion |
+| 2 | `ux-architect` | Fundacion CSS: tokens, layout, tema light/dark, breakpoints |
+| 2 | `ui-designer` | Design system visual, componentes, accesibilidad WCAG AA |
+| 2 | `security-engineer` | Threat model STRIDE, headers de seguridad, OWASP Top 10 |
+| 2B | `brand-agent` | Identidad de marca: paleta, tipografia, tono, personalidad |
+| 2B | `image-agent` | Hero images y galeria via HuggingFace FLUX.1-schnell |
+| 2B | `logo-agent` | Logos SVG vectorizados (FLUX.1 + vtracer) |
+| 2B | `video-agent` | Videos de fondo (Replicate LTXVideo / fallback CSS) |
+| 3 | `frontend-developer` | React/Vue/TS, Tailwind, shadcn/ui, Zustand, TanStack Query |
+| 3 | `backend-architect` | Hono/Express, Drizzle/Prisma, tRPC, PostgreSQL, Better Auth |
+| 3 | `rapid-prototyper` | MVPs multi-stack para validacion rapida |
+| 3 | `mobile-developer` | React Native + Expo SDK 52+, NativeWind 4, Expo Router |
+| 3 | `game-designer` | Game Design Document: mecanicas, loops, economia, balance |
+| 3 | `xr-immersive-developer` | Phaser.js, PixiJS, Canvas API, WebGL (juegos standalone) |
+| 3 | `codepen-explorer` | Busca y extrae efectos visuales de CodePen via Playwright MCP |
+| 3 | `evidence-collector` | QA visual con Playwright MCP, screenshots en 3 viewports |
+| 4 | `seo-discovery` | SEO audit, meta tags, JSON-LD, sitemap, llms.txt, AI discovery |
+| 4 | `api-tester` | Cobertura de endpoints, OWASP API Top 10, latencia P95 |
+| 4 | `performance-benchmarker` | Core Web Vitals, Lighthouse, bundle analysis |
+| 4 | `reality-checker` | Gate final pre-produccion con evidencia visual |
+| 5 | `git` | Commit + push a GitHub, branch management |
+| 5 | `deployer` | Deploy a Vercel + Git Integration para auto-deploy |
+| * | `orquestador` | Coordinador central, gestiona las 5 fases |
 
-### Arquitectura hub-and-spoke
+### Referencias tecnicas
 
-```
-                    +--- project-manager-senior
-                    +--- ux-architect
-                    +--- ui-designer
-    Tu idea ---> ORQUESTADOR --+--- frontend-developer
-                    |          +--- backend-architect
-                    |          +--- evidence-collector
-                    |          +--- ...22 agentes mas
-                    |
-            (nunca programa,
-             solo coordina)
-```
-
-**Regla de oro**: el orquestador NUNCA lee ni escribe codigo. Cada token que consume en trabajo real infla el contexto y acerca la compactacion. Solo coordina.
-
-Los subagentes nunca se comunican entre si -- todo pasa por el orquestador.
+| Archivo | Contenido |
+|---------|-----------|
+| `agent-protocol` | Protocolo compartido: Engram 2-pasos, Return Envelope, reglas universales |
+| `better-auth-reference` | Autenticacion: email/password, OAuth, sesiones, Better Auth + Supabase |
+| `better-gsap-reference` | GSAP Tier 3: useGSAP, ScrollTrigger, SplitText, Next.js gotchas |
+| `react-patterns-reference` | React 19, Next.js 15/16, Tailwind 4, Zustand 5, TanStack Query |
+| `redis-patterns-reference` | Redis: cache-aside, Pub/Sub, HyperLogLog, cursor pagination |
+| `pocketbase-reference` | PocketBase: boolean gotchas, rules, auth v0.23+, Docker, HTTPS |
+| `devops-vps-reference` | Mixed Content HTTPS, Oracle Cloud, nginx, Let's Encrypt |
 
 ---
 
-## Coordinacion entre agentes
+## Stack adaptable
 
-Cada agente sabe exactamente que necesita leer antes de empezar y que produce al terminar:
+El orquestador elige el stack en Fase 1 segun los requisitos del proyecto. No hay stack fijo.
 
-| Agente | Lee antes de empezar | Produce |
-|--------|---------------------|---------|
-| project-manager-senior | spec del usuario | tareas |
-| ux-architect | tareas | css-foundation |
-| ui-designer | css-foundation | design-system |
-| security-engineer | tareas | security-spec |
-| frontend-developer | css-foundation, design-system, security-spec, tareas | tarea-{N} |
-| backend-architect | security-spec, tareas | tarea-{N}, api-spec |
-| evidence-collector | tarea-{N} del dev | qa-{N} |
-| reality-checker | qa-{N}, seo, api-qa, perf-report | certificacion |
-
-La lista completa esta en `CLAUDE.md` (seccion "Coordinacion cross-agent").
-
----
-
-## Gestion de contexto y memoria
-
-El sistema esta disenado para no perder tu progreso, incluso si la sesion se corta o la ventana de contexto se compacta.
-
-**Como lo hace:**
-- **Engram**: memoria persistente que sobrevive entre sesiones. Todo el estado del proyecto se guarda aca.
-- **DAG State**: despues de cada tarea completada, el orquestador guarda un snapshot completo del progreso.
-- **Boot Sequence**: al iniciar, el sistema busca automaticamente si hay un proyecto en curso para retomarlo.
-- **Dual-write**: los datos criticos se guardan en Engram Y en disco (`{project_dir}/.pipeline/`), por si uno falla.
-- **Proactive saves**: los agentes guardan descubrimientos importantes inmediatamente, no al final.
-
-### Cajones Engram (topic keys)
-
-El sistema organiza la informacion en 21 cajones con roles definidos:
-
-| Topic key | Generado por | Leido por |
-|-----------|-------------|-----------|
-| `{proyecto}/estado` | orquestador | orquestador (retomar) |
-| `{proyecto}/tareas` | project-manager-senior | todos los dev |
-| `{proyecto}/css-foundation` | ux-architect | frontend-developer |
-| `{proyecto}/design-system` | ui-designer | frontend-developer |
-| `{proyecto}/security-spec` | security-engineer | backend-architect |
-| `{proyecto}/tarea-{N}` | dev agents | evidence-collector |
-| `{proyecto}/qa-{N}` | evidence-collector | reality-checker |
-| `{proyecto}/branding` | brand-agent | agentes creativos |
-| `{proyecto}/creative-images` | image-agent | orquestador |
-| `{proyecto}/creative-logos` | logo-agent | orquestador |
-| `{proyecto}/creative-video` | video-agent | orquestador |
-| `codepen-vault/{slug}` | codepen-explorer | frontend-developer |
-
-La tabla completa con los 21 cajones esta en `CLAUDE.md`.
-
-**Retomar un proyecto:**
-Abri una conversacion nueva y deci:
-```
-retomar [nombre-del-proyecto]
-```
-El sistema lee el estado guardado y continua exactamente donde quedo. Funciona incluso si otra persona retoma el proyecto.
+| Capa | Opciones | Preferido |
+|------|----------|-----------|
+| Frontend | Next.js, SvelteKit, Nuxt, Astro, Vite+React | Next.js (apps), Vite+React (landing) |
+| Backend | Hono, Express, Fastify | Hono (edge-ready) |
+| Base de datos | PostgreSQL, SQLite, Supabase | PostgreSQL (prod), Supabase (MVP) |
+| ORM | Drizzle, Prisma | Drizzle (type-safe, edge) |
+| API | tRPC, REST, GraphQL | tRPC (full TypeScript) |
+| Mobile | React Native + Expo SDK 52+, NativeWind 4 | Expo (iOS + Android desde un repo) |
+| Auth | Better Auth | Siempre (salvo proyecto existente con otra solucion) |
 
 ---
 
 ## Assets creativos (Fase 2B)
 
-Si tu proyecto necesita marca visual, el sistema genera logos, imagenes y videos con IA. Se activa automaticamente si detecta que necesitas landing page, hero section o logo.
+La Fase 2B genera assets visuales con IA generativa. Se activa automaticamente si el proyecto tiene landing page, logo o hero section.
 
-**Flujo:** brand-agent crea la identidad --> vos aprobas --> se generan los assets
+**Flujo:** brand-agent genera identidad → usuario aprueba → logo-agent + image-agent en paralelo → video-agent (opcional)
 
-### Credenciales (opcionales, solo para Fase 2B)
+Ningun asset creativo bloquea el pipeline. Si una API falla, hay cadena de fallback:
+- Imagenes: FLUX.1 → SDXL → Pollinations.ai (gratis)
+- Video: LTXVideo → CSS animation
+- Logo: FLUX.1 + vtracer → PNG directo
 
-| Variable | Servicio | Costo | Para que |
-|----------|----------|-------|---------|
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | ~$0.02-0.04/imagen | Imagenes de mejor calidad (requiere billing) |
-| `HF_TOKEN` | [HuggingFace](https://huggingface.co/settings/tokens) | Gratis | Imagenes gratis (calidad buena) |
-| `REPLICATE_API_TOKEN` | [Replicate](https://replicate.com/account/api-tokens) | ~$0.05/video | Videos de fondo |
+### Credenciales
 
-Si no configuras ninguna key, el sistema salta la Fase 2B y construye el proyecto sin assets generados. El pipeline de desarrollo sigue funcionando al 100%.
+| Variable | Servicio | Costo | Usado por |
+|----------|----------|-------|-----------|
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | ~$0.02-0.04/imagen (billing requerido) | image-agent, logo-agent (opcional, primario si existe) |
+| `HF_TOKEN` | [HuggingFace](https://huggingface.co) | Gratis | image-agent, logo-agent (fallback o primario si no hay Gemini) |
+| `REPLICATE_API_TOKEN` | [Replicate](https://replicate.com) | ~$0.05/video | video-agent |
+
+**Elegis tu backend de imagenes**: Gemini (mejor calidad, ~$0.02-0.04/img, requiere billing) o HuggingFace (gratis). Si tenes ambas keys, Gemini se usa como primario con HuggingFace como fallback.
+
+> **Nota**: Gemini requiere habilitar billing en Google Cloud. Sin billing, la generación de imágenes por API no funciona. HuggingFace funciona gratis sin configuración extra.
 
 ```bash
-# Opcion A: Gemini (mejor calidad, requiere billing en Google Cloud)
-export GEMINI_API_KEY="tu_api_key"
-
-# Opcion B: HuggingFace (gratis)
-export HF_TOKEN="hf_tu_token"
-
-# Solo si queres videos de fondo
-export REPLICATE_API_TOKEN="r8_tu_token"
+export GEMINI_API_KEY="tu_api_key"        # Opcion A: Gemini (recomendado)
+export HF_TOKEN="hf_tu_token"             # Opcion B: HuggingFace (gratis)
+export REPLICATE_API_TOKEN="r8_tu_token"  # Solo para video-agent
 ```
+
+**vtracer** (opcional): mejora logos PNG a SVG vectorizado. Instalar con `cargo install vtracer` o desde [releases](https://github.com/visioncortex/vtracer/releases). Sin el, los logos se entregan como PNG.
+
+> **Nota**: la URL de la HuggingFace Inference API cambio en 2025 a `router.huggingface.co/hf-inference`. Los agentes ya usan la URL correcta.
 
 ---
 
 ## Servicios y MCPs
 
-| Servicio | Para que | Se instala con |
-|----------|---------|---------------|
-| **Engram** | Memoria persistente entre sesiones | Instalacion automatica |
-| **Context7** | Documentacion tecnica actualizada | Instalacion automatica |
-| **Playwright** | Screenshots de QA en 3 dispositivos | Instalacion automatica |
-| **Vercel CLI** | Publicar en internet | `npm i -g vercel && vercel login` |
-| **GitHub CLI** | Subir codigo a GitHub | `gh auth login` |
+| Servicio | Funcion | Activacion |
+|----------|---------|------------|
+| Engram | Memoria persistente entre sesiones | Plugin MCP (automatico) |
+| Context7 | Documentacion tecnica actualizada | MCP (automatico) |
+| Playwright | QA visual con screenshots | MCP (automatico) |
+| Vercel CLI | Deploy a produccion | `vercel login` |
+| GitHub CLI | Repos, commits, push | `gh auth login` |
 
 ---
 
-## Que pasa cuando algo falla
+## Robustez del pipeline
 
-El sistema no asume que todo va a salir bien. Tiene mecanismos para cada escenario:
+El sistema no solo cubre el happy path. Incluye mecanismos para cuando las cosas fallan:
 
-| Situacion | Que hace |
-|-----------|---------|
-| Una tarea falla en QA | La reintenta hasta 3 veces con feedback especifico |
-| Despues de 3 intentos sigue fallando | Te pregunta que hacer: reasignar, partir en sub-tareas, o aceptar con limitacion |
-| La sesion se corta | Guarda progreso automaticamente, retoma al abrir nueva sesion |
-| Engram no responde | Usa disco local como respaldo temporal |
-| Playwright no esta disponible | Hace QA solo con checks de codigo (sin screenshots) |
-| Un asset creativo falla | Cadena de fallback (ej: Gemini falla --> HuggingFace --> placeholder) |
-| reality-checker no aprueba | Vuelve a Fase 3 solo para las tareas con problemas |
-| Deploy rompe produccion | git revierte, deployer promueve version anterior |
+| Mecanismo | Que resuelve |
+|-----------|-------------|
+| **Phase Gates** | Verifica que los outputs de la fase anterior existen antes de avanzar. Si falta algo, re-delega automaticamente. |
+| **Error Recovery** | Si un agente crashea sin devolver resultado, el orquestador verifica Engram, recupera lo que pueda y re-delega. |
+| **Graceful Degradation** | Si Engram esta caido, usa disco local como fallback. Si Playwright no esta disponible, hace QA solo con checks de codigo. |
+| **Rejection Workflows** | Si el usuario rechaza assets creativos, hay hasta 3 reintentos con estrategia escalonada (ajustar → cambiar composicion → alternativa completamente diferente). |
+| **NEEDS WORK Flow** | Si reality-checker no certifica, el orquestador evalua los blockers y vuelve a Fase 3 solo para las tareas afectadas. |
+
+---
+
+## Branching strategy
+
+Por defecto, el sistema trabaja **directo en `main`** sin feature branches. Esto es seguro cuando:
+- Sos el unico desarrollador
+- El pipeline QA valida antes de pushear
+- Vercel tiene rollback instantaneo
+
+**Si trabajas en equipo**, cambia a un flujo con branches:
+
+```
+main (produccion, protegida)
+  └── feature/nombre-tarea
+      └── PR + merge a main despues de certificacion
+```
+
+| Situacion | Estrategia |
+|-----------|------------|
+| Solo, proyecto personal | Directo a `main` (default) |
+| Solo, con usuarios reales | Recomendado usar branches |
+| Equipo 2+ personas | **Obligatorio** usar branches |
+
+Para cambiar el comportamiento, modifica `agents/git.md`. El auto-deploy de Vercel solo se dispara en `main`, asi que las feature branches no generan deploys accidentales.
 
 ---
 
 ## Estructura del repositorio
 
 ```
-agents/                         23 agentes + 7 referencias = 30 archivos
-  orquestador.md                Coordinador central (nunca programa)
-  project-manager-senior.md     Planificacion
-  ux-architect.md               Fundacion CSS
-  ui-designer.md                Design system
-  security-engineer.md          Seguridad
-  frontend-developer.md         UI web
-  backend-architect.md          APIs y DB
-  rapid-prototyper.md           MVPs rapidos
-  mobile-developer.md           Apps mobile
-  game-designer.md              Diseno de juegos
-  xr-immersive-developer.md     Implementacion de juegos
-  codepen-explorer.md           Busca/extrae efectos de CodePen
-  evidence-collector.md         QA visual por tarea
-  reality-checker.md            Certificacion final
-  api-tester.md                 Testing de APIs
-  performance-benchmarker.md    Performance
-  seo-discovery.md              SEO + AI discovery
-  brand-agent.md                Identidad de marca
-  image-agent.md                Imagenes con IA
-  logo-agent.md                 Logos SVG
-  video-agent.md                Videos de fondo
-  git.md                        Git + GitHub
-  deployer.md                   Vercel deploy
-  agent-protocol.md             Protocolo compartido (Engram, Return Envelope, reglas)
-  better-auth-reference.md      Guia de autenticacion (Better Auth)
-  better-gsap-reference.md      Guia de animaciones GSAP
-  react-patterns-reference.md   Patrones React 19 / Next.js 15-16 / Tailwind 4
-  redis-patterns-reference.md   Patrones Redis (cache, pub/sub, HyperLogLog)
-  pocketbase-reference.md       Gotchas de PocketBase
-  devops-vps-reference.md       DevOps VPS, HTTPS, Oracle Cloud, nginx
+agents/                         23 agentes + 7 referencias
+  ├── orquestador.md
+  ├── project-manager-senior.md
+  ├── ux-architect.md
+  ├── ui-designer.md
+  ├── security-engineer.md
+  ├── frontend-developer.md
+  ├── backend-architect.md
+  ├── rapid-prototyper.md
+  ├── mobile-developer.md
+  ├── game-designer.md
+  ├── xr-immersive-developer.md
+  ├── codepen-explorer.md
+  ├── evidence-collector.md
+  ├── reality-checker.md
+  ├── api-tester.md
+  ├── performance-benchmarker.md
+  ├── seo-discovery.md
+  ├── git.md
+  ├── deployer.md
+  ├── brand-agent.md
+  ├── image-agent.md
+  ├── logo-agent.md
+  ├── video-agent.md
+  ├── agent-protocol.md
+  ├── better-auth-reference.md
+  ├── better-gsap-reference.md
+  ├── react-patterns-reference.md
+  ├── redis-patterns-reference.md
+  ├── pocketbase-reference.md
+  └── devops-vps-reference.md
 install/
-  linux.sh                      Instalacion automatica (Linux/macOS)
-  windows.md                    Guia paso a paso (Windows)
+  ├── linux.sh                  Instalacion automatica (Linux/Claude Code)
+  └── windows.md                Guia paso a paso (Windows/Claude Desktop)
 templates/
-  global-claude.md              CLAUDE.md para Linux
-  windows-claude.md             CLAUDE.md para Windows
-  windows-launch.json           Config de preview servers
-  settings.json                 Config de MCPs (Engram)
-  settings.local.json           Permisos para los 23 agentes
-docs/
-  game-dev-improvements.md      Mejoras de game dev recopiladas
-CLAUDE.md                       Instrucciones del sistema (fuente de verdad)
+  ├── global-claude.md          CLAUDE.md para Linux
+  ├── windows-claude.md         CLAUDE.md para Windows
+  ├── windows-launch.json       Preview servers en Windows
+  ├── settings.json             Configuracion MCPs (Engram)
+  └── settings.local.json       Permisos para todos los agentes
+CLAUDE.md                       Instrucciones del sistema (auto-leido por Claude)
 ```
 
 ---
 
-## Para desarrolladores
-
-### Protocolo compartido
-
-Todos los subagentes siguen el protocolo definido en `agents/agent-protocol.md`:
-- **Engram 2-pasos**: lectura obligatoria con `mem_search` → `mem_get_observation` (nunca usar el preview truncado)
-- **Return Envelope**: formato estandar de respuesta al orquestador (STATUS, TAREA, ARCHIVOS, ENGRAM, NOTAS)
-- **Proactive saves**: descubrimientos se guardan inmediatamente con topic key `{proyecto}/discovery-{desc}`
-- **Topic key obligatorio**: todo `mem_save` lleva `topic_key` y `project` para evitar duplicados
-
-### Modificar agentes
-
-Cada agente es un archivo `.md` en `agents/`. Podes editarlos directamente. Estructura tipica:
-
-```markdown
----
-name: nombre-agente
-description: Que hace este agente
----
-
-> **Protocolo compartido**: Ver agent-protocol.md
-
-## Inputs de Engram
-## Lo que hago
-## Como guardo resultado
-## Proactive saves
-## Return Envelope
-## Tools asignadas
-```
-
-### Herramientas por agente
-
-| Agente | Tools |
-|--------|-------|
-| orquestador | Agent (spawn subagentes), Engram MCP |
-| frontend-developer, backend-architect, rapid-prototyper, mobile-developer, xr-immersive-developer | Read, Write, Edit, Bash, Engram MCP |
-| project-manager-senior, ux-architect, ui-designer, security-engineer, game-designer | Read, Write, Engram MCP |
-| evidence-collector | Read, Bash, Playwright MCP, Engram MCP |
-| reality-checker | Read, Bash, Glob, Grep, Playwright MCP, Engram MCP |
-| codepen-explorer | Playwright MCP, Engram MCP |
-| seo-discovery | Read, Write, Edit, Bash, Engram MCP |
-| git | Bash (git, gh), Engram MCP |
-| deployer | Bash (vercel), Engram MCP |
-
-### Stack adaptable
-
-| Capa | Preferido | Alternativas |
-|------|-----------|-------------|
-| Frontend | Next.js (apps), Vite+React (landing) | SvelteKit, Nuxt, Astro |
-| Backend | Hono (edge-ready) | Express, Fastify |
-| DB | PostgreSQL (prod), Supabase (MVP) | SQLite |
-| ORM | Drizzle (type-safe, edge) | Prisma |
-| API | tRPC (full TypeScript) | REST, GraphQL |
-| Auth | Better Auth | Siempre para proyectos nuevos |
-| Mobile | React Native + Expo SDK 52+ | NativeWind 4, Expo Router |
-| Juegos 2D | Phaser.js 3 | PixiJS, Canvas API |
-| Animacion | CSS (Tier 1) → Framer Motion (Tier 2) → GSAP (Tier 3) | Segun complejidad |
-
----
-
-## Requisitos
+## Requisitos minimos
 
 | Plataforma | Necesitas |
 |------------|-----------|
-| Linux / macOS | Claude Code instalado. El script instala Node.js, Vercel CLI y GitHub CLI |
-| Windows | Git for Windows + Claude Desktop. La guia te lleva paso a paso |
-
----
-
-## Repos hermanos
-
-Este sistema usa repos separados para datos que tienen ciclo de vida propio:
-
-| Repo | Que contiene | Para que |
-|------|-------------|---------|
-| [`codepen-vault`](https://github.com/Emaleo0522/codepen-vault) | Efectos extraidos de CodePen (original.json + README + preview) | `codepen-explorer` guarda aca, `frontend-developer` lee de aca |
-| [`engram-sync`](https://github.com/Emaleo0522/engram-sync) | Chunks comprimidos de la memoria persistente (Engram) | Backup y sync multi-PC de toda la memoria del sistema |
+| Linux | Ubuntu/Debian, Claude Code. El script instala Node.js, Vercel CLI y gh CLI |
+| Windows | Git for Windows (Git Bash), Claude Desktop. Ver [`install/windows.md`](install/windows.md) |
 
 ---
 
 ## Creditos
 
 Inspirado en:
-- [Agency Agents](https://github.com/msitarzewski/agency-agents) -- agentes especializados con metricas
-- [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) -- SDD, Engram, context management patterns
-- [pixel-agents](https://github.com/pablodelucca/pixel-agents) -- visualizacion pixel art de agentes
+- [Agency Agents](https://github.com/msitarzewski/agency-agents) — agentes especializados con metricas
+- [Agent Teams Lite](https://github.com/Gentleman-Programming/agent-teams-lite) — DAG State, handoffs minimos, Engram
