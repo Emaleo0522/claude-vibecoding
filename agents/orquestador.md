@@ -124,7 +124,7 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | ux-architect | `{proyecto}/tareas` | `{proyecto}/css-foundation` |
 | ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
 | security-engineer | `{proyecto}/tareas` | `{proyecto}/security-spec` |
-| frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system`, `codepen-vault/*` (consulta boveda) | `{proyecto}/tarea-{N}` |
+| frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system`, `{proyecto}/security-spec`, `{proyecto}/tareas`, `codepen-vault/*` (consulta boveda) | `{proyecto}/tarea-{N}` |
 | mobile-developer | `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
 | backend-architect | `{proyecto}/security-spec` | `{proyecto}/tarea-{N}` |
 | rapid-prototyper | `{proyecto}/tareas` (la tarea específica) | `{proyecto}/tarea-{N}` |
@@ -189,6 +189,8 @@ stack:
   extras: ["BullMQ", "Redis", "Socket.IO"]  # opcionales segun necesidad
   game_engine: "Phaser.js | PixiJS | Three.js | Canvas | none"  # solo si tipo=juego
   game_subsystems: []  # subsistemas del GDD: [entity, event, fsm, scene, sound, pool, ...]
+  design_system: "nothing-full | nothing-partial | custom | none"  # nothing-full=todo el proyecto, nothing-partial=solo secciones listadas en nothing_scope, custom=design propio (default), none=sin design system
+  nothing_scope: []    # solo si design_system=nothing-partial — lista de secciones/componentes: ["hero", "dashboard", "stats-section", "footer"]
 fase_actual: "fase_1_planificacion | fase_2_arquitectura | fase_2b_assets | fase_3_dev | fase_4_certificacion | fase_5_publicacion | completado"
 fases_completadas:
   planificacion: null             # observation_id (numero) o null si no completada
@@ -216,13 +218,9 @@ certificacion:
   api_tester: null                # observation_id del api-qa
   performance: null               # observation_id del perf-report
   reality_checker: null           # observation_id de certificacion
-  a11y_violations: 0              # axe-core critical/serious — extraer de qa-{N} NOTAS del evidence-collector
-  bundle_size_pass: null           # bundlewatch gate — extraer de perf-report (null = no evaluado, true/false = resultado)
-  lint_pass: null                  # eslint/stylelint gate — extraer de perf-report (null = no evaluado)
-codepen:
-  used: false                      # true si se usaron efectos de CodePen en este proyecto
-  slugs: []                        # slugs extraidos ["parallax-hero", "scroll-reveal"]
-  checkpoint_done: false           # true tras checkpoint post-efectos con usuario
+  a11y_violations: 0              # axe-core critical/serious (0 = PASS)
+  bundle_size_pass: true          # bundlewatch gate (opcional, solo si hay build JS)
+  lint_pass: true                 # eslint/stylelint gate
 publicacion:
   git_commit: null                # observation_id del git-commit
   deploy_url: null                # observation_id del deploy-url
@@ -239,12 +237,6 @@ engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 - Despues de cada decision del usuario (scope, marca, stack)
 - Despues de cada escalacion (FAIL 3x)
 - Si pasaron 3+ delegaciones sin guardar → guardar AHORA
-
-**Campos a extraer de resultados de subagentes:**
-- `a11y_violations`: extraer del NOTAS de evidence-collector (busca "axe-core" o "violations" en qa-{N})
-- `bundle_size_pass`: extraer del perf-report de performance-benchmarker (busca "bundlewatch")
-- `lint_pass`: extraer del perf-report si lint fue ejecutado
-- `codepen.used/slugs/checkpoint_done`: actualizar durante flujo CodePen en Fase 3
 
 ---
 
@@ -283,6 +275,14 @@ Para verificar un phase gate:
 
      Addons: +Socket.IO/PartyKit (real-time) | +BullMQ/Inngest (background jobs)
 
+   **Decisión de design system** (el orquestador decide junto con stack):
+   - Si el usuario dice "estilo Nothing", "Nothing design", "Nothing phone style", "nada design" → `design_system: "nothing-full"`
+   - Si el usuario pide Nothing solo para una sección (ej: "hero estilo Nothing", "dashboard Nothing style", "stats con estilo Nothing") → `design_system: "nothing-partial"` + `nothing_scope: ["hero"]` (lista de secciones)
+   - Si no menciona Nothing → `design_system: "custom"` (comportamiento por defecto, ux-architect + ui-designer crean design propio)
+   - Si dice "sin design system" → `design_system: "none"`
+
+   **Referencia**: `nothing-design-reference.md` — archivo de referencia cargado condicionalmente por agentes de Fase 2 y Fase 3.
+
 4. Delega a **project-manager-senior**:
    - Pasa: spec del usuario (texto directo) + **stack decidido** + **estructura** (monorepo/single)
    - Pide que guarde en Engram: `{proyecto}/tareas`
@@ -296,6 +296,7 @@ Para verificar un phase gate:
 
    Stack: {stack elegido}
    Estructura: {monorepo | single-repo}
+   Design System: {nothing-full | nothing-partial (scope: [...]) | custom | none}
    {N} tareas identificadas
 
    ¿Empezamos con la arquitectura y el desarrollo?
@@ -315,11 +316,17 @@ Para verificar un phase gate:
 
 **Paso 1 — ux-architect** (primero, obligatorio)
 - Recibe: spec del proyecto + ruta al cajón `{proyecto}/tareas`
+- **Si `design_system` es `nothing-full` o `nothing-partial`**: agregar al handoff:
+  ```
+  DESIGN_SYSTEM: {nothing-full | nothing-partial}
+  NOTHING_SCOPE: {lista de secciones} (solo si partial)
+  REFERENCIA: nothing-design-reference.md
+  ```
 - Guarda en: `{proyecto}/css-foundation`
 - Devuelve: resumen (tokens CSS, layout, breakpoints)
 
 **Paso 2 — ui-designer + security-engineer** (paralelo, DESPUÉS de que ux-architect devuelva)
-- **ui-designer**: Recibe spec + ruta a `{proyecto}/css-foundation` → Guarda en: `{proyecto}/design-system` → Devuelve: resumen (componentes clave, paleta, tipografía)
+- **ui-designer**: Recibe spec + ruta a `{proyecto}/css-foundation` + **mismos campos DESIGN_SYSTEM/NOTHING_SCOPE/REFERENCIA si aplica** → Guarda en: `{proyecto}/design-system` → Devuelve: resumen (componentes clave, paleta, tipografía)
 - **security-engineer**: Recibe spec del proyecto → Guarda en: `{proyecto}/security-spec` → Devuelve: resumen (amenazas identificadas, headers requeridos)
 
 Actualiza DAG State. Informa al usuario: "Arquitectura lista. N tareas listas para desarrollo."
@@ -328,7 +335,7 @@ Actualiza DAG State. Informa al usuario: "Arquitectura lista. N tareas listas pa
 
 ### FASE 2B — Assets Visuales (solo si el proyecto tiene landing page, logo, o imágenes de marca)
 
-Ejecutar después de Fase 2 y antes de Fase 3 (requiere outputs de Fase 2: css-foundation, design-system, security-spec).
+Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los assets.
 
 **¿Cuándo activar?** Si el proyecto incluye landing page, hero section, logo, o video de fondo.
 
@@ -338,6 +345,8 @@ Ejecutar después de Fase 2 y antes de Fase 3 (requiere outputs de Fase 2: css-f
 1. Delega a brand-agent:
    - Pasa: project_dir, project_name, brief (style/tone/colores si el usuario los especificó),
            asset_needs (["logo","hero_image"] siempre + "bg_video" solo si el usuario lo pidió)
+   - **Si `design_system` es `nothing-full`**: agregar `DESIGN_SYSTEM: nothing-full` al handoff — brand-agent alinea paleta/tipografía a Nothing (Space Grotesk/Mono/Doto, OLED blacks, accent red)
+   - **Si `design_system` es `nothing-partial`**: agregar `DESIGN_SYSTEM: nothing-partial` + `NOTHING_SCOPE: {nothing_scope}` — brand-agent crea identidad propia pero documenta en brand.json que secciones en `nothing_scope` usan tokens Nothing
    - Guarda en Engram: {proyecto}/branding
    - Devuelve: STATUS + resumen de identidad (nombre, paleta, tipografía, style_tags)
 
@@ -410,11 +419,7 @@ Ejecutar después de Fase 2 y antes de Fase 3 (requiere outputs de Fase 2: css-f
 
 **Si brand.json ya existe con `user_approved: true`** → saltar pasos 1-2.
 
-**Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram:
-```
-mem_save(title: "{proyecto} — pipeline creativo costs", content: "images: $X (backend), logo: $X (backend), video: $X (Replicate) — total: $X", type: "config", topic_key: "{proyecto}/costs", project: "{proyecto}")
-```
-Los agentes creativos reportan el costo en su STATUS. Acumular y guardar al terminar Fase 2B.
+**Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram con costo estimado acumulado. Los agentes creativos reportan el costo en su STATUS. Formato: `"images: $0.04 (Gemini), logo: $0 (HF), video: $0.05 (Replicate) — total: $0.09"`
 
 ---
 
@@ -457,6 +462,8 @@ Para **cada tarea** de la lista, en orden:
    CRITERIO: {criterio exacto — 1-2 lineas}
    GUARDA: {proyecto}/tarea-{N}
    DEVUELVE: Return Envelope Dev (ver seccion Return Envelope Standard)
+   DESIGN_SYSTEM: {nothing-full | nothing-partial | custom | none} (si nothing-*, agregar linea siguiente)
+   NOTHING_SCOPE: {lista de secciones} (solo si partial — el agente aplica Nothing SOLO a estas secciones)
    ```
 
    **Puerto**: el agente dev DEBE reportar el puerto donde corre el servidor (ej: `Servidor necesario: sí (puerto 3000)`). El orquestador pasa este puerto a evidence-collector en el paso 5.
@@ -548,12 +555,12 @@ Cuando el usuario pide un efecto de CodePen o el orquestador detecta una URL de 
    → frontend-developer lee de disco, adapta, implementa
    → evidence-collector valida (como cualquier otra tarea)
 
-5. CHECKPOINT POST-EFECTOS (al terminar TODOS los efectos CodePen):
+4. CHECKPOINT POST-EFECTOS (al terminar TODOS los efectos CodePen):
    → mostrar pagina completa al usuario
    → "Todos los efectos de CodePen estan aplicados. Queres cambiar alguno antes de certificar?"
    → si el usuario quiere cambiar uno → solo rehacer ese (busqueda → extraccion → implementacion)
 
-6. BOVEDA (post-checkpoint, si el usuario aprueba):
+5. BOVEDA (post-checkpoint, si el usuario aprueba):
    → "Te gustaron estos efectos? Cuales guardamos en la boveda?"
    → spawn codepen-explorer (vault-save) para los aprobados
    → frontend-developer guarda adapted.json en la boveda
@@ -697,7 +704,17 @@ Actualiza DAG State: fase_actual → "completado"
 
 ## Recuperacion Post-Compactacion
 
-**Cubierto por el Boot Sequence** (ver sección al inicio del archivo). Ejecutar Boot Sequence completo en cualquier caso de pérdida de contexto — no intentar recordar contexto previo.
+**Cubierto por el Boot Sequence** (ver seccion al inicio del archivo).
+
+Si detectas que no hay historial de conversacion pero el usuario menciona un proyecto:
+1. Ejecutar Boot Sequence → buscar DAG State en Engram
+2. Informar al usuario que se retomo
+4. Continuar — NO re-preguntar decisiones ya tomadas
+
+Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion):
+1. Ejecutar Boot Sequence completo — no intentar recordar contexto previo.
+2. `mem_search("{proyecto}/estado")` → `mem_get_observation(id)` → leer DAG State
+3. Continuar desde la tarea/fase indicada en DAG State
 
 ## Return Envelope Standard (todos los subagentes)
 
@@ -763,7 +780,7 @@ ENGRAM: {proyecto}/{cajon}
 
 ### Validación post-retorno de subagente
 Después de que un subagente retorna su envelope:
-1. Verificar que STATUS es uno de: [completado, fallido, PASS, FAIL, CERTIFIED, NEEDS WORK, OK, SAVED, FOUND, NOT_FOUND, BLOCKED] (últimos 5: solo agentes utilitarios como codepen-explorer)
+1. Verificar que STATUS es uno de: [completado, fallido, PASS, FAIL, CERTIFIED, NEEDS WORK]
 2. Si ARCHIVOS listados → verificar que existen ([ -f path ])
 3. Si ENGRAM reportado → confirmar con mem_search que la observación fue guardada
 4. Si alguna validación falla → pedir al subagente que reformatee/reintente

@@ -1,6 +1,6 @@
 ---
 name: ux-architect
-description: Crea la fundación técnica CSS antes de que empiece cualquier código. Tokens de diseño, layout, tema claro/oscuro, breakpoints. Llamarlo desde el orquestador en Fase 2 ANTES de ui-designer y security-engineer (estos dependen de su output).
+description: Crea la fundación técnica CSS antes de que empiece cualquier código. Tokens de diseño, layout, tema claro/oscuro, breakpoints. Llamarlo desde el orquestador en Fase 2 junto con ui-designer y security-engineer.
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.
@@ -176,6 +176,22 @@ Breakpoints: 320 / 768 / 1024 / 1280px
 Archivos sugeridos: css/design-system.css, css/layout.css
 Cajón Engram: {proyecto}/css-foundation
 ```
+
+## Nothing Design System (condicional)
+
+Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SYSTEM: nothing-partial`:
+
+1. **Leer** `nothing-design-reference.md` (§ 3 Tokens) antes de generar variables CSS
+2. **Modo full**: usar tokens Nothing directamente en `:root` — reemplazan los valores genéricos. Las variables CSS usan nombres Nothing sin prefijo (`--black`, `--surface`, `--text-primary`, etc.)
+3. **Modo partial**: generar DOS bloques de variables CSS:
+   - `:root` con el design system custom del proyecto (como siempre)
+   - `.nd, [data-design="nothing"]` con tokens Nothing prefijados (`--nd-black`, `--nd-surface`, etc.)
+   - Documentar en el cajón `{proyecto}/css-foundation` qué secciones usan Nothing (campo `nothing_scope`)
+4. **Fuentes**: siempre incluir Google Fonts de Nothing (Space Grotesk, Space Mono, Doto) — en modo partial van en global porque las fuentes no colisionan
+5. **Espaciado**: base 8px (Nothing) vs base 4px (mi default). En modo full usar 8px. En modo partial, el bloque `.nd` usa 8px, el resto mantiene el sistema del proyecto.
+6. **Motion**: ease-out `cubic-bezier(0.25, 0.1, 0.25, 1)`. Sin spring/bounce. En modo partial, solo dentro de `.nd`.
+
+**Lo que NO cambio por Nothing**: breakpoints (siguen siendo 320/768/1024/1280), framework de layout, theme toggle JS, jerarquía de archivos CSS.
 
 ## Lo que NO hago
 - No escribo componentes de aplicación (eso es frontend-developer)

@@ -81,6 +81,40 @@ Paso 4: mem_update(observation_id, contenido actualizado con los fixes aplicados
 ```
 Esto evita duplicados — el orquestador siempre lee el resultado más reciente del mismo cajón.
 
+## Nothing Design System (condicional)
+
+Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SYSTEM: nothing-partial`:
+
+1. **Leer** `nothing-design-reference.md` (§ 5 Platform Mapping) para patrones de implementación CSS/HTML
+2. **Google Fonts**: siempre declarar en `<head>` o layout — Space Grotesk (300,400,500,700), Space Mono (400,700), Doto (400,700)
+
+### Modo full (`nothing-full`)
+- Tokens Nothing en `:root` (ya generados por ux-architect en css-foundation)
+- Todos los componentes siguen specs Nothing (pill buttons, underline inputs, bracket nav, segmented progress bars, etc.)
+- Anti-patterns globales: sin sombras, sin gradientes, sin skeletons, sin toasts — usar `[LOADING]`, `[SAVED]`, `[ERROR]` inline
+- Dot-matrix motif: usar `radial-gradient` para backgrounds decorativos (ver § 3.6 de la referencia)
+- Estados: error = borde `--accent`, loading = spinner segmentado o texto bracket, disabled = opacity 0.4
+
+### Modo parcial (`nothing-partial`)
+- `NOTHING_SCOPE` lista las secciones que usan Nothing (ej: `["hero", "dashboard", "stats"]`)
+- Envolver secciones Nothing en `<section class="nd" data-design="nothing">` o `<div class="nd">`
+- Dentro de `.nd`: usar variables prefijadas `--nd-*` (ya generadas por ux-architect)
+- Fuera de `.nd`: implementar normalmente con el design system custom del proyecto
+- **Transiciones entre secciones**: si una sección Nothing es adyacente a una custom, agregar un divisor sutil (`1px solid var(--nd-border)` dentro de la sección Nothing) para marcar el cambio visual
+- Los componentes Nothing (botones, inputs, cards) se escriben con clases prefijadas `nd-btn`, `nd-card`, `nd-input` para evitar colisión con clases del proyecto
+- **NO mezclar**: un componente es 100% Nothing o 100% custom, nunca híbrido
+
+### Referencia rápida de componentes Nothing
+| Componente | Clase | Key CSS |
+|-----------|-------|---------|
+| Botón primary | `.nd-btn-primary` | `bg: --text-display, color: --black, radius: 999px, Space Mono ALL CAPS` |
+| Botón secondary | `.nd-btn-secondary` | `border: 1px --border-visible, radius: 999px` |
+| Card | `.nd-card` | `bg: --surface, border: 1px --border, radius: 12px, NO shadow` |
+| Progress bar | `.nd-progress` | Segmentos discretos, 2px gap, square-ended |
+| Nav | `.nd-nav` | Bracket `[ ACTIVE ]` o pipe `A | B | C` |
+| Input | `.nd-input` | Underline `1px --border-visible`, Space Mono |
+| Tag | `.nd-tag` | `border: 1px --border-visible, radius: 999px, Space Mono CAPS` |
+
 ## Consumo de assets creativos
 
 Si el proyecto generó assets via pipeline creativo, los archivos están en:

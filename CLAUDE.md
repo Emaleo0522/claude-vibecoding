@@ -185,6 +185,7 @@ NOTAS: {máx 3 líneas}
 | `redis-patterns-reference.md` | backend-architect | Cache-aside, Pub/Sub, HyperLogLog, cursor pagination |
 | `pocketbase-reference.md` | backend-architect | Boolean fields, rules, auth, sort, Docker, HTTPS |
 | `devops-vps-reference.md` | deployer | Mixed Content HTTPS, Oracle Cloud, nginx, Let's Encrypt |
+| `nothing-design-reference.md` | ux-architect, ui-designer, frontend-developer, brand-agent | Nothing Design System v3.0.0 — tokens, componentes, platform mapping |
 
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram
@@ -227,6 +228,31 @@ El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay st
 | Game Physics | Matter.js (2D, integrado Phaser), Cannon-es (3D) | Matter.js |
 | Level Design | Tiled (JSON/TMX), LDtk | Tiled |
 | Sprites | Aseprite (paid), LibreSprite/Piskel (FOSS) | Aseprite o LibreSprite |
+| Design System | Nothing Design (full/partial), custom, none | custom (default). Nothing si el usuario lo pide |
+
+## Nothing Design System (opcional)
+
+Nothing Design es un design system inspirado en Nothing Phone/tech (tipografía suiza, OLED blacks, dot-matrix). Se activa solo si el usuario lo pide.
+
+### Modos de uso
+| Modo | Cuándo | Efecto |
+|------|--------|--------|
+| `nothing-full` | "estilo Nothing", "Nothing design" | Todo el proyecto usa tokens/componentes Nothing |
+| `nothing-partial` | "hero estilo Nothing", "dashboard Nothing style" | Solo secciones específicas usan Nothing, el resto tiene design system propio |
+| `custom` | Default — sin mención de Nothing | ux-architect + ui-designer crean design system propio |
+| `none` | "sin design system" | Sin sistema de diseño formal |
+
+### Referencia
+- **Archivo**: `~/.claude/agents/nothing-design-reference.md` — tokens, componentes, platform mapping
+- **Agentes que lo cargan**: ux-architect (§ Tokens), ui-designer (§ Componentes), frontend-developer (§ Platform Mapping), brand-agent (alineación de identidad)
+- **Activación**: el orquestador detecta en Fase 1 y propaga via `DESIGN_SYSTEM` + `NOTHING_SCOPE` en handoffs
+- **DAG State**: campo `design_system` y `nothing_scope` en stack
+
+### Modo parcial — Aislamiento CSS
+- Tokens Nothing bajo `.nd` o `[data-design="nothing"]`, NO en `:root`
+- Variables con prefijo `--nd-*` para evitar colisiones
+- Componentes con clases prefijadas `nd-btn`, `nd-card`, etc.
+- Anti-patterns Nothing (no shadows, no gradients) solo aplican dentro de `.nd`
 
 ## Autenticación estándar — Better Auth
 - **Better Auth** es el sistema de auth por defecto para todos los proyectos nuevos

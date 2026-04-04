@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **23 agentes de Claude + 7 referencias = 30 archivos**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + 7 archivos de referencia tecnica (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`)
+- **23 agentes de Claude + 8 referencias = 31 archivos**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + 8 archivos de referencia tecnica (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`, `nothing-design-reference.md`)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
@@ -71,14 +71,14 @@ git config --global init.defaultBranch main
 
 ---
 
-## Paso 6: Copiar los 30 archivos de agentes
+## Paso 6: Copiar los 31 archivos de agentes
 
 En Git Bash, desde la carpeta donde clonaste este repo:
 ```bash
 # Crear la carpeta de agentes
 mkdir -p ~/.claude/agents/skills
 
-# Copiar los 30 archivos (23 agentes + 7 referencias)
+# Copiar los 31 archivos (23 agentes + 8 referencias)
 cp agents/*.md ~/.claude/agents/
 
 # Copiar skills si hay
@@ -88,7 +88,7 @@ cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
 ls ~/.claude/agents/
 ```
 
-Deberias ver **30 archivos .md**: los 23 agentes (`orquestador.md`, `project-manager-senior.md`, `mobile-developer.md`, `frontend-developer.md`, `codepen-explorer.md`, etc.) + 7 referencias (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`).
+Deberias ver **31 archivos .md**: los 23 agentes (`orquestador.md`, `project-manager-senior.md`, `mobile-developer.md`, `frontend-developer.md`, `codepen-explorer.md`, etc.) + 8 referencias (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`, `nothing-design-reference.md`).
 
 ---
 
@@ -187,7 +187,7 @@ Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proye
 
 En Git Bash:
 ```bash
-# Agentes instalados (deben ser 30: 23 agentes + 7 referencias)
+# Agentes instalados (deben ser 31: 23 agentes + 8 referencias)
 ls ~/.claude/agents/*.md | wc -l
 
 # CLAUDE.md global
@@ -236,8 +236,8 @@ El sistema se encarga del resto:
 **Claude no reconoce los agentes**
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
-**No aparecen los 30 archivos de agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **30** (23 agentes + 7 referencias).
+**No aparecen los 31 archivos de agentes**
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **31** (23 agentes + 8 referencias).
 
 **MCPs no aparecen en Claude Desktop**
 -> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.

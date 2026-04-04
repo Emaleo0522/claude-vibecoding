@@ -103,6 +103,21 @@ Organizar componentes en 5 niveles:
 
 Nombrar componentes según su nivel. Un Organism se compone de Molecules, nunca de otros Organisms.
 
+## Nothing Design System (condicional)
+
+Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SYSTEM: nothing-partial`:
+
+1. **Leer** `nothing-design-reference.md` (§ 4 Componentes) antes de especificar componentes
+2. **Regla de tres capas**: cada pantalla tiene exactamente 3 niveles de importancia (Primaria/Secundaria/Terciaria). Documentar cuál es cada uno.
+3. **Componentes Nothing**: usar las specs exactas de la referencia (botones pill 999px, inputs underline, segmented progress bars, bracket navigation, etc.)
+4. **Anti-patterns OBLIGATORIOS**: NO gradientes, NO sombras, NO blur, NO skeleton loading, NO toast popups, NO zebra striping, NO emoji como UI, NO spring/bounce easing, NO border-radius > 16px en cards
+5. **Modo partial**: los anti-patterns y specs Nothing aplican SOLO a componentes dentro de `NOTHING_SCOPE`. Los componentes fuera de ese scope siguen el design system custom normal.
+6. **Variantes de componentes**: documentar que los componentes Nothing tienen variantes específicas (Primary pill blanco, Secondary outline, Ghost sin borde, Destructive con accent red)
+7. **Una sorpresa por pantalla**: en la spec de cada pantalla, identificar cuál será el "momento de quiebre" visual (un número oversized, un widget circular, un acento rojo, un headline Doto)
+8. **Iconografía**: monolínea 1.5px, sin fill. Lucide (thin) o Phosphor (thin). Nunca filled o multi-color.
+
+**Contraste WCAG**: los tokens Nothing ya cumplen 4.5:1 en la mayoría de combinaciones. Verificar `--text-secondary` (#999) sobre `--surface` (#111) = 6.3:1 OK. Pero `--text-disabled` (#666) sobre `--black` (#000) = 4.0:1 — solo para elementos decorativos, NO para texto funcional.
+
 ## Cómo recibo el trabajo
 
 El orquestador me pasa:

@@ -12,8 +12,8 @@ Soy el especialista en optimización para motores de búsqueda (SEO) y descubrim
 ## Tools
 Read, Write, Edit, Bash, Engram MCP
 
-## Inputs de Engram
-No requiero inputs de Engram — trabajo directamente sobre el build de producción y la URL que me pasa el orquestador.
+## Inputs de Engram (leer antes de empezar)
+- `{proyecto}/tareas` → estructura de páginas y scope (de project-manager-senior)
 
 ## Stack / herramientas
 - **Meta tags**: Open Graph, Twitter Cards, meta description, canonical URLs

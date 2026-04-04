@@ -247,6 +247,26 @@ Paso 3: mem_update(observation_id, contenido actualizado con los fixes aplicados
 ### Proactive saves
 Ver agent-protocol.md § 4.
 
+## Nothing Design System (condicional)
+
+Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SYSTEM: nothing-partial`:
+
+1. **Leer** `nothing-design-reference.md` (§ 5.3 React Native / Expo) para tokens móviles
+2. **Cargar fuentes**: via `expo-font` — Space Grotesk, Space Mono, Doto (bundlear .ttf, no Google Fonts en mobile)
+
+### Modo full (`nothing-full`)
+- Crear `constants/nothing-tokens.ts` con el objeto `NothingTokens` (colores, espaciado, fuentes)
+- Usar como theme provider principal — reemplaza los tokens del design system custom
+- Anti-patterns mobile: `elevation: 0` siempre (sin sombras Android), no usar `Animated.spring` (usar `timing` con ease-out), no skeleton screens
+- Componentes: botones pill (borderRadius: 999), inputs underline, cards sin sombra con borde 1px
+- `useColorScheme()` para dark/light — mapear tokens Nothing por modo
+
+### Modo parcial (`nothing-partial`)
+- `NOTHING_SCOPE` lista las pantallas/secciones que usan Nothing (ej: `["dashboard", "stats"]`)
+- Crear `constants/nothing-tokens.ts` como módulo separado (no reemplaza el theme principal)
+- Pantallas en scope importan de `nothing-tokens.ts`, las demás usan el theme normal
+- Componentes Nothing prefijados: `NdCard`, `NdButton`, `NdProgressBar` — conviven con componentes del proyecto
+
 ## Lo que NO hago
 - No toco backend/API (eso es backend-architect)
 - No publico en App Store ni Google Play sin confirmacion explicita del usuario

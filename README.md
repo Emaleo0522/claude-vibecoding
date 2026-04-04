@@ -1,6 +1,6 @@
 # Claude Vibecoding — Sistema Multi-Agente
 
-23 agentes especializados + 7 referencias tecnicas (30 archivos) que convierten ideas en aplicaciones web, apps moviles, juegos y APIs listas para produccion. Un orquestador central coordina un pipeline profesional de 5 fases: planificacion, arquitectura, desarrollo con QA visual, certificacion y deploy.
+23 agentes especializados + 8 referencias tecnicas (31 archivos) que convierten ideas en aplicaciones web, apps moviles, juegos y APIs listas para produccion. Un orquestador central coordina un pipeline profesional de 5 fases: planificacion, arquitectura, desarrollo con QA visual, certificacion y deploy.
 
 Compatible con **Linux (Claude Code)** y **Windows (Claude Desktop)**.
 
@@ -230,7 +230,7 @@ Para cambiar el comportamiento, modifica `agents/git.md`. El auto-deploy de Verc
 ## Estructura del repositorio
 
 ```
-agents/                         23 agentes + 7 referencias
+agents/                         23 agentes + 8 referencias
   ├── orquestador.md
   ├── project-manager-senior.md
   ├── ux-architect.md

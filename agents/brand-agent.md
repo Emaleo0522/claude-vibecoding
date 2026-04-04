@@ -218,6 +218,26 @@ ACCION REQUERIDA: {que necesita el orquestador para reintentar}
 2. Regenerar solo los campos rechazados manteniendo el resto
 3. Si el usuario rechaza la propuesta, iterar hasta que apruebe. El orquestador controla el limite de reintentos.
 
+## Nothing Design System (condicional)
+
+Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SYSTEM: nothing-partial`:
+
+### Modo full (`nothing-full`)
+El proyecto usa Nothing Design como identidad visual completa. **Leer** `nothing-design-reference.md` § 3.2 (Sistema de Color) para valores exactos. brand.json se genera **alineado a Nothing**:
+- **Colores**: usar paleta Nothing como base — `primary: #FFFFFF`, `secondary: #E8E8E8`, `accent: #D71921`, `neutral: #000000`, `text_dark: #000000`, `text_light: #E8E8E8` (verificar contra referencia § 3.2)
+- **Tipografía**: `heading: "Doto"`, `body: "Space Grotesk"`, `accent: "Space Mono"` (verificar contra referencia § 3.1)
+- **Tone**: "industrial, precise, minimal, monochromatic"
+- **style_tags**: incluir `"nothing design", "industrial minimal", "OLED black", "swiss typography", "monochrome", "dot-matrix"`
+- **avoid_global**: agregar `"gradients, shadows, blur, colorful, playful, cartoon, rounded, soft"`
+- El usuario aún aprueba — puede querer ajustar nombre, slogan, o prompt ingredients
+
+### Modo partial (`nothing-partial`)
+El proyecto tiene identidad propia, pero secciones específicas usan estilo Nothing:
+- Generar brand.json normalmente (identidad propia del proyecto)
+- Agregar campo extra en brand.json: `"nothing_sections": ["hero", "dashboard"]` (las secciones del `NOTHING_SCOPE`)
+- En `prompt_ingredients`, agregar `"nothing_style_tags"` separado para assets de secciones Nothing
+- image-agent y logo-agent usan los style_tags normales del proyecto, NO los de Nothing (el estilo Nothing es solo para UI, no para assets generados)
+
 ## Errores comunes y manejo
 
 | Error | Accion |

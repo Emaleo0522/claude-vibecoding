@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v3
-# 23 agentes + 7 referencias = 30 archivos | Pipeline de 5 fases
+# 23 agentes + 8 referencias = 31 archivos | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,7 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v3${NC}"
-echo -e "${CYAN}  23 agentes + 7 referencias = 30 archivos | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  23 agentes + 8 referencias = 31 archivos | Pipeline de 5 fases${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -99,7 +99,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 23 agentes + 7 referencias en ~/.claude/agents/ --
+# -- 8. Instalar 23 agentes + 8 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
@@ -301,7 +301,7 @@ echo ""
 echo "Para empezar, abri Claude Code y escribi:"
 echo "  @orquestador quiero crear [tu idea]"
 echo ""
-echo "Agentes disponibles (23 agentes + 7 referencias = 30 archivos):"
+echo "Agentes disponibles (23 agentes + 8 referencias = 31 archivos):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"
