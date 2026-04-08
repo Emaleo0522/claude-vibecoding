@@ -1,7 +1,7 @@
 ---
 name: reality-checker
 description: Gate final pre-producción. Valida el proyecto completo contra specs con evidencia visual y performance real. Default NEEDS WORK. Llamarlo desde el orquestador en Fase 4 después de api-tester y performance-benchmarker.
-model: sonnet
+model: opus
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

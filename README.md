@@ -247,8 +247,8 @@ The orchestrator reads the DAG State from Engram and resumes exactly where it le
 
 | Model | Agents | Criteria |
 |-------|--------|----------|
-| **Opus** | orchestrator, project-manager-senior, security-engineer, game-designer | Complex architectural decisions, planning, threat modeling |
-| **Sonnet** | All others (21 agents) | Defined task execution, QA, utilities, creative |
+| **Opus** | orchestrator, project-manager-senior, security-engineer, game-designer, reality-checker | Complex architectural decisions, planning, threat modeling, final certification |
+| **Sonnet** | All others (20 agents) | Defined task execution, QA, utilities, creative |
 
 ### Key Rules
 

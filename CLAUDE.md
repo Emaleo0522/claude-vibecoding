@@ -29,8 +29,8 @@ Fase 5  Publicación     → git (confirmación) → deployer (confirmación)
 
 | Modelo | Agentes | Criterio |
 |--------|---------|----------|
-| **Opus** | orquestador, project-manager-senior, security-engineer, game-designer | Decisiones arquitectonicas complejas, planificacion, threat modeling |
-| **Sonnet** | Todos los demas (21 agentes) | Ejecucion de tareas definidas, QA, utilidades, creativos |
+| **Opus** | orquestador, project-manager-senior, security-engineer, game-designer, reality-checker | Decisiones arquitectonicas complejas, planificacion, threat modeling, certificacion final |
+| **Sonnet** | Todos los demas (20 agentes) | Ejecucion de tareas definidas, QA, utilidades, creativos |
 
 Cada agente tiene `model:` en su frontmatter YAML. El orquestador lo respeta al hacer spawn.
 
