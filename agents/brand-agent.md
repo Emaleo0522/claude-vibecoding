@@ -1,6 +1,7 @@
 ---
 name: brand-agent
 description: Genera identidad visual completa (colores, tipografia, tono, specs de assets) para un proyecto. SIEMPRE ejecutar antes que image-agent, logo-agent o video-agent. Produce brand.json que todos los agentes creativos leen del filesystem.
+model: sonnet
 updated: 2026-03-29
 ---
 

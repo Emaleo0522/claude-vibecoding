@@ -13,7 +13,7 @@ Cuando se activa el modo orquestador, Claude adopta el comportamiento definido e
 
 ## Arquitectura
 
-Este sistema usa un **orquestador central** (1 coordinador + 22 subagentes = 23 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
+Este sistema usa un **orquestador central** (1 coordinador + 24 subagentes = 25 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
 
 ### Pipeline (5 fases)
 ```
@@ -24,6 +24,15 @@ Fase 3  Dev ↔ QA Loop  → dev-agents ↔ evidence-collector (3 reintentos)
 Fase 4  Certificación   → seo-discovery + api-tester + performance-benchmarker + reality-checker
 Fase 5  Publicación     → git (confirmación) → deployer (confirmación)
 ```
+
+### Model routing (Opus / Sonnet)
+
+| Modelo | Agentes | Criterio |
+|--------|---------|----------|
+| **Opus** | orquestador, project-manager-senior, security-engineer, game-designer | Decisiones arquitectonicas complejas, planificacion, threat modeling |
+| **Sonnet** | Todos los demas (21 agentes) | Ejecucion de tareas definidas, QA, utilidades, creativos |
+
+Cada agente tiene `model:` en su frontmatter YAML. El orquestador lo respeta al hacer spawn.
 
 ### Regla de oro
 El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
@@ -57,6 +66,9 @@ if result.observation_id:
 else:
     # cajon no existe — informar al orquestador
 ```
+
+### Perfil personal del usuario
+Al iniciar **cualquier** sesion (nueva, retomada o activa), ejecutar `mem_context(scope="personal")` antes de cualquier tarea. Esto carga el perfil laboral y personal del usuario (Leonardo Emanuel Mansilla / @Tio / PM en Reyesoft) y permite trabajar con contexto completo desde el primer mensaje.
 
 ### Continuidad entre sesiones
 
@@ -104,6 +116,65 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | `{proyecto}/deploy-url` | deployer | orquestador |
 | `codepen-vault/{slug}` | codepen-explorer | codepen-explorer, frontend-developer |
 | `{proyecto}/discovery-{desc}` | cualquier subagente (proactive saves) | busqueda futura via mem_search |
+| `system/audit-latest` | self-auditor | orquestador (health check) |
+
+### Resiliencia Engram (fallbacks validados en auditoría 2026-04-07)
+- **Disk fallback para escritura**: si `mem_save`/`mem_update` falla → escribir a `{project_dir}/.pipeline/{cajon}.md`. Orquestador busca primero en Engram, luego en `.pipeline/`
+- **Null observation_id en lectura**: cajones críticos (tareas, css-foundation, design-system, security-spec, gdd) → buscar fallback en disco → si no existe, STATUS fallido con BLOQUEADORES. Cajones opcionales → continuar con defaults. Cajones QA → marcar como "no validada"
+- **Retry counter**: el orquestador posee `intento_actual` (no el subagente). Se pasa en cada handoff a evidence-collector y se persiste en DAG State
+- **pre-compact snapshot**: solo guarda metadata de sesión (tool count, cwd), NO DAG State. La persistencia del DAG State es responsabilidad del orquestador via dual-write
+
+## Hook System (capa reactiva — v2.1, auditada 2026-04-07)
+
+Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
+
+### Hooks activos
+
+| Hook | Tipo | Matcher | Accion |
+|------|------|---------|--------|
+| `block-no-verify` | PreToolUse | Bash | **BLOQUEA** git --no-verify, --no-gpg-sign, rm -rf, git reset --hard, git clean -f, DROP TABLE/DATABASE, chmod 777, curl\|sh |
+| `config-protection` | PreToolUse | Write\|Edit | **BLOQUEA** edicion de secrets (.env, .pem, .key, credentials). **ADVIERTE** al modificar configs de linting/formatting |
+| `quality-gate` | PostToolUse | Write\|Edit | **ADVIERTE** debugger, .only(), @ts-ignore, @ts-nocheck, secrets/API keys hardcodeados en JS/TS |
+| `console-log-warning` | PostToolUse | Write\|Edit | **ADVIERTE** console.log/warn/error en codigo de produccion (ignora tests) |
+| `suggest-compact` | PostToolUse | (global) | **ADVIERTE** cada ~50 tool calls con contexto de fase/tarea del pipeline (async) |
+| `pre-compact-engram` | PreCompact | (lifecycle) | **GUARDA** snapshot a disco + resetea counter antes de compactar |
+| `cost-tracker` | PostToolUse | (global) | **REGISTRA** cada tool call con categoria, subagente, modelo (async) |
+| `session-summary` | Stop | (lifecycle) | **LOGUEA** actividad de sesion en JSONL para recovery (async) |
+| `engram-sync` | Stop | (lifecycle) | **SINCRONIZA** memorias Engram con GitHub automaticamente (async, 60s timeout) |
+| `session-start-context` | Notification | (lifecycle) | **CARGA** contexto de sesion anterior + health check de hooks async al inicio + perfil personal via `mem_context(scope="personal")` |
+
+### Comportamiento de hooks
+- **Exit 2** = BLOCK (solo PreToolUse puede bloquear)
+- **Exit 0 + stderr** = WARN (el mensaje llega a Claude como contexto)
+- **Exit 0 silencioso** = ALLOW (no consume tokens)
+- **Fail-open**: si un hook crashea, permite la operacion (nunca rompe el flujo)
+- **async: true**: el hook no bloquea la respuesta (suggest-compact usa esto)
+
+### Self-audit
+Ejecutar `node ~/.claude/hooks/audit-system.js` para validar el sistema completo:
+- T1: Catalog sync (agentes en disco vs esperados)
+- T2: Hook integrity (archivos existen, no crashean)
+- T3: Protocol compliance (frontmatter, name, protocol ref)
+- T4: Settings structure (JSON valido, Engram habilitado)
+- T5: Hook performance (todos deben ser <500ms)
+- T6: Snapshot directory (existe)
+
+Resultado: HEALTHY (6/6) | DEGRADED (4-5/6) | BROKEN (<4/6)
+
+### Cost report
+Ejecutar `node ~/.claude/hooks/cost-report.js` para ver uso de herramientas:
+- Desglose por categoria (agent, exec, file, search, memory, browser)
+- Subagentes invocados y frecuencia
+- Top tools por numero de llamadas
+- Opciones: `--last=50` (ultimos N), `--agents-only` (solo subagentes)
+
+### Learning index (continuous learning ligero)
+Indice local de descubrimientos que complementa Engram proactive saves:
+- `node ~/.claude/hooks/learning-index.js --list` — ver todos los descubrimientos
+- `node ~/.claude/hooks/learning-index.js --search=keyword` — buscar por keyword
+- `node ~/.claude/hooks/learning-index.js --add "Titulo|Contenido"` — agregar discovery
+- Auto-tagging por tecnologias mencionadas (React, Next.js, TypeScript, etc.)
+- Max 200 entries (auto-trim)
 
 ## Herramientas por agente
 
@@ -132,6 +203,8 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 | git | Bash (git, gh), Engram MCP |
 | deployer | Bash (vercel), Engram MCP |
 | codepen-explorer | Playwright MCP (browser_navigate, browser_evaluate, browser_snapshot, browser_click, browser_wait_for, browser_take_screenshot), Engram MCP |
+| self-auditor | Read, Bash, Glob, Grep, Engram MCP |
+| build-resolver | Read, Write, Edit, Bash, Grep, Glob, Engram MCP |
 
 ## Protocolo compartido de subagentes
 - **Referencia completa**: `~/.claude/agents/agent-protocol.md`
@@ -174,6 +247,8 @@ NOTAS: {máx 3 líneas}
 | git | archivos del proyecto | `{proyecto}/git-commit` |
 | deployer | build del proyecto | `{proyecto}/deploy-url` |
 | codepen-explorer | query del orquestador | `codepen-vault/{slug}` |
+| build-resolver | build output fallido + `{proyecto}/tareas` | `{proyecto}/discovery-build-{slug}` |
+| self-auditor | (standalone — no requiere inputs de Engram) | `system/audit-latest` |
 
 ## Referencias técnicas (archivos no-agente en `~/.claude/agents/`)
 | Archivo | Usado por | Contenido |

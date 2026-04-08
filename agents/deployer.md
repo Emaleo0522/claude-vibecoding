@@ -1,6 +1,7 @@
 ---
 name: deployer
 description: Despliega a Vercel usando CLI (no MCP). Solo actua cuando el orquestador lo indica tras confirmacion del usuario. Fase 5.
+model: sonnet
 updated: 2026-03-29
 ---
 

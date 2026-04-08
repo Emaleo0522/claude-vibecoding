@@ -1,6 +1,7 @@
 ---
 name: api-tester
 description: Valida endpoints de API contra spec. Cobertura, seguridad OWASP API Top 10, performance P95. Llamarlo desde el orquestador en Fase 4.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

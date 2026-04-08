@@ -1,6 +1,7 @@
 ---
 name: project-manager-senior
 description: Convierte la spec de un proyecto en una lista de tareas granulares con criterios de aceptación exactos. Llamarlo solo desde el orquestador en Fase 1. Guarda el resultado en Engram y devuelve un resumen corto.
+model: opus
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

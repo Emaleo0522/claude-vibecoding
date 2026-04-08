@@ -24,7 +24,20 @@ Paso 2: completo = mem_get_observation(observation_id)
 Usar SOLO completo.content — NUNCA resultado.preview
 ```
 
-Si `mem_search` no retorna observation_id → el cajón no existe. Informa al orquestador.
+Si `mem_search` no retorna observation_id → el cajón no existe. Manejo universal:
+
+1. **Cajón critico** (inputs que necesitas para trabajar: `tareas`, `css-foundation`, `design-system`, `security-spec`, `gdd`):
+   - Buscar fallback en disco: `{project_dir}/.pipeline/{cajon}.md`
+   - Si existe en disco: usar contenido del archivo y continuar
+   - Si NO existe en disco: informar en Return Envelope `STATUS: fallido` con `BLOQUEADORES: [{cajon} no encontrado en Engram ni disco]`
+   - NUNCA inventar datos ni usar defaults silenciosos para cajones criticos
+
+2. **Cajón opcional** (`api-spec`, `branding`, `discovery-*`):
+   - Continuar con defaults razonables o sin esa información
+   - Informar en NOTAS: "Cajón {cajon} no encontrado, usando defaults"
+
+3. **Cajón de QA** (`qa-{N}`):
+   - Marcar como "no validada" — no asumir PASS ni FAIL
 
 ---
 
@@ -51,6 +64,18 @@ Paso 4: mem_update(observation_id, contenido_mergeado)
 
 **REGLA**: `topic_key` es OBLIGATORIO en todo `mem_save`. Sin él, los reintentos crean duplicados.
 
+### Fallback a disco (si Engram no responde)
+
+Si `mem_save` o `mem_update` falla (timeout, MCP no disponible, error):
+
+1. Escribir el contenido a `{project_dir}/.pipeline/{cajon}.md` (crear directorio si no existe)
+2. Continuar la tarea normalmente — no bloquearse por fallo de Engram
+3. Informar en el Return Envelope: `NOTAS: Engram write failed, fallback to disk: .pipeline/{cajon}.md`
+
+Al retomar un proyecto, el orquestador busca primero en Engram. Si no encuentra, busca en `.pipeline/`.
+
+**NOTA**: Este fallback es un patrón que cada agente implementa individualmente (los agentes son prompts, no código — no hay forma de compartir un módulo). El patrón es simple: try mem_save → catch → fs.writeFile. No crear una utilidad compartida por esto.
+
 ---
 
 ## 3. Return Envelope — Formato estándar
@@ -68,7 +93,7 @@ NOTAS: {texto libre, máx 3 líneas}
 ```
 
 - **STATUS** es el primer campo, siempre
-- **ARCHIVOS** lista paths relativos al proyecto
+- **ARCHIVOS** lista paths SIEMPRE relativos al proyecto (ej: `src/app/page.tsx`, NO `/home/user/project/src/app/page.tsx`)
 - **ENGRAM** indica el cajón donde guardaste tu resultado
 - Omitir campos vacíos (no poner "SERVIDOR: N/A")
 
@@ -92,6 +117,8 @@ mem_save(
 ```
 
 No esperes al final de la tarea. Guarda al momento.
+
+**NOTA**: Los discoveries se guardan para búsqueda futura via `mem_search`. No hay un agente agregador — el orquestador o el usuario pueden buscar discoveries con `mem_search("{proyecto}/discovery")` cuando necesiten contexto. También accesibles via `node ~/.claude/hooks/learning-index.js --search=keyword`.
 
 ---
 

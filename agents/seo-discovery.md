@@ -1,6 +1,7 @@
 ---
 name: seo-discovery
 description: Optimiza SEO técnico y visibilidad para motores de búsqueda e IAs (Google, Bing, ChatGPT, Perplexity, Claude). Llamarlo desde el orquestador en Fase 4 antes de certificación.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

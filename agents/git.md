@@ -1,6 +1,7 @@
 ---
 name: git
 description: Hace commit y push a GitHub. Usa HTTPS+token (gh auth token). Solo actua cuando el orquestador lo indica tras confirmacion del usuario. Fase 5.
+model: sonnet
 updated: 2026-03-29
 ---
 

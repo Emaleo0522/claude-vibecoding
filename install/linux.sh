@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v3
-# 23 agentes + 8 referencias = 31 archivos | Pipeline de 5 fases
+# 25 agentes + 8 referencias = 33 archivos | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,7 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v3${NC}"
-echo -e "${CYAN}  23 agentes + 8 referencias = 31 archivos | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  25 agentes + 8 referencias = 33 archivos | Pipeline de 5 fases${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -99,7 +99,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 23 agentes + 8 referencias en ~/.claude/agents/ --
+# -- 8. Instalar 25 agentes + 8 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
@@ -111,6 +111,20 @@ fi
 
 AGENT_COUNT=$(ls "$CLAUDE_AGENTS/"*.md 2>/dev/null | wc -l)
 info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
+
+# -- 8b. Instalar hooks reactivos en ~/.claude/hooks/ --
+CLAUDE_HOOKS="$HOME/.claude/hooks"
+mkdir -p "$CLAUDE_HOOKS"
+
+if ls "$REPO_ROOT/hooks/"*.js &>/dev/null; then
+  cp "$REPO_ROOT/hooks/"*.js "$CLAUDE_HOOKS/"
+  chmod +x "$CLAUDE_HOOKS/"*.js
+  HOOK_COUNT=$(ls "$CLAUDE_HOOKS/"*.js 2>/dev/null | wc -l)
+  info "Hooks instalados en $CLAUDE_HOOKS ($HOOK_COUNT hooks reactivos)"
+else
+  HOOK_COUNT=0
+  warn "No se encontraron hooks en $REPO_ROOT/hooks/ — saltando"
+fi
 
 # -- 9. Instalar CLAUDE.md global (instrucciones del sistema) --
 GLOBAL_CLAUDE="$HOME/CLAUDE.md"
@@ -173,7 +187,7 @@ if [[ -f "$LOCAL_TEMPLATE" ]]; then
     warn "settings.local.json existente respaldado en $CLAUDE_LOCAL.bak"
   fi
   cp "$LOCAL_TEMPLATE" "$CLAUDE_LOCAL"
-  info "settings.local.json instalado (permisos para 23 agentes)"
+  info "settings.local.json instalado (permisos para 25 agentes)"
 else
   warn "No se encontro templates/settings.local.json — saltando"
 fi
@@ -292,6 +306,7 @@ echo ""
 info "Git:       $GIT_NAME <$GIT_EMAIL>"
 info "GitHub:    $GH_USER"
 info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
+info "Hooks:     ~/.claude/hooks/ ($HOOK_COUNT hooks reactivos)"
 info "MCPs:      Engram (memoria) configurado en settings.json"
 info "Permisos:  settings.local.json con permisos para todos los agentes"
 info "CLAUDE.md: $GLOBAL_CLAUDE (instrucciones del sistema)"
@@ -301,16 +316,17 @@ echo ""
 echo "Para empezar, abri Claude Code y escribi:"
 echo "  @orquestador quiero crear [tu idea]"
 echo ""
-echo "Agentes disponibles (23 agentes + 8 referencias = 31 archivos):"
+echo "Agentes disponibles (25 agentes + 8 referencias = 33 archivos):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"
 echo "  Fase 3: frontend-developer, backend-architect, rapid-prototyper,"
 echo "          mobile-developer, game-designer, xr-immersive-developer,"
-echo "          codepen-explorer"
+echo "          codepen-explorer, build-resolver"
 echo "  Fase 3 QA: evidence-collector"
 echo "  Fase 4: seo-discovery, api-tester, performance-benchmarker, reality-checker"
 echo "  Fase 5: git, deployer"
+echo "  Misc: self-auditor"
 echo "  Refs: agent-protocol, better-auth, better-gsap, react-patterns,"
-echo "        redis-patterns, pocketbase, devops-vps"
+echo "        redis-patterns, pocketbase, devops-vps, nothing-design"
 echo ""

@@ -1,6 +1,7 @@
 ---
 name: codepen-explorer
 description: Busca, extrae e interpreta efectos de CodePen via Playwright MCP. Gestiona la boveda de efectos probados.
+model: sonnet
 subagent_type: codepen-explorer
 ---
 

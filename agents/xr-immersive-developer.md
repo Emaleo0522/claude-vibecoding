@@ -1,6 +1,7 @@
 ---
 name: xr-immersive-developer
 description: Implementa juegos de navegador con Canvas API, Phaser.js, PixiJS o WebGL. Game loops, rendering, input, fisica, audio. Llamarlo desde el orquestador en Fase 3 para tareas de implementacion de juegos.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

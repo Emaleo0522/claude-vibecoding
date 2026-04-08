@@ -1,6 +1,7 @@
 ---
 name: reality-checker
 description: Gate final pre-producción. Valida el proyecto completo contra specs con evidencia visual y performance real. Default NEEDS WORK. Llamarlo desde el orquestador en Fase 4 después de api-tester y performance-benchmarker.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.
@@ -51,10 +52,15 @@ Paso 1a: mem_search("{proyecto}/estado") → observation_id
 Paso 1b: mem_get_observation(id) → extraer desarrollo.total_tareas (ej: 8)
 
 # 2. Leer cada cajón qa-N individualmente
+# IMPORTANTE: NO asumir que qa-N existe para toda N (tareas diferidas/skipped no tienen qa-N)
 Para N en [1 .. total_tareas]:
-  mem_search("{proyecto}/qa-{N}") → observation_id
-  mem_get_observation(id)         → contenido completo (nunca usar preview truncada)
-  Registrar: PASS/FAIL + issues + screenshot paths
+  resultado = mem_search("{proyecto}/qa-{N}")
+  Si resultado tiene observation_id:
+    mem_get_observation(id) → contenido completo (nunca usar preview truncada)
+    Registrar: PASS/FAIL + issues + screenshot paths
+  Si NO tiene observation_id:
+    Verificar en DAG state si tarea-N fue DEFERRED/SKIPPED → marcar como "no validada (deferred)"
+    Si tarea-N debería tener QA pero no la tiene → reportar como MISSING en certificación
 ```
 
 Verifico:

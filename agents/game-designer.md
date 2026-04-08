@@ -1,6 +1,7 @@
 ---
 name: game-designer
 description: Crea el Game Design Document (GDD) completo — mecanicas, loops, economia, balance, subsistemas, scene graph, audio, level design, onboarding. Llamarlo desde el orquestador en Fase 3 antes de implementar codigo de juego.
+model: opus
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

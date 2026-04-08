@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **23 agentes de Claude + 8 referencias = 31 archivos**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + 8 archivos de referencia tecnica (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`, `nothing-design-reference.md`)
+- **25 agentes de Claude + 8 referencias = 33 archivos**: los especialistas del sistema (orquestador, PM, arquitectos, devs, QA, SEO, agentes creativos, codepen-explorer, etc.) + 8 archivos de referencia tecnica (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`, `nothing-design-reference.md`)
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
@@ -71,14 +71,14 @@ git config --global init.defaultBranch main
 
 ---
 
-## Paso 6: Copiar los 31 archivos de agentes
+## Paso 6: Copiar los 33 archivos de agentes (25 agentes + 8 referencias)
 
 En Git Bash, desde la carpeta donde clonaste este repo:
 ```bash
 # Crear la carpeta de agentes
 mkdir -p ~/.claude/agents/skills
 
-# Copiar los 31 archivos (23 agentes + 8 referencias)
+# Copiar los 33 archivos (25 agentes + 8 referencias)
 cp agents/*.md ~/.claude/agents/
 
 # Copiar skills si hay
@@ -88,7 +88,24 @@ cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
 ls ~/.claude/agents/
 ```
 
-Deberias ver **31 archivos .md**: los 23 agentes (`orquestador.md`, `project-manager-senior.md`, `mobile-developer.md`, `frontend-developer.md`, `codepen-explorer.md`, etc.) + 8 referencias (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`, `nothing-design-reference.md`).
+Deberias ver **33 archivos .md**: los 25 agentes (`orquestador.md`, `project-manager-senior.md`, `mobile-developer.md`, `frontend-developer.md`, `codepen-explorer.md`, `build-resolver.md`, `self-auditor.md`, etc.) + 8 referencias (`agent-protocol.md`, `better-auth-reference.md`, `better-gsap-reference.md`, `react-patterns-reference.md`, `redis-patterns-reference.md`, `pocketbase-reference.md`, `devops-vps-reference.md`, `nothing-design-reference.md`).
+
+---
+
+## Paso 6b: Copiar hooks reactivos
+
+```bash
+# Crear la carpeta de hooks
+mkdir -p ~/.claude/hooks
+
+# Copiar los 13 hooks
+cp hooks/*.js ~/.claude/hooks/
+
+# Verificar
+ls ~/.claude/hooks/
+```
+
+Los hooks interceptan tool calls en tiempo real: bloquean operaciones peligrosas (git --no-verify, rm -rf), advierten sobre debugger/.only()/@ts-ignore, trackean costos, y gestionan contexto automaticamente.
 
 ---
 
@@ -187,7 +204,7 @@ Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proye
 
 En Git Bash:
 ```bash
-# Agentes instalados (deben ser 31: 23 agentes + 8 referencias)
+# Agentes instalados (deben ser 33: 25 agentes + 8 referencias)
 ls ~/.claude/agents/*.md | wc -l
 
 # CLAUDE.md global
@@ -236,8 +253,8 @@ El sistema se encarga del resto:
 **Claude no reconoce los agentes**
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
-**No aparecen los 31 archivos de agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **31** (23 agentes + 8 referencias).
+**No aparecen los 33 archivos de agentes**
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **33** (25 agentes + 8 referencias).
 
 **MCPs no aparecen en Claude Desktop**
 -> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.
@@ -272,6 +289,7 @@ El sistema se encarga del resto:
 |   |-- game-designer.md                         <- Fase 3: GDD, mecanicas
 |   |-- xr-immersive-developer.md                <- Fase 3: Phaser.js, WebGL
 |   |-- codepen-explorer.md                      <- Fase 3: busca/extrae efectos CodePen
+|   |-- build-resolver.md                        <- Fase 3: resuelve errores de build
 |   |-- brand-agent.md                           <- Fase 2B: brand.json
 |   |-- image-agent.md                           <- Fase 2B: hero images
 |   |-- logo-agent.md                            <- Fase 2B: logo SVG
@@ -283,6 +301,7 @@ El sistema se encarga del resto:
 |   |-- performance-benchmarker.md               <- Fase 4: Core Web Vitals
 |   |-- git.md                                   <- Fase 5: commit + push
 |   |-- deployer.md                              <- Fase 5: Vercel CLI
+|   |-- self-auditor.md                          <- auditor del sistema
 |   |-- agent-protocol.md                        <- referencia: protocolo compartido
 |   |-- better-auth-reference.md                 <- referencia: Better Auth 1.5
 |   |-- better-gsap-reference.md                 <- referencia: GSAP Tier 3
@@ -290,6 +309,21 @@ El sistema se encarga del resto:
 |   |-- redis-patterns-reference.md              <- referencia: Redis patterns
 |   |-- pocketbase-reference.md                  <- referencia: PocketBase gotchas
 |   |-- devops-vps-reference.md                  <- referencia: VPS, nginx, HTTPS
+|   |-- nothing-design-reference.md              <- referencia: Nothing Design System
+|-- hooks/
+|   |-- block-no-verify.js                       <- bloquea git --no-verify, rm -rf
+|   |-- config-protection.js                     <- protege .env, secrets
+|   |-- quality-gate.js                          <- advierte debugger, .only()
+|   |-- console-log-warning.js                   <- advierte console.log en produccion
+|   |-- suggest-compact.js                       <- sugiere /compact cada ~50 calls
+|   |-- cost-tracker.js                          <- registra uso de herramientas
+|   |-- cost-report.js                           <- reporte de costos
+|   |-- pre-compact-engram.js                    <- snapshot antes de compactar
+|   |-- session-summary.js                       <- log de sesion
+|   |-- session-start-context.js                 <- carga contexto al inicio
+|   |-- engram-sync.js                           <- sync memorias a GitHub
+|   |-- audit-system.js                          <- auditor del sistema
+|   |-- learning-index.js                        <- indice de descubrimientos
 %APPDATA%\Claude\
 |-- claude_desktop_config.json                   <- MCPs (Engram, Context7, Playwright)
 ~/bin/
@@ -300,7 +334,7 @@ El sistema se encarga del resto:
 
 ## Paso Opcional: Sistema Visual de Agentes (Pixel Art)
 
-Una oficina en pixel art donde los 23 agentes se mueven en tiempo real. Cuando uno recibe una tarea, camina a su escritorio y se pone a trabajar. Cuando termina, camina a reportarle al orquestador con una burbuja de chat, y vuelve a deambular.
+Una oficina en pixel art donde los 25 agentes se mueven en tiempo real. Cuando uno recibe una tarea, camina a su escritorio y se pone a trabajar. Cuando termina, camina a reportarle al orquestador con una burbuja de chat, y vuelve a deambular.
 
 > **100% opcional.** El sistema de vibecoding funciona perfectamente sin esto.
 
@@ -315,7 +349,7 @@ Una oficina en pixel art donde los 23 agentes se mueven en tiempo real. Cuando u
 Instala el sistema visual de pixel art para Claude Desktop.
 Creá un servidor standalone Node.js+Express en ~/.claude/pixel-bridge/standalone/
 que lea ~/.claude/projects/*.jsonl en tiempo real y sirva la UI en http://localhost:3456.
-Los 23 agentes del sistema de vibecoding deben estar siempre presentes
+Los 25 agentes del sistema de vibecoding deben estar siempre presentes
 en la oficina aunque estén inactivos.
 Bajá los assets (sprites, tiles, furniture, fonts) de la carpeta assets/
 de https://github.com/pablodelucca/pixel-agents

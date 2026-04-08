@@ -1,6 +1,7 @@
 ---
 name: image-agent
 description: Genera imagenes para proyectos web (hero images, fondos, thumbnails) usando Gemini o HuggingFace FLUX.1-schnell. Requiere brand.json generado por brand-agent. Llamar despues de brand-agent y aprobacion del usuario.
+model: sonnet
 updated: 2026-03-29
 ---
 

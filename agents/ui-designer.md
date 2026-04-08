@@ -1,6 +1,7 @@
 ---
 name: ui-designer
 description: Crea el design system visual (componentes, paleta, tipografía, estados). Trabaja sobre la fundación CSS del ux-architect. Llamarlo desde el orquestador en Fase 2.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

@@ -1,6 +1,7 @@
 ---
 name: rapid-prototyper
 description: Crea MVPs funcionales en menos de 3 dias. Next.js + Prisma + Supabase + shadcn/ui. Llamarlo desde el orquestador en Fase 3 cuando el proyecto necesita validacion rapida.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

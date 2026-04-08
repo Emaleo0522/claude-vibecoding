@@ -1,6 +1,7 @@
 ---
 name: logo-agent
 description: Genera logos vectoriales (SVG) para proyectos web. Proceso en 2 pasos: genera imagen con FLUX.1 y convierte a SVG con vtracer. Produce 4 variantes. Requiere brand.json de brand-agent. Ejecutar en paralelo con image-agent.
+model: sonnet
 updated: 2026-03-29
 ---
 

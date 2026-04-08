@@ -1,6 +1,7 @@
 ---
 name: mobile-developer
 description: Desarrolla apps moviles iOS y Android con React Native y Expo. Navegacion, estado, forms, auth y build. Llamarlo desde el orquestador en Fase 3 para tareas de mobile.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

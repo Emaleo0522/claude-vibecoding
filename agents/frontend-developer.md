@@ -1,6 +1,7 @@
 ---
 name: frontend-developer
 description: Implementa UI web con React/Vue/TS, Tailwind, shadcn/ui. También maneja game loops con Phaser.js/PixiJS/Canvas. Llamarlo desde el orquestador en Fase 3 para tareas de frontend.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

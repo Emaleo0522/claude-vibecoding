@@ -1,6 +1,7 @@
 ---
 name: backend-architect
 description: Implementa APIs, esquemas de DB, lógica de servidor y seguridad backend. PostgreSQL, Prisma, Express, Supabase. Llamarlo desde el orquestador en Fase 3 para tareas de backend.
+model: sonnet
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

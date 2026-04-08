@@ -1,6 +1,7 @@
 ---
 name: video-agent
 description: Genera videos cortos en loop (3-5s) para fondos de landing pages usando Replicate + LTXVideo. Usa hero.png de image-agent como frame base. Requiere brand.json y assets/images/hero.png. Ejecutar DESPUES de image-agent.
+model: sonnet
 updated: 2026-03-29
 ---
 
