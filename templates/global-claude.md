@@ -211,44 +211,8 @@ Indice local de descubrimientos que complementa Engram proactive saves:
 - Todo subagente DEBE seguir los patrones definidos ahí (Engram 2-pasos, topic_key obligatorio, Return Envelope estándar)
 - No duplicar esos patrones en los archivos de agente — solo referenciar
 
-### Return Envelope estándar (todos los subagentes)
-```
-STATUS: completado | fallido | PASS | FAIL | CERTIFIED | NEEDS WORK | OK | SAVED | FOUND | NOT_FOUND | BLOCKED (últimos 5: solo agentes utilitarios)
-TAREA: {descripción corta}
-ARCHIVOS: [paths creados/modificados]
-ENGRAM: {proyecto}/{cajon} (topic_key)
-SERVIDOR: puerto {N} (si aplica)
-BLOQUEADORES: [lista] (si hay)
-NOTAS: {máx 3 líneas}
-```
-
-### Coordinación cross-agent (quién lee qué antes de empezar)
-| Agente | DEBE leer antes de empezar | Produce |
-|--------|---------------------------|---------|
-| project-manager-senior | spec del usuario | `{proyecto}/tareas` |
-| ux-architect | `{proyecto}/tareas` | `{proyecto}/css-foundation` |
-| ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
-| security-engineer | `{proyecto}/tareas` | `{proyecto}/security-spec` |
-| frontend-developer | `css-foundation`, `design-system`, `security-spec`, `tareas` | `{proyecto}/tarea-{N}` |
-| backend-architect | `security-spec`, `tareas` | `{proyecto}/tarea-{N}`, `{proyecto}/api-spec` |
-| rapid-prototyper | `tareas` | `{proyecto}/tarea-{N}` |
-| mobile-developer | `design-system`, `tareas` | `{proyecto}/tarea-{N}` |
-| game-designer | `tareas` | `{proyecto}/gdd` |
-| xr-immersive-developer | `gdd`, `css-foundation` | `{proyecto}/tarea-{N}` |
-| evidence-collector | `tarea-{N}` del dev | `{proyecto}/qa-{N}` |
-| seo-discovery | `{proyecto}/tareas`, build de producción | `{proyecto}/seo` |
-| api-tester | `api-spec` | `{proyecto}/api-qa` |
-| performance-benchmarker | URL del servidor | `{proyecto}/perf-report` |
-| reality-checker | `qa-{N}`, `seo`, `api-qa`, `perf-report` | `{proyecto}/certificacion` |
-| brand-agent | spec del usuario | `{proyecto}/branding` |
-| image-agent | `branding` (filesystem: brand.json) | `{proyecto}/creative-images` |
-| logo-agent | `branding` (filesystem: brand.json) | `{proyecto}/creative-logos` |
-| video-agent | `branding`, hero.png | `{proyecto}/creative-video` |
-| git | archivos del proyecto | `{proyecto}/git-commit` |
-| deployer | build del proyecto | `{proyecto}/deploy-url` |
-| codepen-explorer | query del orquestador | `codepen-vault/{slug}` |
-| build-resolver | build output fallido + `{proyecto}/tareas` | `{proyecto}/discovery-build-{slug}` |
-| self-auditor | (standalone — no requiere inputs de Engram) | `system/audit-latest` |
+### Coordinación cross-agent
+Ver tabla completa de inputs/outputs por agente en `orquestador.md` § "Qué cajón lee cada agente".
 
 ## Referencias técnicas (archivos no-agente en `~/.claude/agents/`)
 | Archivo | Usado por | Contenido |
@@ -261,6 +225,10 @@ NOTAS: {máx 3 líneas}
 | `pocketbase-reference.md` | backend-architect | Boolean fields, rules, auth, sort, Docker, HTTPS |
 | `devops-vps-reference.md` | deployer | Mixed Content HTTPS, Oracle Cloud, nginx, Let's Encrypt |
 | `nothing-design-reference.md` | ux-architect, ui-designer, frontend-developer, brand-agent | Nothing Design System v3.0.0 — tokens, componentes, platform mapping |
+| `scroll-storytelling-reference.md` | frontend-developer | Lenis, GSAP ScrollTrigger pinning, snap, horizontal scroll, parallax |
+| `advanced-effects-reference.md` | frontend-developer | Lottie, Rive, cursor effects, magnetic buttons, micro-interactions |
+| `creative-coding-reference.md` | frontend-developer, xr-immersive-developer | p5.js, GLSL shaders, generative art, particle systems |
+| `reactive-audio-reference.md` | frontend-developer, xr-immersive-developer | Tone.js, Web Audio API, audio visualization, sound design |
 
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram
@@ -295,6 +263,10 @@ El orquestador decide el stack en Fase 1 basándose en los requisitos. No hay st
 | Estructura | Single-repo, Monorepo (apps/+packages/) | Monorepo si frontend+backend separados |
 | Mobile | React Native + Expo SDK 52+, NativeWind 4, Expo Router | React Native + Expo (iOS + Android desde un repo) |
 | Animación | CSS transitions (Tier 1), Framer Motion (Tier 2), GSAP (Tier 3) | CSS → Framer → GSAP segun complejidad. Ver `better-gsap-reference.md` para Tier 3 |
+| Scroll avanzado | Lenis + GSAP ScrollTrigger | Lenis (storytelling, smooth scroll), GSAP solo (pinning simple). Ver `scroll-storytelling-reference.md` |
+| Animación vectorial | Lottie, Rive | Lottie (After Effects export), Rive (interactivo con state machines). Ver `advanced-effects-reference.md` |
+| Creative coding | p5.js, GLSL shaders, simplex-noise, Canvas 2D | p5.js (2D generativo), Three.js shaders (3D). Ver `creative-coding-reference.md` |
+| Audio reactivo | Tone.js, Web Audio API | Tone.js (completo), Web Audio nativa (simple). Ver `reactive-audio-reference.md` |
 | Data Viz | Recharts (React), Chart.js (vanilla), D3.js (custom) | Recharts |
 | Linting | ESLint + Stylelint | Siempre |
 | Game 2D | Phaser.js 3, PixiJS, Canvas API | Phaser.js (completo), PixiJS (renderer puro) |

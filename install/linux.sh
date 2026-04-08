@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v3
-# 25 agentes + 8 referencias = 33 archivos | Pipeline de 5 fases
+# 25 agentes + 12 referencias = 37 archivos | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,8 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v3${NC}"
-echo -e "${CYAN}  25 agentes + 8 referencias = 33 archivos | Pipeline de 5 fases${NC}"
+echo -e "${CYAN}  25 agentes + 12 referencias = 37 archivos${NC}"
+echo -e "${CYAN}  Pipeline de 5 fases | 13 hooks reactivos${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
@@ -46,8 +47,21 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# -- 0b. Verificar Claude Code CLI --
+if ! command -v claude &>/dev/null; then
+  echo ""
+  warn "Claude Code CLI no detectado."
+  echo "  Este sistema extiende Claude Code — no funciona sin el."
+  echo "  Instalalo primero: https://docs.anthropic.com/en/docs/claude-code/overview"
+  echo ""
+  read -p "  Continuar de todos modos? [y/N]: " CONTINUE_ANYWAY
+  if [[ ! "$CONTINUE_ANYWAY" =~ ^[Yy]$ ]]; then
+    error "Instala Claude Code CLI primero y vuelve a ejecutar este script."
+  fi
+fi
+
 # -- 1. Verificar dependencias basicas --
-for cmd in git python3 curl; do
+for cmd in git curl; do
   if ! command -v $cmd &>/dev/null; then
     case "$PKG_MGR" in
       apt)    error "$cmd no esta instalado. Instalalo con: sudo apt-get install $cmd" ;;
@@ -58,7 +72,7 @@ for cmd in git python3 curl; do
     esac
   fi
 done
-info "Dependencias basicas: git, python3, curl"
+info "Dependencias basicas: git, curl"
 
 # -- 2. Instalar Node.js si no esta --
 if ! command -v node &>/dev/null; then
@@ -138,7 +152,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 25 agentes + 8 referencias en ~/.claude/agents/ --
+# -- 8. Instalar 25 agentes + 12 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS/skills"
 
@@ -149,7 +163,7 @@ if ls "$REPO_ROOT/agents/skills/"*.md &>/dev/null; then
 fi
 
 AGENT_COUNT=$(ls "$CLAUDE_AGENTS/"*.md 2>/dev/null | wc -l)
-info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
+info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT archivos)"
 
 # -- 8b. Instalar hooks reactivos en ~/.claude/hooks/ --
 CLAUDE_HOOKS="$HOME/.claude/hooks"
@@ -200,10 +214,11 @@ if [[ -f "$SETTINGS_TEMPLATE" ]]; then
   info "settings.json instalado (Engram MCP configurado)"
 else
   # Fallback: configurar via python
-  if [[ ! -f "$CLAUDE_SETTINGS" ]]; then
-    echo '{}' > "$CLAUDE_SETTINGS"
-  fi
-  python3 - <<'PYEOF'
+  if command -v python3 &>/dev/null; then
+    if [[ ! -f "$CLAUDE_SETTINGS" ]]; then
+      echo '{}' > "$CLAUDE_SETTINGS"
+    fi
+    python3 - <<'PYEOF'
 import json, os
 settings_path = os.path.expanduser("~/.claude/settings.json")
 with open(settings_path) as f:
@@ -217,7 +232,10 @@ s["extraKnownMarketplaces"]["engram"] = {
 with open(settings_path, "w") as f:
     json.dump(s, f, indent=2)
 PYEOF
-  info "settings.json configurado via fallback"
+    info "settings.json configurado via fallback"
+  else
+    warn "python3 no disponible y no se encontro template de settings.json — configurar manualmente"
+  fi
 fi
 
 # -- 12. Instalar settings.local.json (permisos) --
@@ -230,7 +248,7 @@ if [[ -f "$LOCAL_TEMPLATE" ]]; then
     warn "settings.local.json existente respaldado en $CLAUDE_LOCAL.bak"
   fi
   cp "$LOCAL_TEMPLATE" "$CLAUDE_LOCAL"
-  info "settings.local.json instalado (permisos para 25 agentes)"
+  info "settings.local.json instalado (permisos para agentes)"
 else
   warn "No se encontro templates/settings.local.json — saltando"
 fi
@@ -284,36 +302,50 @@ if [[ "$INSTALL_PIXEL" =~ ^[Yy]$ ]]; then
     cp -r "$REPO_ROOT/pixel-bridge" "$PIXEL_DEST"
     chmod +x "$PIXEL_DEST/start.sh" 2>/dev/null
 
-    # Install and build
+    # Install and build (optional — don't crash if it fails)
+    PIXEL_OK=true
     cd "$PIXEL_DEST"
-    npm install --silent 2>/dev/null
-    cd webview-ui && npm install --silent 2>/dev/null && cd ..
-    npm run build 2>/dev/null
-
-    # Download assets from pixel-agents
-    echo "  Descargando assets de pixel-agents..."
-    git clone --depth=1 https://github.com/pablodelucca/pixel-agents /tmp/pixel-agents-src 2>&1 || warn "No se pudieron descargar assets de pixel-agents"
-    if [[ -d "/tmp/pixel-agents-src/webview-ui/public/assets" ]]; then
-      ASSETS_SRC="/tmp/pixel-agents-src/webview-ui/public/assets"
-      ASSETS_DEST="$PIXEL_DEST/webview-ui/public/assets"
-      cp -r "$ASSETS_SRC/characters" "$ASSETS_DEST/" 2>/dev/null
-      cp -r "$ASSETS_SRC/floors" "$ASSETS_DEST/" 2>/dev/null
-      cp -r "$ASSETS_SRC/walls" "$ASSETS_DEST/" 2>/dev/null
-      cp -r "$ASSETS_SRC/furniture" "$ASSETS_DEST/" 2>/dev/null
-      cp "$ASSETS_SRC"/default-layout*.json "$ASSETS_DEST/" 2>/dev/null
-      # Rename layout if needed
-      [[ -f "$ASSETS_DEST/default-layout-1.json" && ! -f "$ASSETS_DEST/default-layout.json" ]] && \
-        cp "$ASSETS_DEST/default-layout-1.json" "$ASSETS_DEST/default-layout.json"
-      # Fonts
-      cp /tmp/pixel-agents-src/webview-ui/public/fonts/*.ttf "$ASSETS_DEST/" 2>/dev/null
-      rm -rf /tmp/pixel-agents-src
+    if ! npm install --silent 2>/dev/null; then
+      warn "npm install fallo en pixel-bridge — saltando build"
+      PIXEL_OK=false
     fi
 
-    # Rebuild with assets
-    npm run build 2>/dev/null
+    if [[ "$PIXEL_OK" == true ]] && [[ -d "webview-ui" ]]; then
+      cd webview-ui && npm install --silent 2>/dev/null && cd ..
+      npm run build 2>/dev/null || { warn "Build de pixel-bridge fallo — continuando sin el"; PIXEL_OK=false; }
+    fi
 
-    # Add SessionStart hook to settings.json
-    python3 - <<'PYEOF'
+    # Download assets from pixel-agents
+    if [[ "$PIXEL_OK" == true ]]; then
+      echo "  Descargando assets de pixel-agents..."
+      rm -rf /tmp/pixel-agents-src 2>/dev/null
+      git clone --depth=1 https://github.com/pablodelucca/pixel-agents /tmp/pixel-agents-src 2>&1 || warn "No se pudieron descargar assets de pixel-agents"
+      if [[ -d "/tmp/pixel-agents-src/webview-ui/public/assets" ]]; then
+        ASSETS_SRC="/tmp/pixel-agents-src/webview-ui/public/assets"
+        ASSETS_DEST="$PIXEL_DEST/webview-ui/public/assets"
+        mkdir -p "$ASSETS_DEST"
+        cp -r "$ASSETS_SRC/characters" "$ASSETS_DEST/" 2>/dev/null
+        cp -r "$ASSETS_SRC/floors" "$ASSETS_DEST/" 2>/dev/null
+        cp -r "$ASSETS_SRC/walls" "$ASSETS_DEST/" 2>/dev/null
+        cp -r "$ASSETS_SRC/furniture" "$ASSETS_DEST/" 2>/dev/null
+        cp "$ASSETS_SRC"/default-layout*.json "$ASSETS_DEST/" 2>/dev/null
+        # Rename layout if needed
+        [[ -f "$ASSETS_DEST/default-layout-1.json" && ! -f "$ASSETS_DEST/default-layout.json" ]] && \
+          cp "$ASSETS_DEST/default-layout-1.json" "$ASSETS_DEST/default-layout.json"
+        # Fonts go to fonts dir
+        FONTS_DEST="$PIXEL_DEST/webview-ui/public/fonts"
+        mkdir -p "$FONTS_DEST"
+        cp /tmp/pixel-agents-src/webview-ui/public/fonts/*.ttf "$FONTS_DEST/" 2>/dev/null
+        rm -rf /tmp/pixel-agents-src
+      fi
+
+      # Rebuild with assets
+      npm run build 2>/dev/null || warn "Rebuild con assets fallo"
+    fi
+
+    # Add SessionStart hook to settings.json (only if python3 is available)
+    if command -v python3 &>/dev/null; then
+      python3 - <<'PYEOF'
 import json, os
 settings_path = os.path.expanduser("~/.claude/settings.json")
 with open(settings_path) as f:
@@ -329,9 +361,10 @@ s["hooks"]["SessionStart"] = [{
 with open(settings_path, "w") as f:
     json.dump(s, f, indent=2)
 PYEOF
+    fi
 
+    cd "$REPO_ROOT"
     info "Pixel Bridge instalado en $PIXEL_DEST"
-    info "Auto-inicio configurado via SessionStart hook"
     info "Abrir http://localhost:3456 para ver la oficina"
   else
     warn "No se encontro pixel-bridge/ en el repo — saltando"
@@ -348,7 +381,7 @@ echo -e "${CYAN}============================================${NC}"
 echo ""
 info "Git:       $GIT_NAME <$GIT_EMAIL>"
 info "GitHub:    $GH_USER"
-info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT agentes)"
+info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT archivos: 25 agentes + 12 referencias)"
 info "Hooks:     ~/.claude/hooks/ ($HOOK_COUNT hooks reactivos)"
 info "MCPs:      Engram (memoria) configurado en settings.json"
 info "Permisos:  settings.local.json con permisos para todos los agentes"
@@ -356,10 +389,13 @@ info "CLAUDE.md: $GLOBAL_CLAUDE (instrucciones del sistema)"
 echo ""
 echo -e "${YELLOW}IMPORTANTE: Reinicia Claude Code para activar los MCPs.${NC}"
 echo ""
-echo "Para empezar, abri Claude Code y escribi:"
-echo "  @orquestador quiero crear [tu idea]"
+echo "Para verificar la instalacion completa:"
+echo "  node ~/.claude/hooks/audit-system.js"
 echo ""
-echo "Agentes disponibles (25 agentes + 8 referencias = 33 archivos):"
+echo "Para empezar, abri Claude Code y escribi:"
+echo "  modo orquestador — quiero crear [tu idea]"
+echo ""
+echo "Agentes disponibles (25 agentes + 12 referencias = 37 archivos):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"
@@ -371,5 +407,7 @@ echo "  Fase 4: seo-discovery, api-tester, performance-benchmarker, reality-chec
 echo "  Fase 5: git, deployer"
 echo "  Misc: self-auditor"
 echo "  Refs: agent-protocol, better-auth, better-gsap, react-patterns,"
-echo "        redis-patterns, pocketbase, devops-vps, nothing-design"
+echo "        redis-patterns, pocketbase, devops-vps, nothing-design,"
+echo "        scroll-storytelling, advanced-effects, creative-coding,"
+echo "        reactive-audio"
 echo ""

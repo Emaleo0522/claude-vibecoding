@@ -4,13 +4,14 @@
 
 A central orchestrator coordinates 24 specialized AI sub-agents (25 entities total) through a 5-phase pipeline: planning, architecture, development with visual QA, certification, and deployment. 13 reactive hooks enforce security, quality gates, and cost tracking in real time. Persistent memory via Engram MCP enables session continuity and cross-agent coordination.
 
-Compatible with **Linux (Claude Code)** and **Windows (Claude Desktop)**.
+Compatible with **Linux (Claude Code CLI)** and **Windows (Claude Desktop)**.
 
 ---
 
 ## Key Features
 
 - **25 specialized agents** -- 1 orchestrator + 24 sub-agents, each with defined tools and responsibilities
+- **12 technical references** -- shared protocol, auth, animation, design systems, creative coding, and more
 - **5-phase pipeline** -- Planning, Architecture, Dev+QA loop, Certification, Deployment
 - **13 reactive hooks** -- Security blocks, quality gates, cost tracking, context management
 - **Persistent memory** -- Engram MCP for cross-session state, DAG-based progress tracking
@@ -63,7 +64,7 @@ Phase 5: Deployment      -> git -> deployer (with user confirmation)
 | 5 | `deployer` | Deploy to Vercel + Git Integration for auto-deploy |
 | -- | `self-auditor` | Validates system health: agents, hooks, settings, protocols |
 
-### Technical References (8 files)
+### Technical References (12 files)
 
 | File | Content |
 |------|---------|
@@ -75,6 +76,10 @@ Phase 5: Deployment      -> git -> deployer (with user confirmation)
 | `pocketbase-reference` | PocketBase boolean gotchas, rules, auth, Docker, HTTPS |
 | `devops-vps-reference` | Mixed Content HTTPS, Oracle Cloud, nginx, Let's Encrypt |
 | `nothing-design-reference` | Nothing Design System v3.0.0 -- tokens, components, platform mapping |
+| `scroll-storytelling-reference` | Lenis, GSAP ScrollTrigger pinning, snap, horizontal scroll, parallax |
+| `advanced-effects-reference` | Lottie, Rive, cursor effects, magnetic buttons, micro-interactions |
+| `creative-coding-reference` | p5.js, GLSL shaders, generative art, particle systems |
+| `reactive-audio-reference` | Tone.js, Web Audio API, audio visualization, sound design |
 
 ---
 
@@ -104,13 +109,18 @@ Phase 5: Deployment      -> git -> deployer (with user confirmation)
 
 ### Prerequisites
 
-| Platform | Requirements |
-|----------|-------------|
-| Linux | Ubuntu/Debian, Claude Code CLI, git, Node.js (auto-installed if missing) |
-| Windows | Git for Windows (Git Bash), Claude Desktop, Node.js |
+Before starting, you need:
+
+| Platform | You need installed first | Download |
+|----------|------------------------|----------|
+| **Linux** | **Claude Code CLI**, git, Node.js | [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) |
+| **Windows** | **Claude Desktop**, Git for Windows (includes Git Bash), Node.js | [Claude Desktop](https://claude.ai/download), [Git](https://git-scm.com/download/win), [Node.js](https://nodejs.org) |
+
+> **Important:** Claude Code (Linux) or Claude Desktop (Windows) must be installed first. This system extends Claude with agents and hooks -- it does not work without it.
 
 ### Linux (Claude Code)
 
+Open a terminal and run:
 ```bash
 git clone https://github.com/Emaleo0522/claude-vibecoding.git
 cd claude-vibecoding
@@ -121,17 +131,18 @@ The script installs agents, hooks, CLAUDE.md, settings, and configures git/GitHu
 
 ### Windows (Claude Desktop)
 
+Open **Git Bash** (installed with Git for Windows) and run:
 ```bash
 git clone https://github.com/Emaleo0522/claude-vibecoding.git
 cd claude-vibecoding
 ```
 
-Follow the step-by-step guide in [`install/windows.md`](install/windows.md).
+Then follow the step-by-step guide in [`install/windows.md`](install/windows.md). It walks you through everything with screenshots-friendly instructions.
 
 ### Post-Install Verification
 
 ```bash
-# Agents installed (should be 33: 25 agents + 8 references)
+# Agents installed (should be 37: 25 agents + 12 references)
 ls ~/.claude/agents/*.md | wc -l
 
 # Hooks installed (should be 13)
@@ -142,6 +153,9 @@ head -3 ~/CLAUDE.md
 
 # Tools available
 git --version && node --version && gh --version && vercel --version
+
+# Full system health check (optional but recommended)
+node ~/.claude/hooks/audit-system.js
 ```
 
 ---
@@ -150,25 +164,42 @@ git --version && node --version && gh --version && vercel --version
 
 ### Engram MCP (required)
 
-Engram provides persistent memory across sessions. It is configured automatically during installation via `settings.json`. On Windows, it requires downloading the binary separately (see `install/windows.md`).
+Engram is the persistent memory system that lets the orchestrator and agents remember decisions, progress, and context across sessions. Without it, every conversation starts from scratch.
+
+It is configured automatically during installation via `settings.json`. On Windows, it also requires downloading the Engram binary separately (see `install/windows.md`).
+
+### Engram Sync (optional)
+
+The `engram-sync` hook automatically pushes Engram memories to a private GitHub repo when a session ends. This enables:
+- **Cross-machine continuity** -- start on your desktop, resume on laptop
+- **Backup** -- memories survive even if your local Engram DB is deleted
+
+To set it up:
+1. Create a private GitHub repo (e.g., `my-engram-sync`)
+2. Initialize it in `~/.engram/`: `cd ~/.engram && git init && git remote add origin https://github.com/YOUR_USER/my-engram-sync.git`
+3. The `engram-sync` hook (already installed) handles the rest automatically
 
 ### Creative Pipeline Environment Variables (optional)
 
-Required only if your project uses AI-generated visual assets (Phase 2B).
+Required only if your project uses AI-generated visual assets (Phase 2B: logos, images, videos).
 
-| Variable | Service | Cost | Used By |
-|----------|---------|------|---------|
-| `GEMINI_API_KEY` | Google AI Studio | ~$0.02-0.04/image (billing required) | image-agent, logo-agent |
-| `HF_TOKEN` | HuggingFace | Free | image-agent, logo-agent |
-| `REPLICATE_API_TOKEN` | Replicate | ~$0.05/video | video-agent |
+| Variable | Service | Cost | How to get it |
+|----------|---------|------|---------------|
+| `GEMINI_API_KEY` | Google AI Studio | ~$0.02-0.04/image | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) -- requires billing enabled |
+| `HF_TOKEN` | HuggingFace | Free | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| `REPLICATE_API_TOKEN` | Replicate | ~$0.05/video | [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens) |
 
 At least one image key (`GEMINI_API_KEY` or `HF_TOKEN`) is needed for the creative pipeline. If both are set, Gemini is primary with HuggingFace as fallback.
+
+**Where to put them:**
+- **Linux:** Add to `~/.bashrc` or `~/.zshrc`: `export GEMINI_API_KEY="your-key-here"`
+- **Windows:** Add to system environment variables (Settings -> System -> About -> Advanced system settings -> Environment Variables), or create a file at `~/.claude/.env` with one variable per line: `GEMINI_API_KEY=your-key-here`
 
 ### Pixel Bridge (optional)
 
 A pixel art office where agents walk to their desks when assigned tasks, report back to the orchestrator, and idle when inactive. Purely visual, does not affect pipeline operation.
 
-Install during `linux.sh` (prompted) or manually in Claude Desktop.
+Install during `linux.sh` (prompted) or follow the instructions in `install/windows.md`.
 
 ---
 
@@ -203,7 +234,7 @@ The orchestrator reads the DAG State from Engram and resumes exactly where it le
 
 ```
 ~/.claude/
-|-- agents/            # 25 agents + 8 references = 33 files
+|-- agents/            # 25 agents + 12 references = 37 files
 |-- hooks/             # 13 reactive hooks
 |-- settings.json      # hook config + Engram MCP
 |-- settings.local.json # agent permissions
@@ -247,6 +278,9 @@ The orchestrator selects the stack in Phase 1 based on project requirements. The
 | Games 2D | Phaser.js 3, PixiJS, Canvas API | Phaser.js |
 | Games 3D | Three.js, Babylon.js | Three.js |
 | Animation | CSS (Tier 1), Framer Motion (Tier 2), GSAP (Tier 3) | Escalate by complexity |
+| Scroll | Lenis + GSAP ScrollTrigger | Lenis (storytelling), GSAP (pinning) |
+| Creative | p5.js, GLSL shaders, Canvas 2D | p5.js (2D), Three.js shaders (3D) |
+| Audio | Tone.js, Web Audio API | Tone.js (complete), Web Audio (simple) |
 
 ---
 
@@ -273,4 +307,4 @@ The orchestrator selects the stack in Phase 1 based on project requirements. The
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+MIT
