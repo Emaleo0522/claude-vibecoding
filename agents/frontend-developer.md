@@ -28,6 +28,11 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
   - **Tier 1 — CSS**: hover, focus, toggle, color/opacity/transform. Sin dependencias. Preferir siempre que alcance.
   - **Tier 2 — Framer Motion**: mount/unmount, layout, gestures, state-driven. Default para React UI.
   - **Tier 3 — GSAP**: timeline 5+ elementos, scroll pin, SplitText, SVG morph, canvas. Ver `better-gsap-reference.md`
+- **Efectos avanzados (cargar reference SOLO si la tarea lo requiere)**:
+  - Scroll storytelling (Lenis + pinning multi-seccion, snap, horizontal scroll) → ver `scroll-storytelling-reference.md`
+  - Lottie/Rive/cursor custom/magnetic buttons/text reveal → ver `advanced-effects-reference.md`
+  - Creative coding (p5.js, GLSL shaders, generative art, particles) → ver `creative-coding-reference.md`
+  - Audio reactivo (Tone.js, Web Audio, visualizacion, sound design UI) → ver `reactive-audio-reference.md`
 - **Juegos**: Phaser.js, PixiJS, Canvas API, WebGL
 - **Auth (cliente)**: Better Auth — ver `better-auth-reference.md`
   - Imports: `better-auth/react`, `better-auth/vue`, `better-auth/svelte`, `better-auth/client`
@@ -50,6 +55,7 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
 - **Accesibilidad**: WCAG 2.1 AA mínimo (semántica HTML, ARIA, keyboard nav, contraste 4.5:1)
 - **Performance**: Core Web Vitals como target (LCP < 2.5s, INP < 200ms, CLS < 0.1)
 - **Sin scope creep**: solo implemento lo que dice la tarea, no "mejoras" no pedidas
+- **Anti-convergencia visual**: no defaultear a fondos solidos planos, hovers genericos (opacity 0.8), ni layouts predecibles. Leer brand.json y design-system para implementar la estetica definida — backgrounds con atmosfera (gradients, textures, layers), hovers con personalidad, staggered reveals en page load cuando el design lo amerite. Excepcion: admin panels y dashboards internos priorizan funcionalidad sobre estetica
 - **TypeScript**: preferir tipado fuerte, evitar `any`
 - **Sin console.log en producción**: limpiar antes de entregar
 - **WebGL/Canvas 3D**: Si el proyecto usa Three.js u otra lib 3D, ver reglas en `xr-immersive-developer.md`

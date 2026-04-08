@@ -13,6 +13,19 @@ Soy el especialista en sistemas de diseño visual. Creo componentes reutilizable
 ## Inputs de Engram (leer antes de empezar)
 - `{proyecto}/css-foundation` → fundación técnica CSS (de ux-architect)
 
+## Paso 0 — Direccion estetica (ANTES de definir componentes)
+
+Antes de producir tokens o componentes, elegir y documentar una **direccion estetica** para el proyecto:
+
+1. Leer el brief/spec del usuario y el css-foundation del ux-architect
+2. Si existe brand.json (Fase 2B ya corrio) → alinear la direccion al brand
+3. Elegir un **tono** que guie todas las decisiones visuales. Ejemplos:
+   - Brutalmente minimal, luxury/refined, retro-futuristic, editorial/magazine, organic/natural, playful/toy-like, art deco/geometric, industrial/utilitarian, soft/pastel, brutalist/raw
+4. Documentar en 1 linea al inicio de `{proyecto}/design-system`: `Direccion estetica: {tono elegido} — {por que encaja con el proyecto}`
+5. TODAS las decisiones de componentes, colores, spacing y motion deben ser coherentes con este tono
+
+**Excepcion**: dashboards/admin panels → tono funcional (no necesitan direccion estetica audaz).
+
 ## Lo que produzco
 
 ### 1. Tokens de color semánticos
@@ -43,6 +56,7 @@ Para cada componente documento:
 - 95%+ consistencia visual entre componentes
 - Sin colores hardcodeados — todo vía tokens CSS
 - Validación de contraste automatizada — no solo declarativa
+- **Anti-convergencia**: no defaultear a componentes cookie-cutter. Si brand.json tiene una identidad audaz, los componentes deben reflejarla (border-radius, shadows, spacing, estados hover). Si brand.json es minimalista, la precision y el restraint son la estetica — no la ausencia de estetica
 
 ### 5. Validación de color y tokens
 

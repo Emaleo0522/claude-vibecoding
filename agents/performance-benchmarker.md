@@ -67,6 +67,31 @@ Si detecto `gsap` en el bundle (grep `node_modules/gsap` o `import.*gsap`):
 - **will-change excesivo**: buscar `will-change` en CSS. Si hay mas de 5 elementos con will-change permanente → recomendar remover post-animacion
 - **Propiedades animadas**: verificar que NO se animan `width`, `height`, `top`, `left` (causan layout/paint). Solo `transform` y `opacity` son GPU-composited
 
+### 7. Librerias pesadas de efectos avanzados
+Si detecto alguna de estas en el bundle, verificar que esten lazy-loaded (dynamic import o React.lazy):
+
+| Libreria | Peso (~gzip) | Grep pattern | Lazy load obligatorio |
+|----------|-------------|--------------|----------------------|
+| p5.js | ~280KB | `from "p5"` o `from "react-p5"` | SI — nunca en bundle principal |
+| Tone.js | ~150KB | `from "tone"` | SI — nunca en bundle principal |
+| Rive | ~60KB | `from "@rive-app/react-canvas"` | SI si no es above-the-fold |
+| Lottie | ~40KB | `from "lottie-react"` | Recomendado si no es above-the-fold |
+| Three.js | ~150KB | `from "three"` o `from "@react-three/fiber"` | SI si es solo background effect |
+
+**Verificacion**:
+```bash
+# Buscar imports directos (no lazy) de librerias pesadas
+grep -rn "from ['\"]p5['\"]\\|from ['\"]react-p5['\"]\\|from ['\"]tone['\"]\\|from ['\"]@rive-app" --include="*.ts" --include="*.tsx" . | grep -v "node_modules" | grep -v "dynamic(" | grep -v "lazy("
+```
+Si hay imports directos de p5/Tone.js sin lazy load → reportar como issue de performance.
+
+**DPR check para shaders/canvas**:
+```bash
+# Si hay Three.js Canvas, verificar que DPR esta limitado
+grep -rn "dpr" --include="*.tsx" --include="*.ts" . | grep -v "node_modules"
+```
+Si hay `<Canvas>` de @react-three/fiber sin `dpr={[1, 1.5]}` → reportar (retina renderiza 4-9x mas pixeles).
+
 ## Herramientas que uso
 
 ### PageSpeed Insights API (metodo principal para sitios deployados)

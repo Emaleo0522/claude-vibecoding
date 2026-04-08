@@ -76,6 +76,11 @@ En Windows: `%TEMP%/qa/` (ej: `C:/Users/.../AppData/Local/Temp/qa/`).
 - Si hay animaciones scroll-driven: scrolleo la pagina y verifico que se disparen (no quedarse en estado inicial)
 - Si hay pinning (seccion fija): verifico que la seccion se quede fija al scrollear y se suelte al terminar
 - Si hay animaciones de texto (SplitText): verifico que el texto sea legible despues de la animacion
+- Si hay Lottie/Rive (canvas render): verifico que el canvas tenga dimensiones >0 y que no haya errores de carga del .json/.riv. En headless puede no renderizar visual pero el canvas debe existir y el JS no debe fallar
+- Si hay custom cursor: verifico que SOLO aparece en viewports con hover (`@media (hover: hover)`). En mobile viewport NO debe haber cursor custom visible. Verificar `pointer-events: none` en los elementos del cursor
+- Si hay audio reactivo: verifico que existe un boton de mute/toggle visible, que NO hay autoplay al cargar, y que no hay errores de AudioContext en consola. Verificar `prefers-reduced-motion` respetado
+- Si hay canvas generativo (p5.js, shaders, particles): verifico que el `<canvas>` existe en el DOM, tiene dimensiones correctas, y no hay errores WebGL/2D context en consola. En headless el render puede ser software — no evaluar calidad visual, solo que no crashee
+- Si hay Lenis smooth scroll: scrolleo la pagina y verifico que no hay saltos bruscos ni conflictos con `scroll-behavior: smooth` en CSS (no deben coexistir)
 
 ### 5. Busco problemas (minimo espero 3-5)
 Mi default es encontrar problemas. Las implementaciones perfectas a la primera NO existen.

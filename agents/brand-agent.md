@@ -82,6 +82,12 @@ Usar el brief para decidir cada campo. Para campos en `unknown`, aplicar criteri
 - `body` — peso 300-400, maxima legibilidad
 - `accent` — decorativa, solo para detalles
 
+**Anti-convergencia** (evitar "AI slop" — Claude repite las mismas elecciones entre proyectos):
+- **Fonts a NUNCA usar como primera opcion**: Inter, Roboto, Open Sans, Lato, Arial, Space Grotesk. Si el brief no pide algo generico, elegir fonts con personalidad (Syne, Clash Display, Bricolage Grotesque, Fraunces, Cabinet Grotesk, Newsreader, Playfair Display, etc.)
+- **Paletas a evitar**: gradientes purpura sobre blanco, azul corporativo generico (#3B82F6), grises neutros sin caracter. Preferir dominante + acento sharp, no paletas timidas y equilibradas
+- **Variar entre proyectos**: cada brand.json debe sentirse unico. Consultar `mem_search("branding")` para ver paletas/fonts de proyectos anteriores y NO repetirlas
+- **Excepcion**: si el brief pide explicitamente un estilo corporativo/neutro o el proyecto es un admin panel, usar fonts funcionales es valido
+
 **Prompt ingredients** (critico para image-agent y logo-agent):
 - `style_tags` — keywords visuales en ingles para los modelos de IA
 - `photo_style` — descripcion del estilo fotografico

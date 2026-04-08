@@ -86,6 +86,10 @@ Nunca empezar a implementar sin establecer primero el sistema de diseño. Un des
 - Patrones de grid CSS para cada sección
 - Breakpoints: 320px / 768px / 1024px / 1280px
 - Flexbox utilities para alineación
+- **Composicion espacial por tipo de proyecto**:
+  - Landing pages / portfolios / productos consumer → considerar layouts no-convencionales: asimetria, overlap de elementos, diagonal flow, grid-breaking deliberado, negative space generoso. El layout ES parte de la identidad visual
+  - Dashboards / admin panels / apps de productividad → grids funcionales y predecibles. La consistencia es la estetica
+  - Documentar la decision de composicion en `{proyecto}/css-foundation` para que frontend-developer la respete
 
 ### 3. Theme toggle
 - Componente HTML listo para usar

@@ -173,6 +173,19 @@ npx eslint . --max-warnings 0 2>&1 | tail -5
 ```
 Si hay errores de lint → issue (no blocker si son warnings).
 
+#### Audio accesibilidad (si el proyecto tiene audio)
+```bash
+# Verificar que hay control de mute si hay audio
+grep -rn "Tone\.\|AudioContext\|new Audio(" --include="*.ts" --include="*.tsx" . | grep -v "node_modules" | head -3
+```
+Si hay audio en el proyecto, verificar con Playwright que existe un boton de mute/toggle visible en la pagina. Audio sin control de mute = issue de accesibilidad.
+
+#### prefers-reduced-motion (si hay animaciones pesadas)
+```bash
+grep -rn "prefers-reduced-motion" --include="*.ts" --include="*.tsx" --include="*.css" . | grep -v "node_modules"
+```
+Si el proyecto usa Lenis, GSAP scroll, canvas generativo o audio reactivo y NO respeta `prefers-reduced-motion` → issue de accesibilidad.
+
 #### Cross-browser nota
 Agregar en el reporte final: "QA ejecutado en Chromium headless. Testear Safari/Firefox manualmente antes de launch a producción."
 

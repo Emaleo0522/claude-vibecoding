@@ -816,67 +816,9 @@ Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion):
 2. `mem_search("{proyecto}/estado")` → `mem_get_observation(id)` → leer DAG State
 3. Continuar desde la tarea/fase indicada en DAG State
 
-## Return Envelope Standard (todos los subagentes)
+## Return Envelope Standard
 
-Cada subagente devuelve al orquestador usando EXACTAMENTE uno de estos formatos:
-
-### Agentes Fase 2 (ux-architect, ui-designer, security-engineer)
-```
-STATUS: completado | fallido
-TAREA: {descripcion breve de lo entregado}
-ARCHIVOS: [rutas de archivos creados]
-ENGRAM: {proyecto}/{css-foundation | design-system | security-spec}
-NOTAS: {solo si hay bloqueadores}
-```
-
-### Agentes Dev — Fase 3 (frontend, backend, rapid-prototyper, mobile, xr, game-designer)
-```
-STATUS: completado | fallido
-TAREA: {N} — {titulo}
-ARCHIVOS: [lista de rutas modificadas]
-SERVIDOR: puerto {N} | no requerido
-ENGRAM: {proyecto}/tarea-{N}
-NOTAS: {solo si hay bloqueadores o desviaciones}
-```
-
-### Agentes Creativos — Fase 2B (brand-agent, image-agent, logo-agent, video-agent)
-```
-STATUS: completado | fallido
-TAREA: {descripcion del asset generado}
-ARCHIVOS: [rutas de assets creados]
-ENGRAM: {proyecto}/branding | {proyecto}/creative-images | {proyecto}/creative-logos | {proyecto}/creative-video
-COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
-NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
-```
-
-### Agentes QA (evidence-collector)
-```
-STATUS: PASS | FAIL
-TAREA: {N}
-RATING: {D..B+}
-SCREENSHOTS: [rutas en /tmp/qa/]
-ISSUES: [{N} encontrados — lista breve]
-ENGRAM: {proyecto}/qa-{N}
-```
-
-### Agentes Fase 4 (seo, api-tester, performance, reality-checker)
-```
-STATUS: PASS | NEEDS WORK | CERTIFIED
-RESUMEN: {1-2 lineas de resultado}
-METRICAS: {key=value, key=value}
-BLOCKERS: [{N} — lista si NEEDS WORK]
-ENGRAM: {proyecto}/{cajon-correspondiente}
-```
-
-### Agentes Fase 5 (git, deployer)
-```
-STATUS: completado | fallido
-RESULTADO: {URL, commit hash, deploy URL}
-INFO_SIGUIENTE: {datos que el siguiente agente necesita}
-ENGRAM: {proyecto}/{cajon}
-```
-
-**Regla**: si un agente devuelve algo que NO sigue este formato, el orquestador pide que lo reformatee antes de procesar.
+Cada subagente usa el Return Envelope definido en su propio archivo `.md`. Formato base en `agent-protocol.md`.
 
 ### Validación post-retorno de subagente
 Después de que un subagente retorna su envelope:
@@ -943,35 +885,6 @@ Antes de spawnear un subagente, verificar estos 3 puntos (~50 tokens):
    → Si no: actualizar DAG State con `tarea_actual: {N}`
 
 **Este check previene el caso critico**: delego tarea 6, olvido registrar que tarea 5 completo, la sesion se compacta → tarea 5 se pierde. Con el health check, tarea 5 SIEMPRE esta guardada antes de que tarea 6 arranque.
-
----
-
-## Agentes Disponibles
-
-| Rol | Agente | Cuándo usarlo |
-|-----|--------|---------------|
-| Planificación | `project-manager-senior` | Fase 1: convertir spec en tareas |
-| Arquitectura CSS | `ux-architect` | Fase 2: foundation antes de escribir código |
-| Design system | `ui-designer` | Fase 2: componentes y visual |
-| Seguridad | `security-engineer` | Fase 2: threat model y OWASP |
-| Identidad visual | `brand-agent` | Fase 2B: brand.json con paleta, tipografía, prompts IA |
-| Imágenes | `image-agent` | Fase 2B: hero.png, thumbnail.png via Gemini/HuggingFace |
-| Logo | `logo-agent` | Fase 2B: logo SVG vectorizado (4 variantes) |
-| Video loop | `video-agent` | Fase 2B: bg-loop.mp4 para fondos (requiere hero.png) |
-| Frontend web/app | `frontend-developer` | Fase 3: UI, componentes, estilos |
-| App móvil iOS/Android | `mobile-developer` | Fase 3: React Native + Expo, pantallas, navegación |
-| Backend/DB | `backend-architect` | Fase 3: API, esquemas, lógica |
-| MVP rápido | `rapid-prototyper` | Fase 3: validación de hipótesis |
-| Juego (diseño) | `game-designer` | Fase 3: GDD, mecánicas, balance |
-| Juego (código) | `xr-immersive-developer` | Fase 3: canvas, WebGL, game loop |
-| Efectos CodePen | `codepen-explorer` | Fase 3: buscar/extraer efectos de CodePen a disco |
-| QA por tarea | `evidence-collector` | Fase 3: validación con screenshots |
-| SEO & AI Discovery | `seo-discovery` | Fase 4: meta tags, JSON-LD, sitemap, llms.txt, robots.txt |
-| QA APIs | `api-tester` | Fase 4: cobertura de endpoints |
-| Performance | `performance-benchmarker` | Fase 4: Core Web Vitals |
-| Certificación | `reality-checker` | Fase 4: gate final pre-producción |
-| Git | `git` | Fase 5: commit + push a GitHub (con confirmación) |
-| Deploy | `deployer` | Fase 5: deploy a Vercel via CLI (con confirmación) |
 
 ---
 

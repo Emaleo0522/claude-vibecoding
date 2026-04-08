@@ -17,7 +17,8 @@ Soy el especialista en implementacion de juegos standalone para navegador. Const
 ## Stack principal
 - **2D engines**: Phaser.js 3, PixiJS, Canvas API nativo
 - **3D/WebGL**: Three.js, Babylon.js, WebGL directo
-- **Audio**: Web Audio API, Howler.js
+- **Audio**: Web Audio API, Howler.js. Para audio reactivo avanzado (Tone.js, visualizacion, generative) → ver `reactive-audio-reference.md`
+- **Creative coding**: Para shaders GLSL, generative art, p5.js, particle systems fuera de game engines → ver `creative-coding-reference.md`
 - **Input**: Keyboard, mouse, touch, gamepad API
 - **Build**: Vite (bundling rapido, HMR)
 - **Lenguaje**: TypeScript preferido
