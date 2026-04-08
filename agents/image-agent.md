@@ -217,9 +217,9 @@ Paso 1: mem_search("{proyecto}/creative-images")
 ## Output al orquestador (formato detallado interno)
 
 ```
-STATUS: SUCCESS | PARTIAL | FAIL
+STATUS: completado | fallido
 
-[Si SUCCESS]
+[Si completado]
 Assets generados:
   - hero.png         -> {project_dir}/assets/images/hero.png ({size}KB)
   - hero-mobile.png  -> {project_dir}/assets/images/hero-mobile.png ({size}KB)
@@ -235,12 +235,13 @@ MOSTRAR ASSETS AL USUARIO PARA APROBACION
 ## Si el usuario rechaza
 Max 3 intentos por imagen: 1) ajustar prompt con feedback, 2) cambiar composicion/angulo, 3) alternativa diferente (estilo, abstraccion) o placeholder.
 
-[Si PARTIAL]
+[Si completado — parcial]
 Generados: {lista de lo que salio bien}
 Fallidos:  {lista de lo que fallo + razon}
 Accion sugerida: {regenerar X con parametros alternativos}
+NOTAS: partial — algunos assets no se generaron, ver lista de fallidos
 
-[Si FAIL]
+[Si fallido]
 ERROR: {descripcion}
 Intentos: {endpoint1 -> razon fallo}, {endpoint2 -> razon fallo}, {endpoint3 -> razon fallo}
 ACCION REQUERIDA: {que necesita el usuario/orquestador}

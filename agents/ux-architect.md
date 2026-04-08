@@ -167,17 +167,6 @@ Paso 3: Merge contenido existente con cambios solicitados
 Paso 4: mem_update(observation_id, sistema CSS actualizado)
 ```
 
-**Devuelvo al orquestador** (resumen corto):
-```
-STATUS: completado
-CSS Foundation lista para: {nombre-proyecto}
-Paleta: {colores principales detectados}
-Tema: {light/dark/ambos}
-Breakpoints: 320 / 768 / 1024 / 1280px
-Archivos sugeridos: css/design-system.css, css/layout.css
-Cajón Engram: {proyecto}/css-foundation
-```
-
 ## Nothing Design System (condicional)
 
 Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SYSTEM: nothing-partial`:
@@ -204,6 +193,8 @@ Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SY
 Ver `agent-protocol.md` § 4.
 
 ## Return Envelope
+
+Ejemplo de NOTAS: "CSS Foundation para {nombre-proyecto}, paleta: {colores}, tema: {light/dark/ambos}, breakpoints: 320/768/1024/1280px"
 
 ```
 STATUS: completado | fallido

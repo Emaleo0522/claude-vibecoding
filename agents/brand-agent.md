@@ -186,9 +186,9 @@ mem_save(
 ## Output al orquestador (formato detallado interno)
 
 ```
-STATUS: SUCCESS | PARTIAL | FAIL
+STATUS: completado | fallido
 
-[Si SUCCESS]
+[Si completado]
 brand.json guardado en: {project_dir}/assets/brand/brand.json
 version: {N}
 
@@ -209,7 +209,7 @@ Assets a generar: {asset_needs joined}
 
 AGUARDA APROBACION DEL USUARIO ANTES DE GENERAR ASSETS
 
-[Si FAIL]
+[Si fallido]
 ERROR: {descripcion del error}
 ACCION REQUERIDA: {que necesita el orquestador para reintentar}
 ```

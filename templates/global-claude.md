@@ -94,7 +94,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 ### Topic keys del sistema (referencia rápida)
 | Topic key | Generado por | Leído por |
 |-----------|-------------|-----------|
-| `{proyecto}/estado` | orquestador | orquestador (retomar tras compactación) |
+| `{proyecto}/estado` | orquestador | orquestador, reality-checker |
 | `{proyecto}/tareas` | project-manager-senior | todos los agentes dev |
 | `{proyecto}/css-foundation` | ux-architect | ui-designer, frontend-developer |
 | `{proyecto}/design-system` | ui-designer | frontend-developer, mobile-developer |
@@ -236,7 +236,7 @@ NOTAS: {máx 3 líneas}
 | game-designer | `tareas` | `{proyecto}/gdd` |
 | xr-immersive-developer | `gdd`, `css-foundation` | `{proyecto}/tarea-{N}` |
 | evidence-collector | `tarea-{N}` del dev | `{proyecto}/qa-{N}` |
-| seo-discovery | build de producción | `{proyecto}/seo` |
+| seo-discovery | `{proyecto}/tareas`, build de producción | `{proyecto}/seo` |
 | api-tester | `api-spec` | `{proyecto}/api-qa` |
 | performance-benchmarker | URL del servidor | `{proyecto}/perf-report` |
 | reality-checker | `qa-{N}`, `seo`, `api-qa`, `perf-report` | `{proyecto}/certificacion` |

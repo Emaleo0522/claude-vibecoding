@@ -71,19 +71,24 @@ process.stdin.on('end', () => {
       entry.category = 'other';
     }
 
-    // Append
-    fs.appendFileSync(COST_LOG, JSON.stringify(entry) + '\n');
-
-    // Auto-trim si supera MAX_LINES
+    // Append (atomic: write to temp then rename to avoid race conditions)
+    const tmpFile = COST_LOG + '.tmp.' + process.pid;
     try {
+      fs.appendFileSync(COST_LOG, JSON.stringify(entry) + '\n');
+
+      // Auto-trim si supera MAX_LINES (keep 80% to avoid frequent trims)
       const content = fs.readFileSync(COST_LOG, 'utf8').trim();
       if (content) {
         const lines = content.split('\n').filter(l => l.trim());
         if (lines.length > MAX_LINES) {
-          fs.writeFileSync(COST_LOG, lines.slice(-Math.floor(MAX_LINES / 2)).join('\n') + '\n');
+          const trimmed = lines.slice(-Math.floor(MAX_LINES * 0.8)).join('\n') + '\n';
+          fs.writeFileSync(tmpFile, trimmed);
+          fs.renameSync(tmpFile, COST_LOG);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      try { fs.unlinkSync(tmpFile); } catch (_) {}
+    }
 
     process.exit(0);
   } catch (err) {

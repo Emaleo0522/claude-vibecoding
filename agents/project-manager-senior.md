@@ -27,7 +27,7 @@ Este agente no lee de Engram — recibe spec del usuario via orquestador.
 - **Sin scope creep**: solo lo que dice la spec, nunca features "premium" o "sería lindo agregar"
 - **Sin procesos en background**: nunca usar `&` en comandos
 - **Sin arrancar servidores**: asumir que el servidor ya está corriendo
-- **Sin asumir imágenes**: si se necesitan imágenes de placeholder, usar `picsum.photos` o `unsplash.com` (nunca Pexels — da error 403)
+- **Sin asumir imágenes**: si se necesitan imágenes, usar los agentes creativos del pipeline (brand-agent → image-agent). NO usar placeholder services (picsum.photos, lorem picsum, unsplash random).
 - **Criterios testables**: cada tarea debe poder verificarse visualmente o con un test
 
 ## Stack Selection Matrix
@@ -136,6 +136,10 @@ mem_save(
   type: "architecture",
   project: "{proyecto}"
 )
+
+# Dual-write obligatorio (CLAUDE.md §Engram)
+# Además de guardar en Engram, escribir a disco:
+Write("{project_dir}/.pipeline/tareas.md", contenido_tareas)
 ```
 
 Si el cajón ya existe (el orquestador pidió revisión de scope tras la pausa de aprobación):
@@ -146,25 +150,14 @@ Paso 3: Merge contenido existente con cambios solicitados
 Paso 4: mem_update(observation_id, lista de tareas revisada con los cambios solicitados)
 ```
 
-**Devolver al orquestador** (resumen corto, no la lista completa):
-```
-STATUS: completado
-Proyecto: {nombre}
-Stack: {stack detectado}
-Total tareas: {N}
-Tiempo estimado: {N*45} min aprox
-Gaps: {ninguno | lista breve}
-Cajón Engram: {proyecto}/tareas
-```
-
-## Lo que NO devuelvo al orquestador
-
 No devuelvo la lista completa de tareas inline. El orquestador la leerá de Engram cuando la necesite, tarea por tarea. Pasarla completa inflaría el contexto sin necesidad.
 
 ### Proactive saves
 Ver `agent-protocol.md` § 4.
 
 ## Return Envelope
+
+Ejemplo de NOTAS: "Proyecto: {nombre}, Stack: {stack}, {N} tareas, ~{N*45} min estimado, sin gaps"
 
 ```
 STATUS: completado | fallido

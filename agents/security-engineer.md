@@ -118,17 +118,6 @@ Paso 3: Merge contenido existente con cambios solicitados
 Paso 4: mem_update(observation_id, spec de seguridad actualizada)
 ```
 
-**Devuelvo al orquestador** (resumen corto):
-```
-STATUS: completado
-Security Spec para: {nombre-proyecto}
-Amenazas críticas: {N}
-Headers configurados: {N}
-OWASP aplicable: {cuáles de los 10 aplican}
-Validaciones requeridas: {lista breve}
-Cajón Engram: {proyecto}/security-spec
-```
-
 ## Lo que NO hago
 - No escribo código de implementación
 - No hago pentesting en producción
@@ -138,6 +127,8 @@ Cajón Engram: {proyecto}/security-spec
 Ver `agent-protocol.md` § 4.
 
 ## Return Envelope
+
+Ejemplo de NOTAS: "Security Spec para {nombre-proyecto}, {N} amenazas criticas, {N} headers, OWASP: {aplicables}"
 
 ```
 STATUS: completado | fallido

@@ -25,21 +25,54 @@ echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
 
+# -- Detectar gestor de paquetes --
+if command -v apt-get &>/dev/null; then
+  PKG_MGR="apt"
+elif command -v dnf &>/dev/null; then
+  PKG_MGR="dnf"
+  warn "Fedora/RHEL detectado. Algunos comandos pueden variar."
+elif command -v pacman &>/dev/null; then
+  PKG_MGR="pacman"
+  warn "Arch Linux detectado. Algunos comandos pueden variar."
+elif command -v brew &>/dev/null; then
+  PKG_MGR="brew"
+  warn "macOS/Homebrew detectado. Algunos comandos pueden variar."
+else
+  PKG_MGR="unknown"
+  warn "Gestor de paquetes no reconocido. Instala dependencias manualmente."
+fi
+
 # -- 0. Detectar directorio raiz del repo --
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # -- 1. Verificar dependencias basicas --
 for cmd in git python3 curl; do
-  command -v $cmd &>/dev/null || error "$cmd no esta instalado. Instalalo con: sudo apt-get install $cmd"
+  if ! command -v $cmd &>/dev/null; then
+    case "$PKG_MGR" in
+      apt)    error "$cmd no esta instalado. Instalalo con: sudo apt-get install $cmd" ;;
+      dnf)    error "$cmd no esta instalado. Instalalo con: sudo dnf install $cmd" ;;
+      pacman) error "$cmd no esta instalado. Instalalo con: sudo pacman -S $cmd" ;;
+      brew)   error "$cmd no esta instalado. Instalalo con: brew install $cmd" ;;
+      *)      error "$cmd no esta instalado. Instalalo manualmente." ;;
+    esac
+  fi
 done
 info "Dependencias basicas: git, python3, curl"
 
 # -- 2. Instalar Node.js si no esta --
 if ! command -v node &>/dev/null; then
-  warn "Node.js no encontrado. Instalando via NodeSource (LTS)..."
-  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-  sudo apt-get install -y nodejs
+  warn "Node.js no encontrado. Instalando..."
+  case "$PKG_MGR" in
+    apt)
+      curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+      sudo apt-get install -y nodejs
+      ;;
+    dnf)    sudo dnf install -y nodejs ;;
+    pacman) sudo pacman -S --noconfirm nodejs npm ;;
+    brew)   brew install node ;;
+    *)      error "No se puede instalar Node.js automaticamente. Instalalo desde https://nodejs.org" ;;
+  esac
   info "Node.js: $(node --version)"
 else
   info "Node.js: $(node --version)"
@@ -57,7 +90,13 @@ fi
 # -- 4. Instalar gh CLI si no esta --
 if ! command -v gh &>/dev/null; then
   warn "gh CLI no encontrado. Instalando..."
-  sudo apt-get update -qq && sudo apt-get install -y gh
+  case "$PKG_MGR" in
+    apt)    sudo apt-get update -qq && sudo apt-get install -y gh ;;
+    dnf)    sudo dnf install -y gh ;;
+    pacman) sudo pacman -S --noconfirm github-cli ;;
+    brew)   brew install gh ;;
+    *)      error "No se puede instalar gh CLI automaticamente. Instalalo desde https://cli.github.com" ;;
+  esac
   info "gh CLI instalado"
 else
   info "gh CLI: $(gh --version | head -1)"
@@ -142,7 +181,11 @@ else
 fi
 
 # -- 10. Actualizar usuario de GitHub en agente git --
-sed -i "s|<usuario>|$GH_USER|g" "$CLAUDE_AGENTS/git.md" 2>/dev/null || true
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  sed -i '' "s|<usuario>|$GH_USER|g" "$CLAUDE_AGENTS/git.md" 2>/dev/null || true
+else
+  sed -i "s|<usuario>|$GH_USER|g" "$CLAUDE_AGENTS/git.md" 2>/dev/null || true
+fi
 
 # -- 11. Instalar settings.json (MCPs: Engram) --
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
@@ -249,7 +292,7 @@ if [[ "$INSTALL_PIXEL" =~ ^[Yy]$ ]]; then
 
     # Download assets from pixel-agents
     echo "  Descargando assets de pixel-agents..."
-    git clone --depth=1 https://github.com/pablodelucca/pixel-agents /tmp/pixel-agents-src 2>/dev/null
+    git clone --depth=1 https://github.com/pablodelucca/pixel-agents /tmp/pixel-agents-src 2>&1 || warn "No se pudieron descargar assets de pixel-agents"
     if [[ -d "/tmp/pixel-agents-src/webview-ui/public/assets" ]]; then
       ASSETS_SRC="/tmp/pixel-agents-src/webview-ui/public/assets"
       ASSETS_DEST="$PIXEL_DEST/webview-ui/public/assets"

@@ -26,8 +26,8 @@ const os = require('os');
 
 const HOME = os.homedir();
 const ENGRAM_DIR = path.join(HOME, '.engram');
-const REPO_CHUNKS_DIR = path.join(ENGRAM_DIR, '.engram', 'chunks');
-const REPO_MANIFEST = path.join(ENGRAM_DIR, '.engram', 'manifest.json');
+const REPO_CHUNKS_DIR = path.join(ENGRAM_DIR, 'chunks');
+const REPO_MANIFEST = path.join(ENGRAM_DIR, 'manifest.json');
 const LOG_FILE = path.join(HOME, '.claude', 'snapshots', 'engram-sync.log');
 
 const args = process.argv.slice(2);
@@ -155,7 +155,7 @@ function engramExport() {
     const result = run('engram sync --all', { timeout: 30000 });
     log(`Export: ${result || 'done'}`);
 
-    // Check if new chunks were created (use REPO_CHUNKS_DIR: ~/.engram/.engram/chunks)
+    // Check if new chunks were created (REPO_CHUNKS_DIR: ~/.engram/chunks)
     if (!fs.existsSync(REPO_CHUNKS_DIR)) {
       // Chunks directory not found — export may have stored elsewhere
       return true;
@@ -292,15 +292,25 @@ function main() {
   }
 
   if (MODE === 'import') {
-    gitPull();
-    engramImport();
-    log('Import complete.');
+    try {
+      gitPull();
+      engramImport();
+      log('Import complete.');
+    } catch (e) {
+      log(`Import error: ${e.message}`);
+      process.exit(1);
+    }
     return;
   }
 
   if (MODE === 'export') {
-    engramExport();
-    log('Export complete (not pushed).');
+    try {
+      engramExport();
+      log('Export complete (not pushed).');
+    } catch (e) {
+      log(`Export error: ${e.message}`);
+      process.exit(1);
+    }
     return;
   }
 
@@ -325,12 +335,17 @@ function main() {
   }
 
   // MODE === 'full'
-  log('=== Starting full sync ===');
-  gitPull();
-  engramImport();
-  engramExport();
-  gitCommitAndPush();
-  log('=== Sync complete ===');
+  try {
+    log('=== Starting full sync ===');
+    gitPull();
+    engramImport();
+    engramExport();
+    gitCommitAndPush();
+    log('=== Sync complete ===');
+  } catch (e) {
+    log(`Full sync error: ${e.message}`);
+    process.exit(1);
+  }
 }
 
 main();

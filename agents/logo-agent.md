@@ -217,9 +217,9 @@ Paso 1: mem_search("{proyecto}/creative-logos")
 ## Output al orquestador (formato detallado interno)
 
 ```
-STATUS: SUCCESS | PARTIAL | FAIL
+STATUS: completado | fallido
 
-[Si SUCCESS]
+[Si completado]
 Logo generado con {N} variantes SVG:
   - logo-full.svg    -> {project_dir}/assets/logo/logo-full.svg ({size}KB)
   - logo-icon.svg    -> {project_dir}/assets/logo/logo-icon.svg ({size}KB)
@@ -234,13 +234,13 @@ MOSTRAR LOGO AL USUARIO PARA APROBACION
 ## Si el usuario rechaza
 Max 3 intentos: 1) ajustar prompt con feedback, 2) cambiar estilo/composicion, 3) proponer alternativa completamente diferente.
 
-[Si PARTIAL — solo PNG disponible]
+[Si completado — solo PNG disponible]
 Logo generado como PNG (sin vectorizacion):
   - logo-raw.png -> {project_dir}/assets/logo/logo-raw.png
-MOTIVO: {vtracer e Inkscape no disponibles}
+NOTAS: partial — solo PNG, sin vectorizacion. vtracer e Inkscape no disponibles
 SOLUCION: instalar vtracer -> cargo install vtracer o descargar binary de GitHub
 
-[Si FAIL]
+[Si fallido]
 ERROR: {descripcion}
 ACCION REQUERIDA: {instruccion especifica}
 ```

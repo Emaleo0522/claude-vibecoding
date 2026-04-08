@@ -109,6 +109,20 @@ Los hooks interceptan tool calls en tiempo real: bloquean operaciones peligrosas
 
 ---
 
+## Paso 6c: Configurar settings.json y permisos
+
+```bash
+# Instalar settings.json (hooks + Engram MCP)
+cp templates/settings.json ~/.claude/settings.json
+
+# Instalar permisos para agentes
+cp templates/settings.local.json ~/.claude/settings.local.json
+```
+
+> Esto configura los 10 hooks reactivos y los permisos para los 25 agentes.
+
+---
+
 ## Paso 7: Instalar CLAUDE.md global (versión Windows)
 
 ```bash

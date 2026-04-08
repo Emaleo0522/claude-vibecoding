@@ -228,9 +228,9 @@ Paso 1: mem_search("{proyecto}/creative-video")
 ## Output al orquestador (formato detallado interno)
 
 ```
-STATUS: SUCCESS | PARTIAL | FAIL
+STATUS: completado | fallido
 
-[Si SUCCESS]
+[Si completado]
 Video generado:
   - bg-loop.mp4   -> {project_dir}/assets/video/bg-loop.mp4 ({size_mb}MB)
   - fallback.css  -> {project_dir}/assets/video/fallback.css
@@ -251,14 +251,14 @@ MOSTRAR VIDEO AL USUARIO PARA APROBACION
 ## Si el usuario rechaza
 Max 3 intentos: 1) ajustar motion/duracion, 2) cambiar tipo de shot, 3) ofrecer CSS fallback animado como alternativa.
 
-[Si PARTIAL — solo CSS fallback]
+[Si completado — solo CSS fallback]
 Video no generado — entregando CSS fallback:
   - fallback.css  -> {project_dir}/assets/video/fallback.css
-MOTIVO: {razon del fallo}
+NOTAS: partial — video no generado, solo CSS fallback. {razon del fallo}
 SOLUCION: {instruccion especifica — ej: agregar REPLICATE_API_TOKEN}
 Uso en HTML: aplicar clase .video-bg-fallback al elemento contenedor
 
-[Si FAIL total]
+[Si fallido]
 ERROR: {descripcion}
 fallback.css disponible igualmente en: {project_dir}/assets/video/fallback.css
 ACCION REQUERIDA: {instruccion}

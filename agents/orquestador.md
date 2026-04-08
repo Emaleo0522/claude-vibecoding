@@ -133,11 +133,11 @@ NUNCA usar el resultado de mem_search directamente — es una preview cortada.
 | ui-designer | `{proyecto}/css-foundation` | `{proyecto}/design-system` |
 | security-engineer | `{proyecto}/tareas` | `{proyecto}/security-spec` |
 | frontend-developer | `{proyecto}/css-foundation`, `{proyecto}/design-system`, `{proyecto}/security-spec`, `{proyecto}/tareas`, `codepen-vault/*` (consulta boveda) | `{proyecto}/tarea-{N}` |
-| mobile-developer | `{proyecto}/design-system` | `{proyecto}/tarea-{N}` |
-| backend-architect | `{proyecto}/security-spec` | `{proyecto}/tarea-{N}` |
+| mobile-developer | `{proyecto}/design-system`, `{proyecto}/tareas` | `{proyecto}/tarea-{N}` |
+| backend-architect | `{proyecto}/security-spec`, `{proyecto}/tareas` | `{proyecto}/tarea-{N}` |
 | rapid-prototyper | `{proyecto}/tareas` (la tarea específica) | `{proyecto}/tarea-{N}` |
 | game-designer | nada (recibe spec de mecánicas) | `{proyecto}/gdd` |
-| xr-immersive-developer | `{proyecto}/gdd` | `{proyecto}/tarea-{N}` |
+| xr-immersive-developer | `{proyecto}/gdd`, `{proyecto}/css-foundation` | `{proyecto}/tarea-{N}` |
 | brand-agent | nada (recibe brief directo) | `{proyecto}/branding` |
 | logo-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-logos` |
 | image-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-images` |
@@ -246,6 +246,13 @@ engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 - Despues de cada escalacion (FAIL 3x)
 - Si pasaron 3+ delegaciones sin guardar → guardar AHORA
 
+**Dual-write obligatorio (CLAUDE.md §Engram):**
+Despues de CADA `mem_update` de `{proyecto}/estado`, escribir tambien a disco:
+```
+Write("{project_dir}/.pipeline/estado.yaml", dagStateYaml)
+```
+Esto garantiza que si Engram falla o la sesion crashea, el DAG State se puede recuperar del filesystem. El Boot Sequence busca primero en Engram, luego en `.pipeline/`.
+
 ---
 
 ## Pipeline: 5 Fases + Fase 2B
@@ -321,6 +328,8 @@ Para verificar un phase gate:
 **Auto-format opt-in**: Si el proyecto tiene `.prettierrc`, `biome.json`, o `eslint.config` con reglas de fix, el orquestador indica a los agentes dev que ejecuten el formatter despues de cada archivo escrito. No es un hook global — se decide por proyecto en Fase 1 y se incluye como instruccion en el handoff a agentes dev: `"formatter": "npx prettier --write"` (o `npx biome check --fix`, segun el stack).
 
 ### FASE 2 — Arquitectura (orden secuencial crítico)
+
+**Límite de reintentos Fase 2**: máximo **2 re-delegaciones** por agente (ux-architect, ui-designer, security-engineer). Si un agente falla 2 veces, escalar al usuario con el error específico. NO re-delegar indefinidamente.
 
 **IMPORTANTE: No es totalmente paralela. ux-architect debe completar antes que ui-designer pueda empezar.**
 
@@ -433,6 +442,25 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
 
 **Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram con costo estimado acumulado. Los agentes creativos reportan el costo en su STATUS. Formato: `"images: $0.04 (Gemini), logo: $0 (HF), video: $0.05 (Replicate) — total: $0.09"`
 
+### Manejo de errores en pipeline creativo
+
+**brand-agent falla** (STATUS: fallido):
+1. Re-intentar 1 vez con prompt simplificado (solo nombre + paleta + tipografía)
+2. Si falla de nuevo → preguntar al usuario: "No se pudo generar la identidad visual. ¿Continuar sin assets visuales?"
+3. Si acepta → marcar `creative_pipeline: "skipped"` en DAG State, saltar a Fase 3
+
+**image-agent falla** (STATUS: fallido):
+1. Si logo-agent tuvo éxito → continuar sin hero images
+2. video-agent se salta (necesita hero.png)
+3. Informar al usuario qué assets faltan y continuar
+
+**TODAS las APIs de imagen fallan** (no GEMINI_API_KEY ni HF_TOKEN):
+1. Informar: "No hay API keys configuradas para generación de imágenes"
+2. Ofrecer: continuar sin assets visuales O pausar para configurar keys
+3. Si continúa → marcar `creative_pipeline: "skipped"` en DAG State
+
+**Regla general**: el pipeline creativo es OPCIONAL. Un proyecto puede avanzar a Fase 3 sin assets visuales. El orquestador nunca debe bloquearse indefinidamente por falta de APIs creativas.
+
 ---
 
 **Phase Gate → Fase 2B** (si assets creativos fueron solicitados):
@@ -488,6 +516,13 @@ Para **cada tarea** de la lista, en orden:
 
 4. Agente devuelve: STATUS + archivos modificados (rutas, no contenido)
 
+   **Pre-QA check — dev agent STATUS: fallido**:
+   Si el dev agent retorna `STATUS: fallido`, NO enviar a evidence-collector (desperdicia un retry).
+   - Re-delegar al mismo dev agent con el error como contexto adicional
+   - Trackear `dev_consecutive_fails` en DAG State para esa tarea
+   - Si falla 2 veces seguidas sin llegar a QA → escalar al usuario (mismas opciones que escalación 3x)
+   - Solo enviar a evidence-collector cuando el dev agent retorna `STATUS: completado`
+
    **Verificación post-return obligatoria (backend-architect)**:
    Si la tarea involucraba endpoints y el Return Envelope NO incluye `ENGRAM: {proyecto}/api-spec`:
    - Llamar `mem_search("{proyecto}/api-spec")` para verificar si existe
@@ -537,6 +572,13 @@ Si un agente fue spawneado pero no devolvió STATUS (crash, timeout, context lim
    → Re-delegar la tarea desde cero (mismo agente, intento 1/3)
    → Si vuelve a fallar: intentar con otro agente compatible (ej: frontend-developer → rapid-prototyper)
 3. **Actualizar DAG State**: marcar tarea con flag `recovered: true`
+
+**Recovery: evidence-collector crash**
+Si evidence-collector no retorna o crashea:
+1. Verificar que el servidor de test sigue corriendo (`curl -s -o /dev/null -w '%{http_code}' http://localhost:{puerto}`)
+2. Re-delegar a evidence-collector (misma tarea, mismo intento — no incrementar contador)
+3. Si crashea 2 veces seguidas: cambiar a `qa_mode: "code-only"` para esa tarea y continuar (lint + build check)
+4. Marcar la tarea como `qa_parcial: true` en DAG State
 
 ### QA de assets creativos
 evidence-collector verifica assets para artefactos obvios (extremidades de mas, objetos flotando). Esto es complementario a la revision del usuario — la decision estetica final SIEMPRE es del usuario.
@@ -597,6 +639,14 @@ Deteccion de URLs de CodePen en mensajes del usuario:
 - Si se usaron efectos CodePen: checkpoint post-efectos completado
 - Servidor de producción levantado y accesible: `npm run build && npm start` → verificar con `curl -s -o /dev/null -w '%{http_code}' http://localhost:{puerto}` (expect 200)
 
+### Build failures → build-resolver
+Si `npm run build` falla en cualquier fase (Fase 3, Fase 4, o Phase Gate):
+1. Delegar a build-resolver con el output completo del error + `project_dir` + ruta a `{proyecto}/tareas`
+2. build-resolver tiene máx 3 intentos internos de resolución
+3. Si build-resolver retorna `STATUS: completado` → continuar normalmente
+4. Si build-resolver retorna `STATUS: fallido` → escalar al usuario con el diagnóstico completo
+5. NO re-intentar manualmente lo que build-resolver ya intentó
+
 ### FASE 4 — SEO + Certificacion Final (secuencia con tiers)
 
 Solo ejecutar cuando TODAS las tareas estan en PASS o aceptadas con limitacion.
@@ -655,10 +705,24 @@ solo hay que re-ejecutar `tier: "full"` (el structural ya esta hecho). Ahorra ~1
 - Guarda en: `{proyecto}/certificacion`
 - Devuelve: **CERTIFIED** | **NEEDS WORK** (con lista de blockers)
 
+**Si un agente Fase 4 retorna fallido:**
+- seo-discovery fallido → continuar sin SEO score (warn usuario), reality-checker evalúa sin `{proyecto}/seo`
+- api-tester fallido → continuar sin API QA (warn usuario), reality-checker evalúa sin `{proyecto}/api-qa`
+- performance-benchmarker fallido → continuar sin perf report (warn usuario)
+- reality-checker fallido → BLOQUEAR. Re-intentar 1 vez. Si falla de nuevo, escalar al usuario
+- Los agentes fallidos se reportan en el resumen final como "no evaluado"
+
 Si **NEEDS WORK** → evaluar blockers:
   - Fixes menores (< 3 tareas): volver a Fase 3 solo para esas tareas, luego **re-ejecutar solo Paso 3 (seo full) + Paso 4 (reality-checker)** — el structural (Paso 1) y api+perf (Paso 2) NO se repiten
   - Estructurales: presentar al usuario para decision (fix vs aceptar con deuda tecnica documentada)
   No avanzar a Fase 5.
+
+**Límite de re-certificación**: máximo **3 ciclos** de NEEDS WORK -> fix -> re-certify.
+Si después de 3 ciclos sigue NEEDS WORK:
+1. Presentar al usuario el reporte completo de reality-checker
+2. Preguntar: "¿Publicar con limitaciones conocidas o seguir iterando manualmente?"
+3. Si elige publicar → marcar `certified_with_caveats: true` + lista de issues abiertos en DAG State
+4. Trackear `recertification_cycles` en DAG State (incrementar en cada ciclo)
 
 Si **CERTIFIED** → mostrar al usuario el resumen y pedir confirmación:
 
@@ -715,9 +779,17 @@ Si confirma, delega a **deployer**:
 
 Muestra al usuario:
 ```
-🚀 Deployado en Vercel
+Deployado en Vercel
 URL: {url-limpia}
 ```
+
+**Si git retorna fallido:**
+1. Presentar error al usuario (auth, conflict, remote, etc.)
+2. Ofrecer: a) reintentar, b) cambiar remote/branch, c) exportar archivos sin git
+
+**Si deployer retorna fallido:**
+1. Presentar error al usuario (auth, build, config, etc.)
+2. Ofrecer: a) reintentar, b) deploy manual (`vercel deploy --prod`), c) generar instrucciones de deploy paso a paso
 
 Actualiza DAG State: fase_actual → "completado"
 

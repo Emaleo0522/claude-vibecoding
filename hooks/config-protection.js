@@ -14,7 +14,8 @@ const BLOCKED_PATTERNS = [
   /\.pem$/,              // certificados
   /\.key$/,              // private keys
   /^credentials/i,       // credentials.json, credentials.yaml, etc.
-  /secret/i,             // secret.json, .secret, etc.
+  /^\.?secrets?\./i,      // secret.json, .secret, secrets.yaml, etc.
+  /secret[_-]?key/i,     // secret_key.json, secret-key.pem, etc.
   /^id_rsa/,             // SSH keys
   /^id_ed25519/,         // SSH keys (ed25519)
   /\.pfx$/,              // certificate bundles

@@ -148,16 +148,6 @@ Paso 3: Merge contenido existente con cambios solicitados
 Paso 4: mem_update(observation_id, design system actualizado)
 ```
 
-**Devuelvo al orquestador** (resumen corto):
-```
-STATUS: completado
-Design System para: {nombre-proyecto}
-Componentes especificados: {N} (botones, inputs, cards, nav, etc.)
-Paleta: {colores principales}
-Accesibilidad: WCAG AA verificado
-Cajón Engram: {proyecto}/design-system
-```
-
 ## Lo que NO hago
 - No escribo código de implementación (eso es frontend-developer)
 - No creo la arquitectura CSS base (eso es ux-architect)
@@ -167,6 +157,8 @@ Cajón Engram: {proyecto}/design-system
 Ver `agent-protocol.md` § 4.
 
 ## Return Envelope
+
+Ejemplo de NOTAS: "Design System para {nombre-proyecto}, {N} componentes, paleta: {colores}, WCAG AA verificado"
 
 ```
 STATUS: completado | fallido

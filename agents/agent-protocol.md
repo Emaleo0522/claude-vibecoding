@@ -32,11 +32,16 @@ Si `mem_search` no retorna observation_id → el cajón no existe. Manejo univer
    - Si NO existe en disco: informar en Return Envelope `STATUS: fallido` con `BLOQUEADORES: [{cajon} no encontrado en Engram ni disco]`
    - NUNCA inventar datos ni usar defaults silenciosos para cajones criticos
 
-2. **Cajón opcional** (`api-spec`, `branding`, `discovery-*`):
+2. **Cajón importante (re-delegable)** (`api-spec`):
+   - Informar al orquestador que el cajón no existe — el orquestador re-delegará al agente productor (ej: backend-architect para api-spec)
+   - NO continuar con defaults silenciosos para estos cajones; el orquestador decide si re-delegar o proceder sin él
+   - Informar en NOTAS: "Cajón {cajon} no encontrado, requiere re-delegación"
+
+3. **Cajón opcional** (`branding`, `discovery-*`):
    - Continuar con defaults razonables o sin esa información
    - Informar en NOTAS: "Cajón {cajon} no encontrado, usando defaults"
 
-3. **Cajón de QA** (`qa-{N}`):
+4. **Cajón de QA** (`qa-{N}`):
    - Marcar como "no validada" — no asumir PASS ni FAIL
 
 ---

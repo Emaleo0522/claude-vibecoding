@@ -151,19 +151,26 @@ Issues found:
 STATUS: CERTIFIED | NEEDS WORK
 TAREA: System health audit
 ARCHIVOS: [] (read-only agent)
-ENGRAM: system/audit-{date}
+ENGRAM: system/audit-latest
 NOTAS: Score X/8. {resumen de issues si hay}
 ```
 
 ## Engram Output
 
-Guardar resultado en:
+Guardar resultado con UPSERT pattern (actualizar, no duplicar):
 ```
-mem_save(
-  title: "System audit {date}",
-  content: "{output completo del audit}",
-  type: "discovery",
-  topic_key: "system/audit-latest",
-  project: "vibecoding-system"
-)
+# Paso 1: buscar si ya existe
+result = mem_search("system/audit-latest")
+
+# Paso 2: actualizar o crear
+if result.observation_id:
+    mem_update(result.observation_id, "{output completo del audit}")
+else:
+    mem_save(
+      title: "System audit {date}",
+      content: "{output completo del audit}",
+      type: "discovery",
+      topic_key: "system/audit-latest",
+      project: "vibecoding-system"
+    )
 ```

@@ -30,6 +30,15 @@ const HOOKS_DIR = path.join(CLAUDE_DIR, 'hooks');
 const SETTINGS_FILE = path.join(CLAUDE_DIR, 'settings.json');
 const SNAPSHOTS_DIR = path.join(CLAUDE_DIR, 'snapshots');
 
+// Verify critical directories exist before running
+for (const [name, dir] of [['CLAUDE_DIR', CLAUDE_DIR], ['AGENTS_DIR', AGENTS_DIR], ['HOOKS_DIR', HOOKS_DIR]]) {
+  if (!fs.existsSync(dir)) {
+    console.error(`FATAL: ${name} does not exist: ${dir}`);
+    console.error('Run the installer first or verify your ~/.claude/ structure.');
+    process.exit(1);
+  }
+}
+
 // Reference files (not agents)
 const REFERENCE_SUFFIXES = ['-reference.md'];
 const NON_AGENT_FILES = ['agent-protocol.md'];
@@ -100,9 +109,10 @@ function testHookIntegrity() {
           const match = hook.command.match(/node\s+(.+\.js)/);
           if (match) {
             let hookPath = match[1];
-            // Normalize /c/Users to C:/Users for Windows
-            if (hookPath.startsWith('/c/')) {
-              hookPath = 'C:/' + hookPath.slice(3);
+            // Normalize /x/... to X:/... for Windows (any drive letter)
+            const driveMatch = hookPath.match(/^\/([a-zA-Z])\//);
+            if (driveMatch) {
+              hookPath = driveMatch[1].toUpperCase() + ':/' + hookPath.slice(3);
             }
             hookPaths.push({ type: hookType, path: hookPath, desc: entry.description || 'no desc' });
           }

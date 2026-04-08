@@ -9,13 +9,12 @@
  * Vibecoding v2.1 - Expandido con deteccion de secrets hardcodeados
  */
 
-const fs = require('fs');
 const path = require('path');
 
 const JS_TS_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
 
 const PATTERNS = [
-  { regex: /\bany\b(?!\s*\()/g, msg: 'TypeScript `any` type detected — consider using a specific type', severity: 'warn' },
+  { regex: /(?::\s*any\b|<any>|\bas\s+any\b)/g, msg: 'TypeScript `any` type detected — consider using a specific type', severity: 'warn' },
   { regex: /\/\/\s*@ts-ignore/g, msg: '@ts-ignore detected — prefer @ts-expect-error with explanation', severity: 'warn' },
   { regex: /\/\/\s*@ts-nocheck/g, msg: '@ts-nocheck detected — this disables type checking for the entire file', severity: 'warn' },
   { regex: /\.only\s*\(/g, msg: '.only() in test — will skip other tests if committed', severity: 'error' },
@@ -59,7 +58,7 @@ process.stdin.on('end', () => {
       if (matches && matches.length > 0) {
         // Filtrar: 'any' en comentarios o strings es OK, pero dificil de detectar sin AST
         // Ser conservador: solo reportar si hay multiples matches
-        if (pattern.regex.source === '\\bany\\b(?!\\s*\\()') {
+        if (pattern.msg.includes('`any` type')) {
           if (matches.length >= 3) {
             warnings.push(`[${pattern.severity}] ${pattern.msg} (${matches.length}x)`);
           }
