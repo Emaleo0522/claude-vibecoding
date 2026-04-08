@@ -1,56 +1,63 @@
 {
   "hooks": {
     "PreToolUse": [
+      { "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/pixel-bridge/bridge.js", "async": true }] },
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/block-no-verify.js" }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/block-no-verify.js" }],
         "description": "Blocks git commit/push --no-verify and --no-gpg-sign"
       },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/config-protection.js" }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/config-protection.js" }],
         "description": "Warns when modifying linter/formatter/tsconfig files"
       }
     ],
     "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/pixel-bridge/bridge.js", "async": true }] },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/quality-gate.js" }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/quality-gate.js" }],
         "description": "Warns about debugger, .only(), @ts-ignore in JS/TS files"
       },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/console-log-warning.js" }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/console-log-warning.js" }],
         "description": "Warns about console.log/warn/error in production JS/TS files"
       },
       {
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/suggest-compact.js", "async": true }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/suggest-compact.js", "async": true }],
         "description": "Suggests /compact every ~50 tool calls to manage context window"
       },
       {
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/cost-tracker.js", "async": true }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/cost-tracker.js", "async": true }],
         "description": "Logs tool calls by category for cost/usage analysis"
       }
     ],
     "Stop": [
+      { "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/pixel-bridge/bridge.js", "async": true }] },
       {
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/session-summary.js", "async": true }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/session-summary.js", "async": true }],
         "description": "Logs session activity for recovery and tracking"
       },
       {
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/engram-sync.js --hook", "async": true, "timeout": 60000 }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/engram-sync.js --hook", "async": true, "timeout": 60000 }],
         "description": "Auto-syncs Engram memories to GitHub on session stop"
       }
     ],
     "Notification": [
       {
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/session-start-context.js" }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/session-start-context.js" }],
         "description": "Loads previous session context on startup"
+      },
+      {
+        "hooks": [{ "type": "command", "command": "cmd /c \"%USERPROFILE%\\.claude\\pixel-bridge\\standalone\\start.cmd\"", "async": true }],
+        "description": "Auto-launches Pixel Bridge server on session start"
       }
     ],
     "PreCompact": [
       {
-        "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/pre-compact-engram.js" }],
+        "hooks": [{ "type": "command", "command": "node /c/Users/Ema/.claude/hooks/pre-compact-engram.js" }],
         "description": "Saves session snapshot and resets tool counter before context compaction"
       }
     ]

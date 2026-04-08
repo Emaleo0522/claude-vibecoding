@@ -35,53 +35,25 @@ const PERMANENT_AGENTS: Array<{ name: string; id: number }> = [
   { name: "mobile_developer",        id: 1009 },
   { name: "game_designer",           id: 1010 },
   { name: "xr_immersive_developer",  id: 1011 },
-  { name: "evidence_collector",      id: 1012 },
-  { name: "reality_checker",         id: 1013 },
-  { name: "seo_discovery",           id: 1014 },
-  { name: "api_tester",              id: 1015 },
-  { name: "performance_benchmarker", id: 1016 },
-  { name: "brand_agent",             id: 1017 },
-  { name: "image_agent",             id: 1018 },
-  { name: "logo_agent",              id: 1019 },
-  { name: "video_agent",             id: 1020 },
-  { name: "git",                     id: 1021 },
-  { name: "deployer",                id: 1022 },
+  { name: "codepen_explorer",        id: 1012 },
+  { name: "build_resolver",          id: 1013 },
+  { name: "evidence_collector",      id: 1014 },
+  { name: "reality_checker",         id: 1015 },
+  { name: "seo_discovery",           id: 1016 },
+  { name: "api_tester",              id: 1017 },
+  { name: "performance_benchmarker", id: 1018 },
+  { name: "brand_agent",             id: 1019 },
+  { name: "image_agent",             id: 1020 },
+  { name: "logo_agent",              id: 1021 },
+  { name: "video_agent",             id: 1022 },
+  { name: "git",                     id: 1023 },
+  { name: "deployer",                id: 1024 },
+  { name: "self_auditor",            id: 1025 },
 ]
 
-// Normalize agent name for matching: hyphens, underscores, and spaces are equivalent
+// Normalize agent name for matching: hyphens and underscores are equivalent
 function normalizeName(name: string): string {
-  return name.toLowerCase().replace(/[-\s]/g, "_")
-}
-
-// Map subagent_type values to permanent agent names
-// Claude Code uses these types in the Agent tool: subagent_type → normalized name
-const SUBAGENT_TYPE_MAP: Record<string, string> = {
-  "orquestador": "orquestador",
-  "project-manager-senior": "project_manager_senior",
-  "ux-architect": "ux_architect",
-  "ui-designer": "ui_designer",
-  "security-engineer": "security_engineer",
-  "frontend-developer": "frontend_developer",
-  "backend-architect": "backend_architect",
-  "rapid-prototyper": "rapid_prototyper",
-  "mobile-developer": "mobile_developer",
-  "game-designer": "game_designer",
-  "xr-immersive-developer": "xr_immersive_developer",
-  "evidence-collector": "evidence_collector",
-  "reality-checker": "reality_checker",
-  "seo-discovery": "seo_discovery",
-  "api-tester": "api_tester",
-  "performance-benchmarker": "performance_benchmarker",
-  "brand-agent": "brand_agent",
-  "image-agent": "image_agent",
-  "logo-agent": "logo_agent",
-  "video-agent": "video_agent",
-  "git": "git",
-  "deployer": "deployer",
-  // Built-in Claude Code agent types (not in our system)
-  "Explore": "",
-  "Plan": "",
-  "general-purpose": "",
+  return name.toLowerCase().replace(/-/g, "_")
 }
 
 // Project directory names that are infrastructure — skip them
@@ -123,13 +95,6 @@ for (const pa of PERMANENT_AGENTS) {
 let nextAgentId = 1
 const clients = new Set<WebSocket>()
 let lastActivityTime = Date.now()
-
-// ── Claude Code agent mapping ───────────────────────────────────────────────
-// Maps agentId (from subagent JSONL filename) → permanent agent name
-// Populated when we parse Agent tool calls with subagent_type in the parent session
-const agentIdToName = new Map<string, string>()
-// Maps parentToolUseID → subagent_type (from Agent tool calls in parent session)
-const toolUseIdToSubagentType = new Map<string, string>()
 
 // Load assets at startup
 const devAssetsRoot = join(__dirname, "..", "webview-ui", "public", "assets")
@@ -245,47 +210,6 @@ function sendInitialData(ws: WebSocket): void {
   } else {
     ws.send(JSON.stringify({ type: "layoutLoaded", layout: null, version: 0 }))
   }
-
-  // ── STATE SNAPSHOT — send current activity of all agents ──
-  // This is critical for reconnection: without it, all agents appear idle
-  // even if they're actively working. Send tool state for every active agent.
-  for (const agent of agentList) {
-    // Send active tools
-    for (const [toolId, tool] of agent.activeTools) {
-      ws.send(JSON.stringify({
-        type: "agentToolStart",
-        id: agent.id,
-        toolId,
-        status: tool.status,
-      }))
-    }
-    // Send active subagent tools
-    for (const [parentToolId, toolIds] of agent.activeSubagentToolIds) {
-      const toolNames = agent.activeSubagentToolNames.get(parentToolId)
-      for (const toolId of toolIds) {
-        const status = toolNames?.get(toolId) || toolId
-        ws.send(JSON.stringify({
-          type: "subagentToolStart",
-          id: agent.id,
-          parentToolId,
-          toolId,
-          status,
-        }))
-      }
-    }
-    // Send permission state
-    if (agent.permissionSent) {
-      ws.send(JSON.stringify({ type: "agentToolPermission", id: agent.id }))
-    }
-    // Send activity status if not idle
-    if (agent.activity !== "idle") {
-      ws.send(JSON.stringify({
-        type: "agentStatus",
-        id: agent.id,
-        status: agent.activity === "typing" ? "working" : agent.activity,
-      }))
-    }
-  }
 }
 
 wss.on("connection", (ws) => {
@@ -297,8 +221,6 @@ wss.on("connection", (ws) => {
     try {
       const msg = JSON.parse(raw.toString())
       if (msg.type === "webviewReady" || msg.type === "ready") {
-        // Re-scan for active JSONL files that may have appeared while client was disconnected
-        watcher.rescan()
         sendInitialData(ws)
       } else if (msg.type === "saveLayout") {
         try {
@@ -330,165 +252,25 @@ wss.on("connection", (ws) => {
   ws.on("close", () => clients.delete(ws))
 })
 
-// ── Helper: try to activate a permanent agent for a subagent file ───────────
-function tryActivateSubagent(file: WatchedFile): TrackedAgent | null {
-  if (!file.agentId) return null
-
-  // Check if we already have a mapping for this agentId
-  const mappedName = agentIdToName.get(file.agentId)
-  if (mappedName) {
-    const permanent = permanentAgentByName.get(normalizeName(mappedName))
-    if (permanent) return permanent
-  }
-
-  return null
-}
-
-// ── Helper: parse a JSONL line from the PARENT session to extract Agent tool calls ─
-function extractAgentMapping(line: string): void {
-  try {
-    const record = JSON.parse(line) as Record<string, unknown>
-
-    // 1. Extract subagent_type from Agent tool_use calls
-    if (record.type === "assistant") {
-      const message = record.message as Record<string, unknown> | undefined
-      const content = message?.content as Array<Record<string, unknown>> | undefined
-      if (Array.isArray(content)) {
-        for (const block of content) {
-          if (block.type === "tool_use" && block.name === "Agent") {
-            const input = block.input as Record<string, unknown> | undefined
-            const toolId = block.id as string
-            const subagentType = input?.subagent_type as string | undefined
-            if (toolId && subagentType) {
-              toolUseIdToSubagentType.set(toolId, subagentType)
-            }
-          }
-        }
-      }
-    }
-
-    // 2. Extract agentId from progress messages to complete the mapping
-    if (record.type === "progress") {
-      const parentToolUseID = record.parentToolUseID as string | undefined
-      const data = record.data as Record<string, unknown> | undefined
-      if (data?.type === "agent_progress" && parentToolUseID) {
-        const agentId = data.agentId as string | undefined
-        if (agentId && toolUseIdToSubagentType.has(parentToolUseID)) {
-          const subagentType = toolUseIdToSubagentType.get(parentToolUseID)!
-          const normalizedName = SUBAGENT_TYPE_MAP[subagentType]
-          if (normalizedName) {
-            agentIdToName.set(agentId, normalizedName)
-            console.log(`[Mapping] agentId ${agentId.slice(0, 8)} → ${normalizedName} (via ${subagentType})`)
-
-            // If a subagent file was already added but couldn't be mapped, try now
-            const subagentSessionId = `subagent-${agentId}`
-            const existingAgent = agents.get(subagentSessionId)
-            if (existingAgent && existingAgent.id < 1001) {
-              // This was registered as a temporary agent — try to upgrade to permanent
-              const permanent = permanentAgentByName.get(normalizeName(normalizedName))
-              if (permanent && permanent.sessionId.startsWith("permanent-")) {
-                // Remove the temporary agent
-                agents.delete(subagentSessionId)
-                broadcast({ type: "agentClosed", id: existingAgent.id })
-
-                // Activate the permanent agent
-                agents.delete(permanent.sessionId)
-                permanent.sessionId = subagentSessionId
-                permanent.jsonlFile = existingAgent.jsonlFile
-                permanent.projectDir = dirname(existingAgent.jsonlFile)
-                permanent.fileOffset = 0
-                permanent.lineBuffer = ""
-                permanent.lastActivityTime = Date.now()
-                agents.set(subagentSessionId, permanent)
-                broadcast({ type: "agentStatus", id: permanent.id, status: "active" })
-                console.log(`[Upgrade] Agent ${permanent.id} activated: ${permanent.projectName} (late mapping)`)
-              }
-            }
-          }
-        }
-      }
-    }
-  } catch {
-    /* ignore parse errors */
-  }
-}
-
 // ── File watcher ─────────────────────────────────────────────────────────────
 const watcher = new JsonlWatcher()
 
 watcher.on("fileAdded", (file: WatchedFile) => {
   if (agents.has(file.sessionId)) return
 
-  lastActivityTime = Date.now()
-
-  // ── Subagent file: try to map to a permanent agent ──
-  if (file.isSubagent) {
-    const permanent = tryActivateSubagent(file)
-    if (permanent && permanent.sessionId.startsWith("permanent-")) {
-      // Activate the permanent agent
-      agents.delete(permanent.sessionId)
-      permanent.sessionId = file.sessionId
-      permanent.jsonlFile = file.path
-      permanent.projectDir = dirname(file.path)
-      permanent.fileOffset = 0
-      permanent.lineBuffer = ""
-      permanent.lastActivityTime = Date.now()
-      agents.set(file.sessionId, permanent)
-      broadcast({ type: "agentStatus", id: permanent.id, status: "active" })
-      console.log(`[Subagent] Agent ${permanent.id} activated: ${permanent.projectName} (${file.agentId?.slice(0, 8)})`)
-      return
-    }
-
-    // No mapping yet — register as temporary, will be upgraded when mapping arrives
-    const tempAgent: TrackedAgent = {
-      id: nextAgentId++,
-      sessionId: file.sessionId,
-      projectDir: dirname(file.path),
-      projectName: file.projectName,
-      jsonlFile: file.path,
-      fileOffset: 0,
-      lineBuffer: "",
-      activity: "idle",
-      activeTools: new Map(),
-      activeToolNames: new Map(),
-      activeSubagentToolIds: new Map(),
-      activeSubagentToolNames: new Map(),
-      isWaiting: false,
-      permissionSent: false,
-      hadToolsInTurn: false,
-      lastActivityTime: Date.now(),
-    }
-    agents.set(file.sessionId, tempAgent)
-    broadcast({ type: "agentCreated", id: tempAgent.id, folderName: tempAgent.projectName })
-    console.log(`[Subagent] Temporary agent ${tempAgent.id}: ${file.agentId?.slice(0, 8)} (awaiting type mapping)`)
-    return
-  }
-
-  // ── Main session file: activate the orquestador ──
-  // Skip infrastructure directories
+  // Skip infrastructure/system directories
   if (BLOCKED_PROJECT_NAMES.has(normalizeName(file.projectName))) return
 
-  // Main Claude Code sessions are the "orquestador" (the user's primary session)
-  const orq = permanentAgentByName.get("orquestador")
-  if (orq && orq.sessionId.startsWith("permanent-")) {
-    agents.delete(orq.sessionId)
-    orq.sessionId = file.sessionId
-    orq.jsonlFile = file.path
-    orq.projectDir = dirname(file.path)
-    orq.fileOffset = 0
-    orq.lineBuffer = ""
-    orq.lastActivityTime = Date.now()
-    agents.set(file.sessionId, orq)
-    broadcast({ type: "agentStatus", id: orq.id, status: "active" })
-    console.log(`[Main] Orquestador activated: session ${file.sessionId.slice(0, 8)}`)
-    return
-  }
+  lastActivityTime = Date.now()
 
-  // Orquestador already active — check other permanent agents by project name
-  const normalized = normalizeName(file.projectName)
+  // Check if this matches a permanent agent by agent name first, then by project name
+  // agentName comes from JSONL metadata or filename pattern (bridge.js writes these)
+  const agentKey = file.agentName ? normalizeName(file.agentName) : normalizeName(file.projectName)
+  const normalized = agentKey
   const permanent = permanentAgentByName.get(normalized)
 
   if (permanent && permanent.sessionId.startsWith("permanent-")) {
+    // Remove old permanent-key entry, register under the real sessionId
     agents.delete(permanent.sessionId)
     permanent.sessionId = file.sessionId
     permanent.jsonlFile = file.path
@@ -497,11 +279,12 @@ watcher.on("fileAdded", (file: WatchedFile) => {
     permanent.lineBuffer = ""
     permanent.lastActivityTime = Date.now()
     agents.set(file.sessionId, permanent)
+    // No agentCreated broadcast — character already exists and is wandering
     console.log(`Agent ${permanent.id} activated: ${permanent.projectName} (${file.sessionId.slice(0, 8)})`)
     return
   }
 
-  // Unknown session — create a temporary character
+  // Temporary / unknown agent — create a new character
   const agent: TrackedAgent = {
     id: nextAgentId++,
     sessionId: file.sessionId,
@@ -564,12 +347,6 @@ watcher.on("line", (file: WatchedFile, line: string) => {
   const agent = agents.get(file.sessionId)
   if (!agent) return
   lastActivityTime = Date.now()
-
-  // For main sessions (non-subagent), also extract Agent tool mappings
-  if (!file.isSubagent) {
-    extractAgentMapping(line)
-  }
-
   processTranscriptLine(line, agent, broadcast)
 })
 
@@ -578,10 +355,10 @@ watcher.start()
 server.listen(PORT, () => {
   console.log(`Pixel Agents server running at http://localhost:${PORT}`)
   console.log(`Watching ~/.claude/projects/ for active sessions...`)
-  console.log(`Claude Code mode: main session → orquestador, subagents mapped via Agent tool calls`)
 })
 
-// Idle shutdown — only if no real sessions are active
+// Idle shutdown — only if no real sessions AND no browser clients connected
+// If the user has the browser open, keep running so they see the office
 setInterval(() => {
   const hasActiveSessions = Array.from(agents.values()).some(
     (a) => !a.sessionId.startsWith("permanent-")

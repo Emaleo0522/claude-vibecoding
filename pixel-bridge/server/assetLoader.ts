@@ -205,42 +205,64 @@ export function loadWallTiles(assetsRoot: string): LoadedWallTiles | null {
 
 export function loadFloorTiles(assetsRoot: string): LoadedFloorTiles | null {
   try {
+    // Try single sprite sheet first (floors.png)
     const floorPath = path.join(assetsRoot, "floors.png");
-    if (!fs.existsSync(floorPath)) {
-      // floors.png is optional — UI falls back to solid gray
-      return null;
-    }
+    if (fs.existsSync(floorPath)) {
+      const pngBuffer = fs.readFileSync(floorPath);
+      const png = PNG.sync.read(pngBuffer);
+      const sprites: string[][][] = [];
 
-    const pngBuffer = fs.readFileSync(floorPath);
-    const png = PNG.sync.read(pngBuffer);
-    const sprites: string[][][] = [];
-
-    for (let t = 0; t < FLOOR_PATTERN_COUNT; t++) {
-      const sprite: string[][] = [];
-      for (let y = 0; y < FLOOR_TILE_SIZE; y++) {
-        const row: string[] = [];
-        for (let x = 0; x < FLOOR_TILE_SIZE; x++) {
-          const px = t * FLOOR_TILE_SIZE + x;
-          const idx = (y * png.width + px) * 4;
-          const r = png.data[idx];
-          const g = png.data[idx + 1];
-          const b = png.data[idx + 2];
-          const a = png.data[idx + 3];
-          if (a < PNG_ALPHA_THRESHOLD) {
-            row.push("");
-          } else {
-            row.push(
-              `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase(),
-            );
+      for (let t = 0; t < FLOOR_PATTERN_COUNT; t++) {
+        const sprite: string[][] = [];
+        for (let y = 0; y < FLOOR_TILE_SIZE; y++) {
+          const row: string[] = [];
+          for (let x = 0; x < FLOOR_TILE_SIZE; x++) {
+            const px = t * FLOOR_TILE_SIZE + x;
+            const idx = (y * png.width + px) * 4;
+            const r = png.data[idx];
+            const g = png.data[idx + 1];
+            const b = png.data[idx + 2];
+            const a = png.data[idx + 3];
+            if (a < PNG_ALPHA_THRESHOLD) {
+              row.push("");
+            } else {
+              row.push(
+                `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase(),
+              );
+            }
           }
+          sprite.push(row);
         }
-        sprite.push(row);
+        sprites.push(sprite);
       }
-      sprites.push(sprite);
+
+      console.log(`[AssetLoader] Loaded ${sprites.length} floor tile patterns (spritesheet)`);
+      return { sprites };
     }
 
-    console.log(`[AssetLoader] Loaded ${sprites.length} floor tile patterns`);
-    return { sprites };
+    // Try individual floor tiles (floors/floor_0.png, floor_1.png, ...)
+    const floorsDir = path.join(assetsRoot, "floors");
+    if (fs.existsSync(floorsDir)) {
+      const files = fs.readdirSync(floorsDir)
+        .filter((f: string) => f.startsWith("floor_") && f.endsWith(".png"))
+        .sort();
+
+      if (files.length === 0) return null;
+
+      const sprites: string[][][] = [];
+      for (const file of files) {
+        const pngBuffer = fs.readFileSync(path.join(floorsDir, file));
+        const png = PNG.sync.read(pngBuffer);
+        const tileW = Math.min(FLOOR_TILE_SIZE, png.width);
+        const tileH = Math.min(FLOOR_TILE_SIZE, png.height);
+        sprites.push(pngToSpriteData(pngBuffer, tileW, tileH));
+      }
+
+      console.log(`[AssetLoader] Loaded ${sprites.length} floor tile patterns (individual files)`);
+      return { sprites };
+    }
+
+    return null;
   } catch (err) {
     console.error(`[AssetLoader] Error loading floor tiles: ${err instanceof Error ? err.message : err}`);
     return null;

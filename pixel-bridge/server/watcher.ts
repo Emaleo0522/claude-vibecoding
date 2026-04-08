@@ -1,5 +1,5 @@
 import { watch } from "chokidar";
-import { statSync, readdirSync, openSync, readSync, closeSync, existsSync } from "fs";
+import { statSync, readdirSync, openSync, readSync, closeSync, readFileSync } from "fs";
 import { join, basename, dirname } from "path";
 import { homedir } from "os";
 import { EventEmitter } from "events";
@@ -12,14 +12,9 @@ export interface WatchedFile {
   path: string;
   sessionId: string;
   projectName: string;
+  agentName: string; // extracted from metadata line, empty if unknown
   offset: number;
   lineBuffer: string;
-  /** True if this file is inside a /subagents/ directory */
-  isSubagent: boolean;
-  /** The agentId from the subagent filename (e.g. "adc44bdc302a4b882" from "agent-adc44bdc302a4b882.jsonl") */
-  agentId: string | null;
-  /** The parent session UUID (directory name containing the subagents/ folder) */
-  parentSessionId: string | null;
 }
 
 export class JsonlWatcher extends EventEmitter {
@@ -32,7 +27,7 @@ export class JsonlWatcher extends EventEmitter {
 
     this.watcher = watch(CLAUDE_PROJECTS_DIR, {
       ignoreInitial: true,
-      depth: 5, // Increased: projects/{project}/{session}/subagents/agent-*.jsonl
+      depth: 3,
       usePolling: true,
       interval: 1000,
     });
@@ -63,19 +58,24 @@ export class JsonlWatcher extends EventEmitter {
 
   private scanForActiveFiles(): void {
     try {
-      const projectDirs = readdirSync(CLAUDE_PROJECTS_DIR, { withFileTypes: true });
-      for (const projectDir of projectDirs) {
-        if (!projectDir.isDirectory()) continue;
-        const projectPath = join(CLAUDE_PROJECTS_DIR, projectDir.name);
-        this.scanDirectory(projectPath);
+      const dirs = readdirSync(CLAUDE_PROJECTS_DIR, { withFileTypes: true });
+      for (const dir of dirs) {
+        if (!dir.isDirectory()) continue;
+        const dirPath = join(CLAUDE_PROJECTS_DIR, dir.name);
+        try {
+          this.scanDirectory(dirPath, 0);
+        } catch {
+          /* skip unreadable dirs */
+        }
       }
     } catch {
       /* projects dir may not exist */
     }
   }
 
-  /** Recursively scan for active JSONL files (main sessions + subagents) */
-  private scanDirectory(dirPath: string): void {
+  // Recursive scan up to depth 3 (matching chokidar depth)
+  private scanDirectory(dirPath: string, depth: number): void {
+    if (depth > 3) return;
     try {
       const entries = readdirSync(dirPath, { withFileTypes: true });
       for (const entry of entries) {
@@ -87,43 +87,65 @@ export class JsonlWatcher extends EventEmitter {
               this.addFile(fullPath);
             }
           } catch { /* skip */ }
-        } else if (entry.isDirectory()) {
-          // Recurse into session directories and subagents/
-          this.scanDirectory(fullPath);
+        } else if (entry.isDirectory() && depth < 3) {
+          this.scanDirectory(fullPath, depth + 1);
         }
       }
+    } catch { /* skip unreadable */ }
+  }
+
+  // Try to extract agent_name from the first line of a JSONL file
+  // bridge.js writes: {"type":"metadata","agent_name":"frontend_developer","session_id":"..."}
+  private extractAgentName(filePath: string): string {
+    try {
+      const fd = openSync(filePath, "r");
+      // Read first 512 bytes — metadata line is short
+      const buf = Buffer.alloc(512);
+      const bytesRead = readSync(fd, buf, 0, 512, 0);
+      closeSync(fd);
+      if (bytesRead === 0) return "";
+
+      const text = buf.toString("utf-8", 0, bytesRead);
+      const firstLine = text.split("\n")[0];
+      if (!firstLine) return "";
+
+      const parsed = JSON.parse(firstLine);
+      if (parsed.type === "metadata" && parsed.agent_name) {
+        return parsed.agent_name;
+      }
     } catch {
-      /* skip unreadable dirs */
+      /* not a metadata line or file unreadable */
     }
+    return "";
+  }
+
+  // Extract agent name from filename pattern: {agent_name}-px.jsonl
+  private extractAgentNameFromFilename(filename: string): string {
+    if (filename.endsWith("-px.jsonl")) {
+      return filename.replace(/-px\.jsonl$/, "");
+    }
+    return "";
   }
 
   private addFile(filePath: string): void {
     if (this.files.has(filePath)) return;
 
-    const fileName = basename(filePath, ".jsonl");
-    const parentDirName = basename(dirname(filePath));
-    const grandparentDirName = basename(dirname(dirname(filePath)));
+    const filename = basename(filePath);
+    const sessionId = basename(filePath, ".jsonl");
 
-    // Detect subagent files: .../sessions/{uuid}/subagents/agent-{id}.jsonl
-    const isSubagent = parentDirName === "subagents";
-    let agentId: string | null = null;
-    let parentSessionId: string | null = null;
-    let sessionId: string;
-    let projectName: string;
+    // Try to identify the agent:
+    // 1. From filename pattern (agent_name-px.jsonl)
+    // 2. From first-line metadata in the file
+    // 3. Fallback to directory-based extraction (legacy behavior)
+    let agentName = this.extractAgentNameFromFilename(filename);
+    if (!agentName) {
+      agentName = this.extractAgentName(filePath);
+    }
 
-    if (isSubagent && fileName.startsWith("agent-")) {
-      // Subagent file
-      agentId = fileName.replace("agent-", "");
-      parentSessionId = grandparentDirName; // The UUID session directory
-      sessionId = `subagent-${agentId}`;
-      // projectName will be resolved by the server via subagent_type mapping
-      projectName = `subagent-${agentId.slice(0, 8)}`;
-    } else {
-      // Main session file: .../projects/{project-dir}/{uuid}.jsonl
-      sessionId = fileName;
-      // Extract short project name from the project directory
-      // e.g. "-home-pc004" → "pc004", "-Users-alice-myproject" → "myproject"
-      const projectDirName = isSubagent ? basename(dirname(dirname(dirname(filePath)))) : parentDirName;
+    // projectName: use agentName if found, otherwise extract from directory (legacy)
+    let projectName = agentName;
+    if (!projectName) {
+      const projectDirName = basename(dirname(filePath));
       const parts = projectDirName.split("-").filter(Boolean);
       projectName = sessionId.slice(0, 8);
       for (let i = parts.length - 1; i >= 0; i--) {
@@ -138,11 +160,9 @@ export class JsonlWatcher extends EventEmitter {
       path: filePath,
       sessionId,
       projectName,
+      agentName,
       offset: 0,
       lineBuffer: "",
-      isSubagent,
-      agentId,
-      parentSessionId,
     };
 
     this.files.set(filePath, file);
@@ -190,6 +210,12 @@ export class JsonlWatcher extends EventEmitter {
 
       for (const line of lines) {
         if (line.trim()) {
+          // Skip metadata lines — already processed during addFile
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.type === "metadata") continue;
+          } catch { /* not JSON, emit anyway */ }
+
           this.emit("line", file, line);
         }
       }
