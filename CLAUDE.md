@@ -68,7 +68,9 @@ else:
 ```
 
 ### Perfil personal del usuario
-Al iniciar **cualquier** sesion (nueva, retomada o activa), ejecutar `mem_context(scope="personal")` antes de cualquier tarea. Esto carga el perfil laboral y personal del usuario (Leonardo Emanuel Mansilla / @Tio / PM en Reyesoft) y permite trabajar con contexto completo desde el primer mensaje.
+Al iniciar **cualquier** sesion (nueva, retomada o activa), el **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boot Sequence**, antes de cualquier otra acción. Esto carga el perfil laboral y personal del usuario (Leonardo Emanuel Mansilla / @Tio / PM en Reyesoft) y permite trabajar con contexto completo desde el primer mensaje.
+
+**IMPORTANTE**: El hook `session-start-context` NO puede hacer esta llamada — los hooks no tienen acceso a MCPs. Esta responsabilidad es exclusiva del orquestador (ver `orquestador.md` § "Boot Sequence paso 0"). En modo Claude normal (sin orquestador), Claude debe llamar `mem_context(scope="personal")` manualmente al inicio.
 
 ### Carga progresiva del DAG State (v2.2)
 
@@ -152,7 +154,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `cost-tracker` | PostToolUse | (global) | **REGISTRA** cada tool call con categoria, subagente, modelo (async) |
 | `session-summary` | Stop | (lifecycle) | **LOGUEA** actividad de sesion en JSONL para recovery (async) |
 | `engram-sync` | Stop | (lifecycle) | **SINCRONIZA** memorias Engram con GitHub automaticamente (async, 60s timeout) |
-| `session-start-context` | Notification | (lifecycle) | **CARGA** contexto de sesion anterior + health check de hooks async al inicio + perfil personal via `mem_context(scope="personal")` |
+| `session-start-context` | Notification | (lifecycle) | **CARGA** contexto de sesion anterior (snapshot pre-compact + metricas) + health check de hooks. NOTA: los hooks NO pueden llamar MCPs — `mem_context(scope="personal")` lo ejecuta el orquestador en Boot Sequence paso 0 |
 
 ### Comportamiento de hooks
 - **Exit 2** = BLOCK (solo PreToolUse puede bloquear)
@@ -169,8 +171,13 @@ Ejecutar `node ~/.claude/hooks/audit-system.js` para validar el sistema completo
 - T4: Settings structure (JSON valido, Engram habilitado)
 - T5: Hook performance (todos deben ser <500ms)
 - T6: Snapshot directory (existe)
+- T7: Hook functional tests
+- T8: Model routing (todos los agentes tienen modelo válido)
+- T9: CLAUDE.md sync (entity count y tools table)
+- T10: Reference files (12 archivos de referencia presentes)
+- T11: Output files (logs y snapshots escribibles)
 
-Resultado: HEALTHY (6/6) | DEGRADED (4-5/6) | BROKEN (<4/6)
+Resultado: HEALTHY (11/11) | DEGRADED (8-10/11) | BROKEN (<8/11)
 
 ### Cost report
 Ejecutar `node ~/.claude/hooks/cost-report.js` para ver uso de herramientas:
@@ -247,7 +254,8 @@ Ver tabla completa de inputs/outputs por agente en `orquestador.md` § "Qué caj
 - Solo **evidence-collector** y **reality-checker** hacen QA visual
 - Solo **git** hace commits/push — nunca un agente dev
 - Solo **deployer** despliega a Vercel
-- git y deployer actúan **solo con confirmación del usuario**
+- git y deployer actúan **solo con confirmación del usuario** — pero si el mensaje original ya incluía "sube", "git", "deploy", "push", "publica" o similar, eso **ya es la confirmación**. No volver a preguntar.
+- Si el orquestador devuelve una pregunta de confirmación sobre una acción que el usuario ya autorizó en su mensaje, main Claude debe continuar el agente con `SendMessage` respondiendo la respuesta implícita — no dejar el agente suspendido.
 - Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
 - **El orquestador NO activa git hasta que evidence-collector retorna PASS** — nunca saltear QA antes de push, aunque el tiempo apremia. Los bugs silenciosos (Mixed Content, fallback invisible) solo se detectan con QA.
 - **codepen-explorer solo busca y extrae** — nunca adapta ni construye. Guarda código temporal en `{project_dir}/.codepen-temp/{slug}/`. frontend-developer lee de ahí y adapta al proyecto/brand.

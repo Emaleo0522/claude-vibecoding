@@ -33,6 +33,11 @@ El DAG State puede ser grande (10+ KB en proyectos avanzados). Para no inflar el
 
 ### Secuencia de inicio
 
+0. **Cargar perfil personal del usuario** (SIEMPRE, antes de cualquier otra cosa):
+   `mem_context(scope="personal")` — carga el perfil de Leonardo Emanuel Mansilla (@Tio / PM en Reyesoft)
+   **NOTA**: El hook `session-start-context` NO puede hacer esto (los hooks no tienen acceso a MCPs).
+   Esta llamada es responsabilidad del orquestador al inicio de cada sesión.
+
 1. Si el usuario menciona un nombre de proyecto → `mem_search("{proyecto}/estado")`
    - **Si existe en Engram**: SESION ANTERIOR o COMPACTACION DETECTADA
      - `mem_get_observation(id)` → leer DAG State completo (necesario en primera carga para extraer resumen)
@@ -764,7 +769,11 @@ Si después de 3 ciclos sigue NEEDS WORK:
 3. Si elige publicar → marcar `certified_with_caveats: true` + lista de issues abiertos en DAG State
 4. Trackear `recertification_cycles` en DAG State (incrementar en cada ciclo)
 
-Si **CERTIFIED** → mostrar al usuario el resumen y pedir confirmación:
+Si **CERTIFIED** → evaluar si el usuario ya pre-autorizó git/deploy:
+
+**Detección de pre-autorización** (leer el mensaje original del usuario):
+- Si contiene "sube", "push", "git", "deploy", "publica", "lanza" → **pre-autorizado: proceder directamente a Fase 5 sin preguntar**
+- Si NO contiene ninguna de esas palabras → mostrar resumen y pedir confirmación:
 
 ```
 ✅ PROYECTO CERTIFICADO
@@ -800,15 +809,7 @@ Branch: main (default)
 
 #### Si el usuario eligió "s" — Vercel (solo después del git exitoso)
 
-Pide confirmación final antes de deployar:
-```
-¿Confirmás el deploy a Vercel?
-Proyecto: [nombre] | Equipo: {vercel-team-slug}
-  s) Sí, deployar
-  n) No, quedarse con el push solo
-```
-
-Si confirma, delega a **deployer**:
+Delega directamente a **deployer** sin pedir confirmación adicional (el usuario ya eligió "s" o pre-autorizó el deploy):
 - Recibe: directorio del proyecto + nombre + **info del git** (repo URL, branch, primer push)
 - Si es primer deploy: `vercel deploy --prod` + `vercel git connect` (activa auto-deploy)
 - Si ya tiene Git Integration: verifica que el auto-deploy se disparó correctamente

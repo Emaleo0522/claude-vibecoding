@@ -148,8 +148,10 @@ ls ~/.claude/agents/*.md | wc -l
 # Hooks installed (should be 13)
 ls ~/.claude/hooks/*.js | wc -l
 
-# CLAUDE.md present
-head -3 ~/CLAUDE.md
+# CLAUDE.md present (lives in the project directory, not HOME)
+# Linux: head -3 ~/Desktop/claude/CLAUDE.md  (or wherever you cloned claude-vibecoding)
+# Windows: check your working directory for CLAUDE.md
+ls CLAUDE.md
 
 # Tools available
 git --version && node --version && gh --version && vercel --version
@@ -240,7 +242,8 @@ The orchestrator reads the DAG State from Engram and resumes exactly where it le
 |-- settings.local.json # agent permissions
 |-- codepen-vault/     # approved CodePen effects
 |-- pixel-bridge/      # optional visual system
-~/CLAUDE.md             # system instructions (auto-read by Claude)
+{working-directory}/
+|-- CLAUDE.md          # system instructions (auto-read by Claude from the project dir)
 ```
 
 ### Model Routing

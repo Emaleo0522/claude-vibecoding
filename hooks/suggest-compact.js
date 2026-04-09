@@ -59,11 +59,13 @@ process.stdin.on('end', () => {
           if (fs.existsSync(estadoFile)) {
             const estado = fs.readFileSync(estadoFile, 'utf8');
             const faseMatch = estado.match(/fase_actual:\s*(.+)/);
-            const tareasMatch = estado.match(/completadas:\s*(\d+).*total:\s*(\d+)/);
+            // DAG State YAML uses tarea_actual and total_tareas (not "completadas" / "total")
+            const tareaActualMatch = estado.match(/tarea_actual:\s*(\d+)/);
+            const totalTareasMatch = estado.match(/total_tareas:\s*(\d+)/);
             if (faseMatch) {
               pipelineContext = ` Pipeline: Fase ${faseMatch[1].trim()}`;
-              if (tareasMatch) {
-                pipelineContext += `, tareas ${tareasMatch[1]}/${tareasMatch[2]}`;
+              if (tareaActualMatch && totalTareasMatch) {
+                pipelineContext += `, tarea ${tareaActualMatch[1]}/${totalTareasMatch[1]}`;
               }
               pipelineContext += '.';
             }

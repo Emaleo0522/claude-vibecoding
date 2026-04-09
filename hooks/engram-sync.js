@@ -26,8 +26,10 @@ const os = require('os');
 
 const HOME = os.homedir();
 const ENGRAM_DIR = path.join(HOME, '.engram');
-const REPO_CHUNKS_DIR = path.join(ENGRAM_DIR, 'chunks');
-const REPO_MANIFEST = path.join(ENGRAM_DIR, 'manifest.json');
+// The engram tool stores chunks/manifest in a nested .engram/ subdirectory
+// inside the git repo root (~/.engram/.engram/), not at the repo root itself.
+const REPO_CHUNKS_DIR = path.join(ENGRAM_DIR, '.engram', 'chunks');
+const REPO_MANIFEST = path.join(ENGRAM_DIR, '.engram', 'manifest.json');
 const LOG_FILE = path.join(HOME, '.claude', 'snapshots', 'engram-sync.log');
 
 const args = process.argv.slice(2);

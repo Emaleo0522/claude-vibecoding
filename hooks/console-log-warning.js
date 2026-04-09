@@ -16,6 +16,8 @@ const IGNORED_PATTERNS = [
   /\.test\./,
   /\.spec\./,
   /\.config\./,
+  /[\/\\]__tests__[\/\\]/,  // Jest __tests__/ directories
+  /[\/\\]test[\/\\]/,       // /test/ directories
   /scripts\//,
   /hooks\//,
   /\.claude\//,
