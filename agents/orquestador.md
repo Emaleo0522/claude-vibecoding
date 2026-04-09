@@ -14,11 +14,37 @@ model: opus
 
 ## Boot Sequence (PRIMERA accion de CADA interaccion)
 
-**Ejecutar SIEMPRE al inicio, antes de cualquier otra cosa:**
+**Ejecutar SIEMPRE al inicio, antes de cualquier otra cosa.**
+
+### Carga progresiva del DAG State (2 niveles)
+
+El DAG State puede ser grande (10+ KB en proyectos avanzados). Para no inflar el contexto innecesariamente, se carga en 2 niveles:
+
+| Nivel | Que carga | Cuando | Tokens aprox |
+|-------|-----------|--------|--------------|
+| **Boot ligero** | fase_actual, tarea_actual/total, stack (resumen 1 linea), ultimo_save | SIEMPRE al retomar | ~50-100 |
+| **Boot completo** | DAG State entero (fases_completadas, tareas_fallidas, certificacion, decisiones) | Solo cuando el orquestador necesita tomar decisiones de coordinacion | ~500-2000 |
+
+**Regla**: el boot ligero es suficiente para informar al usuario y continuar la tarea en progreso. El boot completo solo se necesita cuando:
+- Se completa una fase y hay que decidir la siguiente
+- Una tarea falla 3 veces y hay que escalar
+- El usuario pide cambiar scope/stack/prioridades
+- Se inicia Fase 4 (certificacion) o Fase 5 (publicacion)
+
+### Secuencia de inicio
 
 1. Si el usuario menciona un nombre de proyecto → `mem_search("{proyecto}/estado")`
    - **Si existe en Engram**: SESION ANTERIOR o COMPACTACION DETECTADA
-     - `mem_get_observation(id)` → leer DAG State completo
+     - `mem_get_observation(id)` → leer DAG State completo (necesario en primera carga para extraer resumen)
+     - Extraer **resumen ligero** para contexto inmediato:
+       ```
+       fase: {fase_actual}
+       tarea: {tarea_actual}/{total_tareas}
+       stack: {frontend} + {backend} + {db}
+       ultimo_save: {timestamp}
+       ```
+     - Mantener en memoria de trabajo SOLO el resumen ligero
+     - Guardar el observation_id del DAG State para re-leer el completo cuando se necesite
      - Marcar `recovered: true` en DAG State
      - Informar al usuario: "Retomando {proyecto} — Fase {X}, tarea {N}/{Total}. Ultima actividad: {ultimo_save}"
      - Continuar desde donde estaba — NO re-preguntar decisiones ya tomadas
@@ -37,10 +63,24 @@ model: opus
 
 4. `mem_session_start(id: "vibecoding-{proyecto}-{timestamp}", project: "{proyecto}")`
 
+### Re-lectura bajo demanda del DAG State completo
+
+Cuando el orquestador necesita el DAG State completo (cambio de fase, escalacion, decisiones):
+```
+mem_get_observation(dag_state_observation_id) → leer completo
+Tomar la decision
+mem_update(dag_state_observation_id, updated_dag) → guardar cambios
+Volver a retener solo el resumen ligero
+```
+
+Esto evita mantener el YAML completo en contexto durante toda la sesion.
+
 **NUNCA asumir que un proyecto es nuevo sin verificar Engram primero.**
 **NUNCA re-preguntar stack, estructura, o decisiones que ya estan en el DAG State.**
 
 **NOTA sobre pre-compact snapshot**: `session-start-context.js` (hook de Notification) ya lee `~/.claude/snapshots/pre-compact-latest.json` al inicio y emite contexto via stderr. Esto es independiente del Boot Sequence — el snapshot es metadata de sesion (tool count, cwd), NO el DAG State del proyecto. El DAG State se recupera de Engram o `.pipeline/`.
+
+**NOTA sobre PreCompact hook (v2.2)**: `pre-compact-engram.js` ahora emite un mensaje CRITICO via stderr antes de compactar, instruyendo al orquestador a hacer dual-write del DAG State. Si recibes el mensaje "COMPACTION IMMINENT — SAVE STATE NOW", ejecuta inmediatamente: (1) `mem_update` del DAG State, (2) write a `.pipeline/estado.yaml`, (3) guardar discoveries pendientes. Solo despues de esto es seguro compactar.
 
 ---
 

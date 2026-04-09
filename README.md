@@ -94,7 +94,7 @@ Phase 5: Deployment      -> git -> deployer (with user confirmation)
 | `quality-gate` | PostToolUse | Write/Edit | **WARNS** on debugger, .only(), @ts-ignore, hardcoded secrets |
 | `console-log-warning` | PostToolUse | Write/Edit | **WARNS** on console.log/warn/error in production code (ignores tests) |
 | `suggest-compact` | PostToolUse | global | **WARNS** every ~50 tool calls with pipeline phase context (async) |
-| `pre-compact-engram` | PreCompact | lifecycle | **SAVES** snapshot to disk + resets counter before compaction |
+| `pre-compact-engram` | PreCompact | lifecycle | **SAVES** snapshot to disk + **INSTRUCTS** Claude to dual-write DAG State before compaction (v2.2) |
 | `cost-tracker` | PostToolUse | global | **LOGS** each tool call with category, sub-agent, model (async) |
 | `session-summary` | Stop | lifecycle | **LOGS** session activity in JSONL for recovery (async) |
 | `engram-sync` | Stop | lifecycle | **SYNCS** Engram memories to GitHub automatically (async, 60s timeout) |
@@ -293,6 +293,60 @@ The orchestrator selects the stack in Phase 1 based on project requirements. The
 | **Graceful Degradation** | If Engram is down, uses local disk as fallback. If Playwright is unavailable, performs code-only QA. |
 | **Rejection Workflows** | Up to 3 retries for rejected creative assets with escalating strategy changes. |
 | **NEEDS WORK Flow** | If reality-checker does not certify, the orchestrator returns to Phase 3 only for affected tasks. |
+
+---
+
+## Context Window Management (v2.2)
+
+The system uses several mechanisms to protect the context window from bloat and ensure state survives compaction events.
+
+### Progressive DAG State Loading
+
+The DAG State (project progress tracker) can grow to 10+ KB for advanced projects. Instead of loading it fully on every interaction, the orchestrator uses 2 levels:
+
+| Level | What it loads | Tokens | When |
+|-------|--------------|--------|------|
+| **Light boot** | Current phase, current task/total, stack (1-liner), last save timestamp | ~50-100 | Always on resume |
+| **Full boot** | Entire DAG State (completed phases, failed tasks, certifications, all decisions) | ~500-2000 | Phase transitions, escalations, scope changes, certification |
+
+The orchestrator reads the full DAG State once at startup to extract the light summary, then retains only the summary + the observation ID. It re-reads the full state on demand when decisions require it.
+
+### PreCompact Blocking (v2.2)
+
+When Claude's context is about to be compacted (context window nearing capacity), the `pre-compact-engram` hook intercepts the event and:
+
+1. **Saves a session snapshot** to disk (tool count, working directory, pipeline status)
+2. **Emits a critical message** via stderr: `COMPACTION IMMINENT -- SAVE STATE NOW`
+
+This message instructs the orchestrator to immediately:
+1. Save DAG State to Engram via `mem_update`
+2. Write DAG State to disk at `{project_dir}/.pipeline/estado.yaml`
+3. Save any unsaved discoveries or task progress
+
+After saving, compaction is safe -- the Boot Sequence recovers from Engram or disk on the next interaction.
+
+> **Why this matters:** Before v2.2, the hook only saved metadata (tool count, cwd). If the orchestrator hadn't done a dual-write recently, task progress could be lost during compaction. Now the hook actively forces a save before context is lost.
+
+### Dual-Write Pattern
+
+Critical state is always written to two locations:
+
+```
+Primary:  Engram MCP  ->  {proyecto}/estado  (searchable, cross-session)
+Fallback: Local disk  ->  {project_dir}/.pipeline/estado.yaml
+```
+
+On recovery, the Boot Sequence checks Engram first, then falls back to disk. This survives MCP failures, network issues, and database locks.
+
+### Token Budget Strategy
+
+| Mechanism | Tokens Saved | How |
+|-----------|-------------|-----|
+| Light boot vs full boot | ~400-1900 per resume | Only load full DAG when decisions needed |
+| Short return envelopes | ~500-2000 per delegation | Sub-agents return status + files + issues, never full code |
+| Screenshots to disk | ~5000+ per QA cycle | Images saved as files, only paths passed in context |
+| Selective drawer reads | ~200-500 per agent | Each agent reads only its relevant Engram drawers |
+| PreCompact save-then-compact | 100% context recovery | State persisted before compaction, nothing lost |
 
 ---
 

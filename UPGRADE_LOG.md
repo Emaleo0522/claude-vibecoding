@@ -1,5 +1,38 @@
 # Upgrade Log — Context Management + Best Practices
 
+## v2.2 — Context Window Optimization — 2026-04-08
+
+### Summary
+Two targeted improvements to context window management, inspired by analysis of [MemPalace](https://github.com/milla-jovovich/mempalace) architecture. Zero new dependencies, zero protocol changes for sub-agents.
+
+### Changes
+
+**1. PreCompact Blocking (pre-compact-engram.js)**
+- Hook now emits "COMPACTION IMMINENT -- SAVE STATE NOW" via stderr before compaction
+- Instructs the orchestrator to do dual-write (Engram + disk) before context is lost
+- Detects active pipeline by reading `.pipeline/estado.yaml` for current phase/task
+- Includes pipeline status in the stderr message for context
+- Previous behavior: only saved metadata snapshot (tool count, cwd) passively
+- New behavior: actively forces state preservation before compaction
+
+**2. Progressive DAG State Loading (orquestador.md Boot Sequence)**
+- Boot Sequence now loads DAG State in 2 levels: light (~50-100 tokens) vs full (~500-2000 tokens)
+- Light boot: fase_actual + tarea_actual/total + stack 1-liner + ultimo_save
+- Full boot: only when orchestrator needs to make coordination decisions (phase transitions, escalations, scope changes)
+- Orchestrator retains observation_id for on-demand re-reads, discards full YAML from context
+- No changes needed in sub-agents -- they still read their specific drawers in full via 2-step pattern
+
+### Files modified
+- `hooks/pre-compact-engram.js` — rewritten with pipeline detection + stderr blocking message
+- `agents/orquestador.md` — Boot Sequence rewritten with 2-level progressive loading + PreCompact v2.2 note
+- `CLAUDE.md` — 3 sections updated (Carga progresiva, hook table, Resiliencia Engram)
+- `README.md` — New "Context Window Management (v2.2)" section + hook table updated
+
+### Audit result
+6/6 PASS (syntax, consistency across 3 files, settings.json integration, agent-protocol compatibility, cross-references)
+
+---
+
 ## Auditoria v3 — 2026-03-30
 
 ### Resumen

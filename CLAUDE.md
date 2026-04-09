@@ -70,12 +70,23 @@ else:
 ### Perfil personal del usuario
 Al iniciar **cualquier** sesion (nueva, retomada o activa), ejecutar `mem_context(scope="personal")` antes de cualquier tarea. Esto carga el perfil laboral y personal del usuario (Leonardo Emanuel Mansilla / @Tio / PM en Reyesoft) y permite trabajar con contexto completo desde el primer mensaje.
 
+### Carga progresiva del DAG State (v2.2)
+
+El DAG State se carga en **2 niveles** para no inflar el contexto innecesariamente:
+
+| Nivel | Contenido | Tokens aprox | Cuando |
+|-------|-----------|--------------|--------|
+| **Boot ligero** | fase_actual, tarea_actual/total, stack (1 linea), ultimo_save | ~50-100 | SIEMPRE al retomar |
+| **Boot completo** | DAG State entero | ~500-2000 | Cambio de fase, escalacion, cambio de scope, certificacion |
+
+El orquestador lee el DAG completo una vez al inicio para extraer el resumen ligero, y luego retiene solo el resumen + el observation_id. Re-lee el completo bajo demanda cuando necesita tomar decisiones.
+
 ### Continuidad entre sesiones
 
 Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 
 1. El orquestador busca `{proyecto}/estado` en Engram (Boot Sequence)
-2. Lee el DAG State completo (fase, stack, tareas, progreso)
+2. Lee el DAG State completo, extrae resumen ligero, descarta el resto
 3. Presenta al usuario:
    ```
    Retomando {proyecto}
@@ -122,7 +133,7 @@ Si un usuario abre una NUEVA conversacion y dice "retomar {proyecto}":
 - **Disk fallback para escritura**: si `mem_save`/`mem_update` falla → escribir a `{project_dir}/.pipeline/{cajon}.md`. Orquestador busca primero en Engram, luego en `.pipeline/`
 - **Null observation_id en lectura**: cajones críticos (tareas, css-foundation, design-system, security-spec, gdd) → buscar fallback en disco → si no existe, STATUS fallido con BLOQUEADORES. Cajones opcionales → continuar con defaults. Cajones QA → marcar como "no validada"
 - **Retry counter**: el orquestador posee `intento_actual` (no el subagente). Se pasa en cada handoff a evidence-collector y se persiste en DAG State
-- **pre-compact snapshot**: solo guarda metadata de sesión (tool count, cwd), NO DAG State. La persistencia del DAG State es responsabilidad del orquestador via dual-write
+- **pre-compact snapshot (v2.2)**: guarda metadata de sesion (tool count, cwd, pipeline status) a disco Y emite mensaje critico via stderr instruyendo a Claude a hacer dual-write del DAG State antes de compactar. El orquestador DEBE responder al mensaje "COMPACTION IMMINENT" haciendo mem_update + disk write antes de que proceda la compactacion
 
 ## Hook System (capa reactiva — v2.1, auditada 2026-04-07)
 
@@ -137,7 +148,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `quality-gate` | PostToolUse | Write\|Edit | **ADVIERTE** debugger, .only(), @ts-ignore, @ts-nocheck, secrets/API keys hardcodeados en JS/TS |
 | `console-log-warning` | PostToolUse | Write\|Edit | **ADVIERTE** console.log/warn/error en codigo de produccion (ignora tests) |
 | `suggest-compact` | PostToolUse | (global) | **ADVIERTE** cada ~50 tool calls con contexto de fase/tarea del pipeline (async) |
-| `pre-compact-engram` | PreCompact | (lifecycle) | **GUARDA** snapshot a disco + resetea counter antes de compactar |
+| `pre-compact-engram` | PreCompact | (lifecycle) | **GUARDA** snapshot a disco + **INSTRUYE** a Claude a hacer dual-write del DAG State antes de compactar (v2.2) |
 | `cost-tracker` | PostToolUse | (global) | **REGISTRA** cada tool call con categoria, subagente, modelo (async) |
 | `session-summary` | Stop | (lifecycle) | **LOGUEA** actividad de sesion en JSONL para recovery (async) |
 | `engram-sync` | Stop | (lifecycle) | **SINCRONIZA** memorias Engram con GitHub automaticamente (async, 60s timeout) |
