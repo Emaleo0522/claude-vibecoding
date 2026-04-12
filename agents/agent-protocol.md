@@ -93,6 +93,7 @@ TAREA: {descripción corta de lo que se hizo}
 ARCHIVOS: [lista de paths creados/modificados]
 ENGRAM: {proyecto}/{mi-cajon} (topic_key usado)
 SERVIDOR: puerto {N} (solo si levantaste servidor)
+VERIFICACION: typo | layout | config | none
 BLOQUEADORES: [lista] (solo si hay impedimentos para continuar)
 NOTAS: {texto libre, máx 3 líneas}
 ```
@@ -100,7 +101,17 @@ NOTAS: {texto libre, máx 3 líneas}
 - **STATUS** es el primer campo, siempre
 - **ARCHIVOS** lista paths SIEMPRE relativos al proyecto (ej: `src/app/page.tsx`, NO `/home/user/project/src/app/page.tsx`)
 - **ENGRAM** indica el cajón donde guardaste tu resultado
+- **VERIFICACION** indica qué nivel de verificación requiere el cambio (ver tabla abajo)
 - Omitir campos vacíos (no poner "SERVIDOR: N/A")
+
+### Tabla de valores para VERIFICACION
+
+| Valor | Cuándo usarlo | Acción del orquestador |
+|-------|--------------|----------------------|
+| `layout` | Cambios de UI, estilos, componentes, lógica nueva | Workflow completo: snapshot → navigate → screenshot |
+| `typo` | Corrección de texto/copy en string estático, empty state, texto condicional | Un solo `preview_eval`: `document.body.innerText.includes("texto_nuevo")` → si `true`, PASS |
+| `config` | Cambios en archivos no-UI: configs, tipos, API routes, env vars | Saltar verificación completamente |
+| `none` | Sin servidor de preview activo, o cambio no observable en browser | Saltar verificación completamente |
 
 **Agentes utilitarios** (codepen-explorer) pueden usar STATUS operacionales adicionales:
 `OK | SAVED | FOUND | NOT_FOUND | BLOCKED` — siempre dentro del mismo formato de envelope.

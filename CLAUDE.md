@@ -445,6 +445,42 @@ Los agentes reportan el costo en su STATUS al orquestador. Máximo estimado del 
 - **bundlewatch**: configurar en `package.json` con límites por bundle. Gate obligatorio en Fase 4 si el proyecto tiene build JS.
 - Límites recomendados: main bundle < 250KB gzip, vendor < 150KB gzip, páginas individuales < 50KB gzip
 
+### WebGL / Three.js / R3F — Safety Patterns (obligatorio en proyectos con Canvas 3D)
+
+Estos patrones son **obligatorios** cuando frontend-developer o xr-immersive-developer usan Three.js, R3F, PixiJS o cualquier Canvas WebGL. El pipeline fue desarrollado en Chrome — Safari, Dia y Chrome en hardware limitado fallan silenciosamente sin estos guards.
+
+#### Error handling (sin esto la escena desaparece sin aviso)
+- **Siempre** envolver `<Canvas>` en un React Error Boundary con fallback CSS. Ver patrón en `kahntus-portfolio/src/components/WebGLErrorBoundary.tsx`
+- **Siempre** llamar `detectWebGLSupport()` antes de montar el Canvas — si WebGL no está disponible, renderizar el fallback directamente sin intentar montar Three.js
+- El boundary captura tanto errores de JS como pérdidas de contexto WebGL
+
+#### GLSL Shaders — compatibilidad Safari/Webkit
+- **`precision mediump float;`** al inicio de TODOS los fragment shaders — Safari usa `lowp` por defecto (floats de 16-bit) lo que rompe completamente `exp()` y `pow()`
+- **Nunca** usar `array[i]` dentro de loops donde `i` es variable de loop — el compilador GLSL de Safari rechaza dynamic array indexing en branches. Desenrollar manualmente con índices estáticos (`array[0]`, `array[1]`, etc.)
+- Loops simples sin array indexing dinámico (ej: `fbm` acumuladores) son seguros
+
+#### Video backgrounds
+- **Nunca** confiar en el atributo declarativo `autoPlay` — usar `video.play().catch(() => setFailed(true))` imperativo en `useEffect`
+- Agregar `preload="none"` — sin esto, un stall de red nunca dispara `onError` y el video queda en estado indeterminado para siempre
+- Poner fuente WebM **antes** del MP4: `<source src="video.webm" type="video/webm" /><source src="video.mp4" type="video/mp4" />`
+- Generar WebM con: `ffmpeg -i video.mp4 -c:v libvpx-vp9 -crf 35 -b:v 0 video.webm`
+
+#### Animaciones JS (intro, scramble, loaders)
+- **Nunca** usar `setTimeout(fn, <28ms)` para animaciones frame-a-frame — Safari throttlea `setTimeout` a ~250ms bajo presión de CPU, congelando la animación a mitad
+- **Siempre** usar `requestAnimationFrame` con pacing por timestamp: guardar `lastTick = performance.now()` y solo avanzar cuando `now - lastTick >= FRAME_DURATION`
+
+#### Camera/objeto lerp en useFrame
+- **Siempre** pasar `delta` a `useFrame((_, delta) => {...})` y usar lerp frame-rate independent:
+  ```ts
+  const lerpFactor = 1 - Math.pow(1 - BASE, Math.min(delta, 0.1) * 60)
+  // BASE=0.08 → a 60fps da ~0.08, a 1fps da ~0.99 (no freeze)
+  ```
+- El `Math.min(delta, 0.1)` evita saltos bruscos si el tab queda en background
+
+#### Limitación conocida del pipeline de QA
+- **Playwright (evidence-collector, reality-checker) solo corre Chromium** — issues de Safari/Webkit/Dia NO son detectados por el QA automatizado
+- Para proyectos con WebGL, aplicar obligatoriamente todos los safety patterns de esta sección ANTES de Fase 4 — no se puede detectar en QA
+
 ### QA & Certificación
 - Siempre testear contra **build de producción** (`npm run build && npm start`), no dev server
 - Matar procesos en puerto antes de levantar servidor de test (`lsof -ti:PORT && kill ...`)
@@ -503,6 +539,19 @@ cd nombre-proyecto && npm run build
 ### Next.js — Versiones
 - Usar **Next.js 15 o 16** (no 14)
 - Next.js 16+: `proxy.ts` en raiz del proyecto (no `middleware.ts`)
+
+### Preview verification — proporcionalidad
+
+El hook `stop` dispara `verification_workflow` cuando se edita código con un preview server activo. Aplicar con criterio según el tipo de cambio:
+
+| Tipo de cambio | Verificación requerida |
+|----------------|----------------------|
+| Layout, UI, estilos, lógica nueva | Workflow completo: snapshot → navigate → screenshot |
+| Texto/copy en estado visible (hero, nav, botones) | `preview_eval` único para confirmar el texto nuevo existe |
+| Typo en empty state / texto condicional | `preview_eval` único: `document.body.innerText.includes("texto_correcto")` — si retorna `true`, PASS sin navegación ni snapshot |
+| Cambio en archivo no-UI (config, tipos, API routes) | Saltar verificación completamente |
+
+**Regla clave**: un typo fix en un string estático NO requiere navegar, hacer snapshot ni tomar screenshot. Un solo `preview_eval` de búsqueda de texto es suficiente y correcto.
 
 ## Herramientas de diseno
 - **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explicitamente
