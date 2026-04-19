@@ -53,11 +53,32 @@ process.stdin.on('end', () => {
       if (fs.existsSync(estadoPath)) {
         pipelineActive = true;
         const estado = fs.readFileSync(estadoPath, 'utf8');
-        const faseMatch = estado.match(/fase_actual:\s*(.+)/);
-        const tareaMatch = estado.match(/tarea_actual:\s*(\d+)/);
-        const totalMatch = estado.match(/total_tareas:\s*(\d+)/);
-        if (faseMatch) pipelinePhase = faseMatch[1].trim();
-        if (tareaMatch && totalMatch) pipelineTask = `${tareaMatch[1]}/${totalMatch[1]}`;
+        // Parser seguro: ignora comentarios (#...), quita quotes, maneja inline comments.
+        // Busca solo top-level keys (sin indentación) para evitar matching en sub-objetos.
+        const extractYamlField = (content, key) => {
+          const lines = content.split('\n');
+          for (const line of lines) {
+            // Skip comments y líneas indentadas (sub-objetos)
+            if (/^\s*#/.test(line) || /^\s/.test(line)) continue;
+            const m = line.match(new RegExp(`^${key}\\s*:\\s*(.*)$`));
+            if (m) {
+              // Quitar inline comment y quotes
+              let value = m[1].replace(/\s*#.*$/, '').trim();
+              if ((value.startsWith('"') && value.endsWith('"')) ||
+                  (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+              }
+              return value;
+            }
+          }
+          return null;
+        };
+        pipelinePhase = extractYamlField(estado, 'fase_actual') || '';
+        const tarea = extractYamlField(estado, 'tarea_actual');
+        const total = extractYamlField(estado, 'total_tareas');
+        if (tarea && total && /^\d+$/.test(tarea) && /^\d+$/.test(total)) {
+          pipelineTask = `${tarea}/${total}`;
+        }
       }
     } catch (e) {}
 

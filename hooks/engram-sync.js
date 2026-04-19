@@ -39,6 +39,8 @@ const MODE = args.includes('--export') ? 'export'
   : args.includes('--hook') ? 'hook'
   : 'full';
 
+const LOG_MAX_LINES = 2000;
+
 function log(msg) {
   const ts = new Date().toISOString();
   const line = `[${ts}] ${msg}`;
@@ -46,7 +48,26 @@ function log(msg) {
   try {
     const dir = path.dirname(LOG_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(LOG_FILE, line + '\n');
+    // Atomic append-with-trim: read → append in memory → write temp → rename.
+    // Evita race condition cuando varias instancias del hook corren en paralelo.
+    const tmpFile = LOG_FILE + '.tmp.' + process.pid;
+    try {
+      let lines = [];
+      if (fs.existsSync(LOG_FILE)) {
+        const existing = fs.readFileSync(LOG_FILE, 'utf8').trim();
+        if (existing) lines = existing.split('\n').filter(l => l.trim());
+      }
+      lines.push(line);
+      if (lines.length > LOG_MAX_LINES) {
+        lines = lines.slice(-Math.floor(LOG_MAX_LINES * 0.8));
+      }
+      fs.writeFileSync(tmpFile, lines.join('\n') + '\n');
+      fs.renameSync(tmpFile, LOG_FILE);
+    } catch (inner) {
+      try { fs.unlinkSync(tmpFile); } catch (_) {}
+      // Fallback: append simple si el atomic pattern falla (ej. filesystem sin rename)
+      fs.appendFileSync(LOG_FILE, line + '\n');
+    }
   } catch (e) {}
 }
 
