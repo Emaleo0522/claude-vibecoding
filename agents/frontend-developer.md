@@ -576,59 +576,46 @@ describe('ContactForm', () => {
 ### Proactive saves
 Ver `agent-protocol.md` § 4.
 
-## Pre-return Audit — Anti-Generic Check (NUEVO — 2026-04-19)
+## Pre-return Audit — Anti-Generic Check (EJECUTABLE — 2026-04-22)
 
-Antes de devolver STATUS: completado para una tarea de UI (landing, dashboard page, componente con impacto visual), ejecutar este self-audit sobre el código generado:
+Antes de devolver STATUS: completado para una tarea de UI (landing, dashboard page, componente con impacto visual), ejecutar el script `~/.claude/hooks/frontend-audit.sh` sobre los archivos modificados. Es determinístico, exit 0 = PASS, exit 1 = FAIL.
 
-**Paso 1 — Leer anti_patterns_HIGH**:
+**Paso 1 — Leer contexto desde Engram**:
 ```
-# Desde brand.json (preferido, tiene schema v2)
-anti_patterns = cat {brand.json}.anti_patterns_HIGH
-# Fallback si no hay brand.json
-anti_patterns = intent.anti_patterns_HIGH
+intent = mem_get_observation(mem_search("{proyecto}/intent").observation_id)
+visual_direction = mem_get_observation(mem_search("{proyecto}/visual-direction").observation_id)
+
+mood_preset = intent.mood_preset
+motion_intensity = intent.dials_suggested.motion_intensity  # 1-10
+hero_type = visual_direction.hero                           # static/video/animated/parallax/slider/text-only
 ```
 
-**Paso 2 — Checks automatizables (grep sobre archivos escritos en esta tarea)**:
+**Paso 2 — Ejecutar el audit**:
 
 ```bash
-# Check SaaS teal default (solo si mood_preset NO es swiss-minimal/dashboard-dense)
-if [[ "$mood_preset" != "swiss-minimal" && "$mood_preset" != "dashboard-dense" ]]; then
-  # Paleta teal/cyan hardcoded
-  grep -rE "text-teal-|bg-teal-|text-cyan-|bg-cyan-|#0[0-9a-f][7-9][0-9a-f][78][0-9a-f]" {archivos modificados}
-  # Si match → FAIL "teal hardcoded detectado en mood $mood_preset"
-
-  # Font Inter/Roboto/Open Sans hardcoded como heading
-  grep -rE "font-family:[^;]*\b(Inter|Roboto|Open Sans|Lato|Arial)" {archivos modificados}
-  # Si match Y el archivo es hero/landing → FAIL "heading sans-serif genérico"
-
-  # Patrón hero centrado + 2 CTAs + 3 cards Lucide
-  grep -l "lucide-react" {archivos} | xargs grep -lE "grid.*cols-3|grid-cols-3.*gap"
-  # Si match en page principal → ALERT "posible SaaS genérico, revisar composición"
-fi
-
-# Check shadow uniforme (ignora mood swiss-minimal)
-if [[ "$mood_preset" == "neo-brutalism" ]]; then
-  grep -rE "shadow-(sm|md|lg)" {archivos modificados}
-  # Si match → FAIL "shadow suave en brutalism, debe ser offset hard (ej. shadow-[6px_6px_0_#000])"
-fi
-
-# Check Hero image/media presente (solo si visual-direction.hero != "text-only")
-if [[ "$hero_type" != "text-only" ]]; then
-  grep -l "<img\|<video\|<Image\|next/image" {hero_archivo}
-  # Si NO match → FAIL "hero sin imagen/video pese a visual-direction.hero = $hero_type"
-fi
-
-# Check motion coherente con motion_intensity dial
-if [[ "$motion_intensity" -ge 7 ]]; then
-  grep -l "gsap\|ScrollTrigger\|useScroll\|framer-motion" {archivos modificados}
-  # Si NO match en tarea de hero/landing → FAIL "motion_intensity≥7 requiere GSAP/Framer en hero"
-fi
+bash ~/.claude/hooks/frontend-audit.sh \
+  --mood="$mood_preset" \
+  --hero="$hero_type" \
+  --motion="$motion_intensity" \
+  --files="$(echo archivos_modificados_en_tarea)"
 ```
 
-**Paso 3 — Acción**:
-- Si todo PASS → devolver STATUS: completado con sección AUTO_AUDIT.
-- Si algún FAIL → NO devolver. Regenerar la parte fallida (ej. reemplazar teal por color del preset, reemplazar Inter por serif display, agregar asimetría al hero).
-- Máximo 2 iteraciones internas. Si sigue fallando → STATUS: fallido con BLOQUEADORES: ["Regla $X: $detalle"].
+El script corre 5 checks determinísticos (grep patterns compilados):
+- **T1 saas_teal_check**: teal/cyan hardcoded en moods no-swiss
+- **T2 heading_font_check**: Inter/Roboto/Open Sans como heading en moods audaces
+- **T3 hero_media_check**: hero sin `<img>/<video>/<Image>` cuando visual-direction.hero ≠ text-only
+- **T4 motion_coherent**: motion_intensity≥7 sin GSAP/Framer, o ≤3 con GSAP (sobre-engineered)
+- **T5 shadow_coherent**: shadow-sm/md/lg en neo-brutalism (debe ser offset-hard)
+
+Output: YAML con `saas_teal_check`, `heading_font_check`, `hero_media_check`, `motion_coherent`, `shadow_coherent`, `fail_count`, `verdict`.
+
+**Paso 3 — Acción según exit code**:
+- **Exit 0 (verdict: PASS)** → copiar output YAML al AUTO_AUDIT del Return Envelope y devolver STATUS: completado.
+- **Exit 1 (verdict: FAIL)** → NO devolver. Leer qué T-rule falló, regenerar la parte fallida (reemplazar teal por color del preset, swap Inter por display serif, agregar media al hero, escalar motion a GSAP, shadow offset-hard).
+- Re-ejecutar el script tras el fix. Máximo 2 iteraciones internas.
+- Si sigue FAIL tras 2 iteraciones → STATUS: fallido con BLOQUEADORES: ["frontend-audit: T{N} sigue FAIL tras 2 iter: {detalle}"].
+
+**Por qué script en vez de pseudocode**: el script es token-zero en runtime (bash local, no LLM). Devuelve resultado determinístico. Cierra el gap "honor system" donde el agente podía reportar PASS sin correr los checks reales. evidence-collector Paso 4b lee AUTO_AUDIT — si el verdict no matchea el output del script, es false positive detectable.
 
 ## Return Envelope
 

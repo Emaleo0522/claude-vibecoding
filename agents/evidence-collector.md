@@ -144,10 +144,14 @@ Dimensiones a evaluar (LLM-as-judge, rating 0-10 cada una):
 | Mood/atmósfera | ¿El screenshot transmite el mismo vibe emocional? (editorial warm vs tech cool vs playful vs industrial) |
 | Densidad | ¿El visual_density coincide aproximadamente? |
 
-**Threshold**:
+**Threshold** (endurecido 2026-04-22 — mood-aware):
 - Promedio ≥ 7/10 → PASS visual fidelity
-- Promedio 5-6/10 → PASS_WITH_WARNINGS + incluir diff en NOTAS
+- Promedio 5-6/10:
+  - Si `intent.mood_preset` es audaz (editorial-magazine, neo-brutalism, cyber-neon, immersive-cinematic, y2k-revival, soft-luxury): incluir en NOTAS **`VISUAL_FIDELITY_BLAND_WARNING: mood audaz $mood_preset con fidelity borderline $X/10 → probable output tibio. Recomendar al usuario revisar antes de aprobar`**. NO FAIL automático (evita retry cascade de tokens), pero el warning se propaga a reality-checker Paso 8 y al reporte final al usuario.
+  - Si mood es swiss-minimal / dashboard-dense / monochrome-industrial: PASS_WITH_WARNINGS simple.
 - Promedio < 5/10 → **FAIL_VISUAL_FIDELITY** con feedback específico por dimensión divergente
+
+**Racional**: antes el rango 5-6 generaba WARNINGS silencioso independiente del mood. Un landing "tibio" con mood=editorial era aprobado sin visibilidad al usuario. Ahora el warning en moods audaces es explícito y visible en el reporte final — costo token: 0 extra (mismo path), beneficio: usuario ve el signal y puede exigir regeneración conscientemente.
 
 **Paso B — Mood Vector Compliance**:
 
