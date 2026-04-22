@@ -328,7 +328,7 @@ vercel --version
 ```bash
 node ~/.claude/hooks/audit-system.js
 ```
-Esto valida agentes, hooks, settings y protocolos. Resultado esperado: `HEALTHY (6/6)`.
+Esto valida agentes, hooks, settings y protocolos. Resultado esperado: `HEALTHY (11/11)`.
 
 En Claude Desktop: abri una nueva conversacion y escribi `modo orquestador — hola` — si responde describiendo el pipeline de 5 fases, todo funciona.
 

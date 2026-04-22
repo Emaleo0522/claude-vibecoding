@@ -1,5 +1,78 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Audit Completo 10 Fases — 2026-04-22 ✅
+
+### Summary
+Audit arquitectonico completo post-fix 2026-04-19, expandido de 6 a 10 fases. Incluye 4 fases nuevas no cubiertas previamente: Distribution Integrity, Install Script E2E, README Coherence, UPGRADE_LOG Management. Identifico drift critico en templates y install docs que un usuario nuevo hubiera recibido al instalar.
+
+### Resultado por fase
+
+| Fase | Subject | Status | Findings |
+|------|---------|--------|----------|
+| 1 | Sync repo ↔ local | ✅ FIXED | 6 hooks + 4 agents out of sync (repo newer, local outdated) |
+| 2 | Hooks + audit-system + engram-sync E2E | ✅ PASS | 11/11 HEALTHY, 13 hooks, engram-sync pushed today |
+| 3 | MCPs + tokens + deadlocks | ✅ PASS | 4 MCPs (engram/context7/playwright/pixel-bridge), anti-loop present, deploy_url consistent |
+| 4 | External integrations (GitHub/Vercel/CodePen/Engram-sync) | ✅ PASS | gh auth OK, vercel OK, 8 vault entries, engram.db 2.9MB |
+| 5 | Regression + Windows + pixel-bridge + protocol | ✅ PASS | 25/25 protocol compliant, Windows overrides via CLAUDE.md |
+| 6 | self-auditor + Engram + MEMORY | ✅ PASS | self-auditor present, Engram healthy, 15 memory files |
+| 7 | Distribution Integrity (NEW) | ✅ FIXED | templates/global-claude.md + windows-claude.md obsoletos (sin Intent Clarifier, anti-generic) |
+| 8 | Install script E2E (NEW) | ✅ PASS | set -e, idempotent (.bak), __CLAUDE_HOME__ placeholder, no hardcoded user |
+| 9 | README coherence (NEW) | ✅ PASS | 38 agents/13 hooks/13 refs/8 CSVs verificados, no broken links |
+| 10 | UPGRADE_LOG management (NEW) | ✅ FIXED | Entry agregada para audit completo |
+
+### Drift fixes aplicados
+
+**1. Hooks desincronizados (repo → local)**
+- `~/.claude/hooks/` tenia 6 hooks viejos (audit-system, cost-tracker, engram-sync, pre-compact-engram, quality-gate, suggest-compact)
+- Repo tenia las versiones con fixes Medium del backlog 2026-04-19 (YAML parser robusto, secret regex env-aware, atomic log writes)
+- Sincronizados los 6 hooks a local
+
+**2. Agents desincronizados (repo → local)**
+- `~/.claude/agents/` tenia 4 agents viejos (brand-agent, frontend-developer, pipeline-reference, ui-designer)
+- Repo tenia las versiones con Intent Clarifier + anti-generic + QA hardening del 2026-04-19
+- Sincronizados los 4 agents a local
+
+**3. Templates obsoletos (critico)**
+- `templates/global-claude.md` y `templates/windows-claude.md` tenian version pre-2026-04-19 (sin Intent Clarifier, Visual Direction Checkpoint, anti-generic guardrails, QA hardening)
+- Impacto: usuarios nuevos corriendo `install/linux.sh` recibian CLAUDE.md viejo aunque el repo README anunciaba las features nuevas
+- Fix: templates overwriteados con CLAUDE.md actual (identicos ahora)
+
+**4. install/windows.md desactualizado**
+- Decia "Resultado esperado: HEALTHY (6/6)" cuando el audit-system ahora devuelve 11/11
+- Fix: actualizado a "HEALTHY (11/11)"
+
+### Nuevas fases introducidas
+
+La plantilla de audit original (6 fases) cubria arquitectura interna pero no validaba:
+
+- **Fase 7 Distribution Integrity**: que lo instalado por el installer coincida con lo advertido por README. Esencial para usuarios nuevos.
+- **Fase 8 Install Script E2E**: idempotencia (re-install sin romper), placeholders funcionan, fail-fast con `set -e`, sin hardcoded user info.
+- **Fase 9 README Coherence**: claims verificables (contadores exactos, links no rotos, comandos que funcionan).
+- **Fase 10 UPGRADE_LOG Management**: cada cambio sistemico queda documentado para trazabilidad.
+
+Estas 4 fases deberian correr en cada audit futuro — son las que atrapan la divergencia repo-templates que tuvimos esta vez.
+
+### Backup de seguridad
+- `~/.claude/backups/mini-audit-2026-04-22/` (1MB, pre-sync completo de hooks + agents + CLAUDE.md + settings.json)
+- `~/.claude/.audit-2026-04-19-backup/` del audit previo, preservado
+
+### Validacion final
+- `node ~/.claude/hooks/audit-system.js` → 11/11 HEALTHY
+- `diff -rq` repo/hooks vs local/hooks → 0 files differ
+- `diff -rq` repo/agents vs local/agents → 0 files differ
+- `diff -q` CLAUDE.md vs templates/global-claude.md → identicos
+- `diff -q` CLAUDE.md vs templates/windows-claude.md → identicos
+
+### Recomendacion operativa
+Cada cambio a `CLAUDE.md`, `agents/`, o `hooks/` debe propagarse simultaneamente a:
+- `~/.claude/` (local runtime)
+- `templates/global-claude.md` + `templates/windows-claude.md` (installer targets)
+- `UPGRADE_LOG.md` (trazabilidad)
+
+Sin esto, el installer queda desincronizado del estado actual del repo.
+
+---
+
 ## v2.2 — Context Window Optimization — 2026-04-08
 
 ### Summary
