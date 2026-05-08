@@ -137,6 +137,31 @@ El CSS foundation NO es un template fijo. Los valores de tipografía, spacing, m
   --container-xl: [spec]; /* 1280px normal, 1440px para inmersivo, 960px para editorial */
 }
 
+### Container strategy by mood (NUEVO — 2026-05-08, refinado 2026-05-08)
+
+`css-foundation.md` debe declarar `--envelope-strategy` según `intent.mood_preset`. Hay **2 niveles** independientes que NO confundir:
+
+**Nivel 1 — Section background / hero media / image grids / layouts asimétricos visuales**:
+- SIEMPRE full-bleed: el `<section>` bg color/image se extiende edge-to-edge en cualquier mood. NO max-w aquí.
+
+**Nivel 2 — Envelope de contenido (atomic components, navbar, footer-grid, content blocks)**:
+
+| Mood preset | Estrategia envelope | Tokens recomendados |
+|---|---|---|
+| swiss-minimal, editorial-magazine, dashboard-dense | `container-fixed` | `--envelope-max: 1280px; --envelope-px: 24px;` |
+| balanced, corporate-modern | `container-fixed` | `--envelope-max: 1280px; --envelope-px: max(24px, 4vw);` |
+| neo-brutalism, y2k-revival, immersive-storytelling, soft-luxury, playful-illustrated, monochrome-industrial | **`container-bold`** (NUEVO) | `--envelope-max: 1800px; --envelope-px: max(24px, 5vw);` |
+
+**Por qué `container-bold` en moods bold y NO full-bleed total**:
+> En monitores ultrawide (2K, 4K, 21:9), un envelope sin max-width hace que navbar, footer, hero asimétrico y otros componentes con relaciones intencionales entre items (brand-nav-CTA en navbar, columnas de footer, hero 40/60) se dispersen — los elementos se sienten "perdidos" porque las distancias entre ellos crecen con el viewport pero los items no escalan en proporción. La solución es preservar bg full-bleed (impacto visual) pero agrupar el contenido a un cap generoso (1600-1920px) que se sienta amplio en monitores normales sin colapsar en ultrawide.
+
+Reglas:
+- **Texto largo** (párrafos, formularios, tablas) SIEMPRE va en `max-w-prose` (~65ch) o `max-w-2xl` interior, independiente del envelope global.
+- **Section bg** (Nivel 1) SIEMPRE full-bleed.
+- **Atomic envelopes** (Nivel 2 — navbar, footer-grid, hero asimétrico, menu grid) usan la estrategia del mood.
+- **Tipografía recomendada en moods bold**: usar `clamp()` para que el texto crezca con el viewport (`font-size: clamp(2rem, 1rem + 3vw, 5rem)`). No es obligatorio pero evita que titles se sientan chicos en 4K.
+- NUNCA usar `mx-auto` + `max-w-1280px` rígido en moods bold — usar 1600-1920px para no caer en SaaS feel.
+
 [data-theme="dark"] {
   color-scheme: dark;
   --bg-primary: [spec-dark];

@@ -607,7 +607,36 @@ El script corre 5 checks determinísticos (grep patterns compilados):
 - **T4 motion_coherent**: motion_intensity≥7 sin GSAP/Framer, o ≤3 con GSAP (sobre-engineered)
 - **T5 shadow_coherent**: shadow-sm/md/lg en neo-brutalism (debe ser offset-hard)
 
-Output: YAML con `saas_teal_check`, `heading_font_check`, `hero_media_check`, `motion_coherent`, `shadow_coherent`, `fail_count`, `verdict`.
+**Check adicional T7 — Envelope strategy (NUEVO — 2026-05-08, refinado)**:
+
+Hay 2 niveles que NO confundir: section bg full-bleed (Nivel 1) vs envelope de contenido (Nivel 2). Para moods bold, el bg debe ser full-bleed pero el contenido necesita max-width 1600-1920px (`container-bold`) para no dispersarse en ultrawide.
+
+```bash
+# Solo si mood_preset ∈ {neo-brutalism, y2k-revival, immersive-storytelling,
+# soft-luxury, playful-illustrated, monochrome-industrial}:
+
+# Check 1: max-w pequeño (≤1280px) en envelope de section → SaaS feel
+grep -rE "max-w-(7xl|6xl|5xl|screen-xl|screen-lg|4xl|3xl)" src/components/*Section.tsx src/components/Hero*.tsx 2>/dev/null \
+  | grep -v "max-w-prose\|max-w-2xl\|.*text\|.*form"
+
+# Check 2: inline maxWidth ≤ 1280px en envelopes
+grep -rE "maxWidth:\s*['\"]?(1[0-2][0-9]{2}|[0-9]{1,3})px" src/components/ 2>/dev/null
+
+# Check 3: AUSENCIA total de max-w / mx-auto en navbar y footer-grid
+# (full-bleed sin cap = dispersión en ultrawide)
+grep -lE "<nav|role=.navigation" src/components/Navbar* | while read f; do
+  if ! grep -E "max-w-\[1[6-9][0-9]{2}px\]|max-w-\[20[0-9]{2}px\]|mx-auto" "$f" > /dev/null; then
+    echo "WARN: Navbar sin container-bold cap → dispersa en ultrawide ($f)"
+  fi
+done
+```
+- Check 1 → FAIL: envelope demasiado tight para mood bold. Subir a `max-w-[1800px]`.
+- Check 2 → FAIL: inline maxWidth ≤1280 → SaaS feel. Subir a 1600-1920.
+- Check 3 → WARN: navbar/footer sin cap → dispersa en monitores ultrawide.
+- Refactor recomendado: `mx-auto + max-w-[1800px] + px-[max(24px,5vw)]` para envelope de contenido. Section bg queda full-bleed (sin tocar).
+- En moods conservadores (swiss-minimal/editorial/dashboard-dense): el envelope ≤1280px es OK; omitir Check 1+2.
+
+Output: YAML con `saas_teal_check`, `heading_font_check`, `hero_media_check`, `motion_coherent`, `shadow_coherent`, `envelope_strategy`, `fail_count`, `verdict`.
 
 **Paso 3 — Acción según exit code**:
 - **Exit 0 (verdict: PASS)** → copiar output YAML al AUTO_AUDIT del Return Envelope y devolver STATUS: completado.
@@ -633,6 +662,7 @@ AUTO_AUDIT:
   hero_media_check: PASS | FAIL | N/A
   motion_coherent_check: PASS | FAIL
   shadow_coherent_check: PASS | FAIL | N/A
+  envelope_strategy_check: PASS | FAIL | N/A
   anti_patterns_violated: [lista o vacío]
 NOTAS: {solo si hay bloqueadores o desviaciones}
 ```

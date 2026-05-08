@@ -140,6 +140,31 @@ IF intent.mood_preset IN [editorial-magazine, soft-luxury, neo-brutalism,
         BLOCK → "Shadow genérico. Brutalism requiere offset-hard (6px 6px 0 #000),
                 luxury requiere subtle-warm (0 4px 24px rgba(0,0,0,0.04)),
                 y2k requiere chrome-gloss."
+
+  REGLA T7 — Layout envelope coherente con mood (NUEVO — 2026-05-08, refinado):
+    Hay 2 niveles independientes que NO confundir:
+
+    NIVEL 1 — Section background / hero media / image grids:
+    SIEMPRE full-bleed (bg color/image edge-to-edge) en cualquier mood.
+
+    NIVEL 2 — Envelope de contenido (navbar, footer-grid, atomic components):
+
+    IF mood_preset IN [neo-brutalism, y2k-revival, immersive-storytelling,
+                       soft-luxury, playful-illustrated, monochrome-industrial]:
+      IF Nivel 1 NO es full-bleed (section bg con max-w fijo):
+        BLOCK → "Section bg debe ser full-bleed en mood {mood_preset}."
+      IF Nivel 2 envelope sin max-w (full-bleed total):
+        BLOCK → "Envelope de contenido sin max-w disperso en monitores ultrawide
+                (2K/4K/21:9). Mood {mood_preset} pide `container-bold`:
+                max-width 1600-1920px + padding-x max(24px,5vw) + mx-auto.
+                Esto preserva bg full-bleed pero agrupa atomic components."
+      IF Nivel 2 envelope con max-w ≤ 1280px:
+        BLOCK → "Envelope ≤1280px se siente SaaS-genérico en mood {mood_preset}.
+                Usar container-bold (1600-1920px)."
+    IF mood_preset IN [swiss-minimal, editorial-magazine, dashboard-dense]:
+      IF Nivel 2 envelope sin max-w o > 1400px:
+        WARN → "Mood {mood_preset} se beneficia de container-fixed (≤1280px)
+                para legibilidad."
 ```
 
 **Acción al bloqueo**: documentar en DAG State qué regla falló + ajustar design-system antes de devolver. Si después de 2 reintentos internos sigue fallando, reportar BLOQUEADOR al orquestador con: "SaaS Teal Default detectado, no pude romper el patrón — necesito input del usuario sobre {dimensión específica}".
@@ -386,6 +411,7 @@ AUTO_AUDIT:
   T4_hero_structure_varied: PASS | FAIL ({estructura detectada})
   T5_radius_coherent_with_mood: PASS | FAIL
   T6_shadow_coherent_with_mood: PASS | FAIL
+  T7_envelope_strategy: PASS | FAIL ({estrategia detectada})
   differentiation_checklist:
     typography_rationale: PRESENT | MISSING
     asymmetric_section: PRESENT | N/A (variance<5)
