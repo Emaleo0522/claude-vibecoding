@@ -135,6 +135,17 @@ vercel project inspect {nombre-proyecto} 2>&1
 # Si no muestra repo -> conectar con vercel git connect
 ```
 
+### Rollback Vercel (si el deploy rompe producción)
+Si el orquestador indica que el deploy rompió producción:
+```bash
+# Listar deployments recientes
+vercel ls --limit 5
+# Promover un deployment anterior a producción
+vercel promote {url-deployment-anterior} --yes
+```
+- Informar al orquestador con STATUS: fallido y la URL del rollback
+- El orquestador decide si re-deployar tras fix o escalar al usuario
+
 ## Deploy alternativo: Mobile (EAS Build)
 
 Para proyectos mobile (React Native + Expo), el deploy NO es a Vercel sino a **Expo Application Services (EAS)**:
@@ -179,19 +190,87 @@ RESULTADO: {URL de descarga del build en EAS}
 INFO_SIGUIENTE: {platform: android|ios|both, profile: preview|production, store_submit: si/no}
 ```
 
-## Deploy alternativo: VPS
-Para self-hosting (PocketBase, WebSocket servers), ver CLAUDE.md S DevOps VPS. Este agente solo maneja Vercel y EAS Build.
+## Deploy alternativo: VPS (self-hosted)
 
-### Rollback (si el deploy rompe producción)
-Si el orquestador indica que el deploy rompió producción:
-```bash
-# Listar deployments recientes
-vercel ls --limit 5
-# Promover un deployment anterior a producción
-vercel promote {url-deployment-anterior} --yes
+Para self-hosting (PocketBase, n8n, Hono+Postgres en VPS, WebSocket servers, etc.).
+
+### Trigger
+El orquestador pasa `deploy_mode: "vps"` con metadata adicional:
+```json
+{
+  "deploy_mode": "vps",
+  "vps_provider": "oracle | digitalocean | hetzner | aws-ec2 | other",
+  "ssh_target": "user@host-or-ip",
+  "services_to_expose": ["nginx:443", "pocketbase:8090"],
+  "primera_vez": true | false
+}
 ```
-- Informar al orquestador con STATUS: fallido y la URL del rollback
-- El orquestador decide si re-deployar tras fix o escalar al usuario
+
+### Cargas de referencia obligatorias
+- `devops-vps-reference.md` — Mixed Content, nginx + Let's Encrypt, Oracle VCN/UFW
+- `linux-hardening-reference.md` — SSH/UFW/Fail2Ban baseline + smoke-test ejecutable
+
+### Flujo VPS (primera_vez: true)
+1. **Conectar SSH** vía key (no password)
+2. **Aplicar baseline de hardening** (en este orden — la primera vez, después solo verificar):
+   - SSH config (`linux-hardening-reference.md` § 1) — ANTES de cerrar sesión, validar acceso desde 2da terminal
+   - UFW (§ 2) — `default deny` + abrir solo puertos de `services_to_expose` + 22/tcp con `ufw limit`
+   - Fail2Ban (§ 3) — jail.local con sshd enabled
+   - unattended-upgrades (§ 4) — solo security
+   - sysctl hardening (§ 5) — copiar bloque completo a `/etc/sysctl.d/99-hardening.conf` + `sysctl --system`
+3. **Deploy del servicio** (nginx + reverse proxy → app, según `services_to_expose`)
+4. **Let's Encrypt** si hay dominio (`devops-vps-reference.md` § nginx)
+5. **Smoke-test** (`linux-hardening-reference.md` § 8) — script bash de 5 checks. Threshold: ≥ 4/5 PASS
+6. **Lynis audit** — `sudo lynis audit system --quick`. Threshold: hardening_index ≥ 70
+7. **Verificar servicio público** — curl al endpoint público, status 200
+8. **Guardar resultado en Engram** (ver "Como guardo resultado VPS" abajo)
+
+### Flujo VPS (primera_vez: false — re-deploy)
+- Saltar pasos 2 (baseline ya aplicado), saltar 4 (cert ya emitido)
+- Re-ejecutar paso 5 (smoke-test) y paso 6 (Lynis) — si hardening_index bajó >5 puntos, alertar al orquestador
+- Reiniciar servicio con `systemctl restart {servicio}` o equivalente
+- Verificar servicio público (paso 7)
+
+### Como guardo resultado VPS
+UPSERT en `{proyecto}/vps-hardening`:
+```
+mem_save / mem_update con contenido:
+{
+  "deploy_url": "https://...",
+  "vps_provider": "oracle",
+  "ssh_target": "ema@host (sin exponer IP en el log)",
+  "smoke_test": "5/5 PASS",
+  "lynis_hardening_index": 78,
+  "services_exposed": ["nginx:443", "pocketbase:8090"],
+  "fecha": "ISO-8601",
+  "checks_failed": []  // lista vacía si OK
+}
+```
+
+También UPSERT en `{proyecto}/deploy-url` (mismo flujo que Vercel) con la URL pública.
+
+### Reglas no negociables VPS
+- **NUNCA** exponer servicios sin pasar por nginx + HTTPS (excepto SSH 22)
+- **NUNCA** dejar password auth habilitada — si la 2da terminal de validación SSH no entra con key, abortar deploy y avisar al orquestador (no soy yo quien debugea SSH del usuario)
+- **NUNCA** correr `ufw enable` antes de validar que SSH 22 está en la allow-list (te quedás afuera)
+- **Si smoke-test < 4/5 o Lynis < 70** → STATUS: fallido, NO marcar deploy como exitoso, devolver al orquestador con detalle de checks fallidos
+
+### Return Envelope para VPS
+```
+STATUS: completado | fallido
+TAREA: deploy a VPS ({provider})
+ARCHIVOS: []
+ENGRAM: {proyecto}/vps-hardening + {proyecto}/deploy-url
+RESULTADO: {URL pública HTTPS}
+INFO_SIGUIENTE: {smoke_test: N/5, lynis: X/100, checks_failed: [...]}
+```
+
+### Rollback VPS (si el deploy rompe el servicio)
+A diferencia de Vercel, no hay "promote" automático. Estrategias según el setup:
+- Si el servicio se gestiona con **systemd** y el binario anterior está versionado (ej. `pocketbase-prev`): `sudo systemctl stop {servicio} && cp pocketbase-prev pocketbase && sudo systemctl start {servicio}`
+- Si el deploy fue vía **git pull** + build: `git reset --hard {sha-anterior} && npm run build && sudo systemctl restart {servicio}`
+- Si hay snapshot del provider (Oracle/DO/Hetzner): restaurar snapshot vía console del provider — **acción del usuario**, no del agente
+- Informar al orquestador con STATUS: fallido + estrategia recomendada según setup. NO ejecutar rollback destructivo sin confirmación del orquestador.
 
 ### Proactive saves
 Ver agent-protocol.md § 4.

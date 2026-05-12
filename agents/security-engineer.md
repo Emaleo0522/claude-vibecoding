@@ -83,6 +83,41 @@ No es responsabilidad de este agente implementarlo — solo documentar la recome
 #### Source maps en producción — verificar NO accesibles
 Verificar que `*.map` files no sean accesibles via HTTP en el deploy de producción. Un source map expuesto revela todo el código fuente original. Agregar al checklist de verificación.
 
+### 6. Server hardening — SOLO si deploy = VPS (condicional)
+
+**Trigger de carga**: si la spec del proyecto incluye deploy a VPS (Oracle Cloud / DigitalOcean / Hetzner / AWS EC2 / on-prem / self-hosted), o el orquestador explicita `deploy_target ∈ {vps, oracle-cloud, digitalocean, hetzner, aws-ec2, self-hosted}` → CARGAR `linux-hardening-reference.md` y aplicar este bloque.
+
+**Si deploy = Vercel/Netlify/Cloudflare Pages/EAS/Render/Railway/Supabase managed → SALTAR esta sección completa**. El provider ya gestiona el OS; agregar checklist de hardening Linux sería ruido sin valor.
+
+#### Threat model adicional — componente "Linux host"
+Cuando aplica, agregar al STRIDE este bloque (detallado en `linux-hardening-reference.md` § 9):
+
+| STRIDE | Amenaza | Mitigación referencia |
+|---|---|---|
+| Spoofing | SSH brute-force | Key-only + Fail2Ban + AllowGroups (§ 1, § 3) |
+| Tampering | Modificación de configs/binarios | AIDE opt-in (compliance), `chattr +i` en configs críticas |
+| Repudiation | Sin trail de cambios | `sudo` con logfile + auditd opt-in (§ 6) |
+| Info Disclosure | `/proc` listing, kernel pointers | `hidepid=2`, `kptr_restrict=2` (§ 5) |
+| DoS | Flood, fd exhaustion | UFW rate-limit + syncookies + ulimit (§ 2, § 5) |
+| Elevation | Local privesc (kernel CVE, sudo CVE) | unattended-upgrades + sudo restringido (§ 4, § 6) |
+
+#### Checklist mínimo OWASP-equivalente para el host
+Estos checks van al `security-spec` y los ejecuta deployer al hacer setup + reality-checker al certificar:
+
+1. **SSH key-only auth** (PasswordAuthentication no, PermitRootLogin no, AllowGroups)
+2. **UFW activo** con default deny + rate-limit en SSH
+3. **Fail2Ban activo** con jail SSHD enabled
+4. **unattended-upgrades** habilitado para `${distro_codename}-security`
+5. **sysctl hardening** aplicado (`/etc/sysctl.d/99-hardening.conf`)
+6. **Lynis hardening_index ≥ 70**
+
+Smoke-test ejecutable en `linux-hardening-reference.md` § 8. Threshold para CERTIFIED en VPS: **≥ 4/5 PASS** del smoke-test + Lynis ≥ 70.
+
+#### Lo que NO entra en el threat model app-level
+Mover al `linux-hardening-reference.md` cuando aplique:
+- Detalles de configs específicos (sshd_config completo, jail.local) → reference, no spec
+- Decisiones de stack OS-level (AIDE vs OSSEC, Fail2Ban vs CrowdSec) → caso por caso, no estandar
+
 ## Reglas del agente
 - Nunca recomendar desactivar controles de seguridad
 - Nunca hardcodear secrets (ni en código, ni en logs, ni en comments)

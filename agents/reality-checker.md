@@ -357,6 +357,56 @@ esac
 
 **Excepcion documentada**: si el proyecto tiene `NO_AUDIT=true` en `security-spec` (raro, solo para POCs internos sin prod), saltar audit pero mantener los otros checks.
 
+#### 6.3 — VPS Hardening Audit (CONDICIONAL — solo si deploy = VPS)
+
+**Trigger**: ejecutar SOLO si el deploy del proyecto es VPS self-hosted. Detectar leyendo `{proyecto}/vps-hardening` de Engram (existe ⇒ aplica). Si el cajón no existe → SKIP esta sección (deploy es Vercel/EAS/managed).
+
+**Si aplica**, cargar `linux-hardening-reference.md` y validar:
+
+```
+# 1. Leer estado guardado por deployer
+vps = mem_search("{proyecto}/vps-hardening") → mem_get_observation
+Verificar campos presentes: smoke_test, lynis_hardening_index, deploy_url, services_exposed
+```
+
+**Re-ejecución del smoke-test contra el deploy actual** (no confiar solo en el snapshot de deployer):
+```bash
+# Conectar via SSH y correr smoke-test (ver linux-hardening-reference.md § 8)
+ssh {ssh_target} 'bash -s' < /path/to/vps-smoke-test.sh
+# Capturar exit code y output
+```
+
+**Reglas de interpretacion**:
+- Smoke-test < 4/5 PASS → **BLOCKER** (hardening insuficiente para certificación)
+- Lynis hardening_index < 70 → **BLOCKER** (auditar y aplicar fixes antes de certificar)
+- Servicio HTTP sin HTTPS expuesto en puerto público (no 22) → **BLOCKER** (Mixed Content + transit insecurity)
+- SSH con `PasswordAuthentication yes` detectado en runtime → **BLOCKER**
+- UFW status != active → **BLOCKER**
+- Fail2Ban no activo o sshd jail no enabled → **BLOCKER**
+
+**Verificación adicional desde fuera del VPS** (sin SSH, complementa el smoke-test):
+```bash
+# nmap rápido a los puertos esperados — no deben aparecer puertos extra
+nmap -Pn -p 22,80,443,8090 {ip-publica} 2>/dev/null | grep open
+
+# TLS check si hay HTTPS expuesto
+curl -sI https://{deploy_url} | grep -E "Strict-Transport-Security|HTTP/2"
+echo | openssl s_client -connect {deploy_url}:443 -servername {deploy_url} 2>/dev/null | openssl x509 -noout -dates
+```
+
+Si `nmap` muestra puertos abiertos no declarados en `services_exposed` → **BLOCKER** (servicios expuestos no documentados).
+
+**Reporte VPS_HARDENING_AUDIT** (agregar al Return Envelope cuando aplica):
+```
+VPS_HARDENING_AUDIT:
+  applies: true
+  smoke_test_rerun: N/5 PASS
+  lynis_hardening_index: X/100
+  ports_open_unexpected: [lista vacía o puertos detectados]
+  tls_valid: PASS | FAIL
+  hsts_present: PASS | FAIL
+```
+
 ### Paso 7: Mobile contract test (scope: código fuente, independiente de QA visual)
 
 Grep estático contra `src/`, `app/`, `pages/`, `components/` buscando patrones que rompen mobile aunque pasen Playwright headless:
@@ -476,6 +526,7 @@ Sin evidencia citada → el criterio NO cuenta como PASS. "Lo revisé visualment
 - **Secrets hardcoded detectados en código fuente** (Paso 6.1) — AWS/GitHub/Stripe/Slack/Google/OpenAI/Anthropic keys, JWTs, private keys
 - **Lock file ausente, en .gitignore, o con vulnerabilities HIGH/CRITICAL sin mitigación** (Paso 6.2) — supply chain integrity
 - **Mobile contract test — cualquier match sin guard md:/useMediaQuery** (Paso 7): overflow-x, font-size <16px en inputs, `<video>` sin playsInline, hover sin touch fallback, parallax sin media query
+- **VPS Hardening (si deploy = VPS)** (Paso 6.3): smoke-test <4/5, Lynis <70, password auth habilitada, UFW inactiva, Fail2Ban sshd jail no activo, puertos open no documentados
 
 ## Rating
 - **CERTIFIED**: abrumadora evidencia de que cumple la spec en todos los viewports, performance aceptable, 0 errores en consola, todos los user journeys funcionan
@@ -585,6 +636,14 @@ EVIDENCE_TRAIL:
   network_clean: {paths}
   axe_core_run: {paths}
   seo_report_path: {path}
+
+VPS_HARDENING_AUDIT:           # solo si deploy = VPS, sino omitir bloque
+  applies: true | false
+  smoke_test_rerun: N/5 PASS
+  lynis_hardening_index: X/100
+  ports_open_unexpected: []
+  tls_valid: PASS | FAIL
+  hsts_present: PASS | FAIL
 
 BLOCKERS: [{N} — lista si NEEDS WORK]
 SCREENSHOTS: [rutas en /tmp/qa/]
