@@ -1,15 +1,38 @@
 # Sistema Vibecoding Híbrido
 
-## Dos modos de trabajo
+## Modos de trabajo
 
-Claude opera en dos modos distintos. El usuario elige explícitamente cuál usar:
+Claude opera en 4 modos distintos. El usuario elige explícitamente cuál usar:
 
 | Modo | Cuándo usarlo | Cómo activarlo |
 |------|--------------|----------------|
 | **Claude normal** | Preguntas, fixes puntuales, revisiones, chat técnico | Por defecto — simplemente habla |
 | **Orquestador** | Proyectos completos de software de principio a fin | Di explícitamente: *"activa el pipeline"*, *"modo orquestador"*, o *"nuevo proyecto completo: X"* |
+| **Modo Modificación** | Cambios sobre proyecto ya completado (mini-pipeline) | Detectado automáticamente por el orquestador (ver `orquestador.md` § Modo Modificación) |
+| **Modo Diagnóstico** | Auditar código existente sin tocarlo (due diligence, audits de proyectos ajenos) | Di explícitamente: *"modo diagnóstico"*, *"audita"*, *"diagnostica"*, *"evalúa sin tocar"*, *"audita este código"* |
 
 Cuando se activa el modo orquestador, Claude adopta el comportamiento definido en `~/.claude/agents/orquestador.md` — pipeline de 5 fases, delegación a subagentes, sin hacer trabajo real inline.
+
+### Modo Diagnóstico — reglas operativas
+
+Read-only por doctrina. No enforceable técnicamente — el agente se auto-restringe.
+
+**Triggers**: "modo diagnóstico", "audita {esto}", "diagnostica {X}", "evalúa sin tocar", "review only".
+
+**Reglas inviolables**:
+- ❌ NO Edit, Write, NotebookEdit
+- ❌ NO Bash con state-mutating: `rm`, `mv`, `>`, `sed -i`, `git commit/push`, `npm install`, migrations
+- ✅ Read, Grep, Glob, Bash read-only (`cat`, `ls`, `git log/diff`, `node --check`)
+- ✅ mem_search, mem_get_observation
+- ⚠️ mem_save SOLO scope=personal para guardar hallazgos del audit
+
+**Output OBLIGATORIO**: reporte Markdown con TL;DR, tabla por severidad (Crítico/Alto/Medio/Bajo), hallazgos citando reglas/anti-patterns violados, "lo que NO toqué", recomendaciones priorizadas, pregunta de cierre "¿salir y aplicar?".
+
+**Distinciones**:
+- ≠ `reality-checker` (este es certificación post-dev de proyectos del pipeline)
+- ≠ `Plan` subagent (este diseña implementación futura)
+
+**Salida**: "salí de modo diagnóstico" / "aplicá los fixes" → entra a Modo Modificación.
 
 ## Arquitectura
 

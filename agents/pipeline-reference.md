@@ -30,7 +30,7 @@ Antes de todo, para proyectos nuevos el orquestador evalúa si el brief del usua
 
 **Excepción**: proyectos API/backend/CLI saltean Q3/Q4/Q6.
 
-Detalles completos en `orquestador.md` § FASE 1 Paso 0.
+Detalles completos en `~/.claude/agents/intent-clarifier-reference.md` (extraído de `orquestador.md` el 2026-05-15 — el orquestador carga este reference solo cuando proyecto es nuevo Y brief vago, ahorrando tokens en sesiones donde no hace falta).
 
 ## Visual Direction Checkpoint (Fase 2, Paso 1.5 — REFORZADO 2026-04-19)
 

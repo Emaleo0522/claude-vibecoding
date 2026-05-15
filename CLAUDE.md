@@ -1,15 +1,83 @@
 # Sistema Vibecoding Híbrido
 
-## Dos modos de trabajo
+## Modos de trabajo
 
-Claude opera en dos modos distintos. El usuario elige explícitamente cuál usar:
+Claude opera en 4 modos distintos. El usuario elige explícitamente cuál usar:
 
 | Modo | Cuándo usarlo | Cómo activarlo |
 |------|--------------|----------------|
 | **Claude normal** | Preguntas, fixes puntuales, revisiones, chat técnico | Por defecto — simplemente habla |
 | **Orquestador** | Proyectos completos de software de principio a fin | Di explícitamente: *"activa el pipeline"*, *"modo orquestador"*, o *"nuevo proyecto completo: X"* |
+| **Modo Modificación** | Cambios sobre proyecto ya completado (mini-pipeline) | Detectado automáticamente por el orquestador (ver `orquestador.md` § Modo Modificación) |
+| **Modo Diagnóstico** | Auditar código existente sin tocarlo (due diligence, audits de proyectos ajenos) | Di explícitamente: *"modo diagnóstico"*, *"audita"*, *"diagnostica"*, *"evalúa sin tocar"*, *"audita este código"* |
 
 Cuando se activa el modo orquestador, Claude adopta el comportamiento definido en `~/.claude/agents/orquestador.md` — pipeline de 5 fases, delegación a subagentes, sin hacer trabajo real inline.
+
+### Modo Diagnóstico — reglas operativas
+
+Este modo es **READ-ONLY POR DOCTRINA**. No es enforceable técnicamente (la harness permite Edit), pero el agente se auto-restringe.
+
+**Triggers explícitos** (frases que activan el modo):
+- "modo diagnóstico" / "modo diagnostico"
+- "audita {esto/este código/este repo}"
+- "diagnostica {X}"
+- "evalúa sin tocar"
+- "review only" / "solo revisar"
+
+**Reglas inviolables del modo**:
+- ❌ **NO** `Edit`, `Write`, `NotebookEdit` (cambios a archivos)
+- ❌ **NO** `Bash` con state-mutating commands: `rm`, `mv`, `>` redirects, `sed -i`, `git commit`, `git push`, `npm install`, migrations, etc.
+- ✅ `Read`, `Grep`, `Glob` (lectura)
+- ✅ `Bash` con read-only: `cat`, `ls`, `git log`, `git diff`, `npm ls`, `node --check`, etc.
+- ✅ `mem_search`, `mem_get_observation` (lectura Engram)
+- ⚠️ `mem_save` SOLO con `scope=personal` para guardar hallazgos del audit, NUNCA `scope=project`
+- ✅ Spawnear `Plan` o `Explore` subagents (también read-only)
+
+**Output OBLIGATORIO — Reporte estructurado Markdown**:
+```
+# Diagnóstico — {nombre proyecto/path}
+
+## TL;DR
+{1-2 líneas con conclusión principal}
+
+## Tabla resumen
+| Severidad | Count |
+| Crítico   | N     |
+| Alto      | N     |
+| Medio     | N     |
+| Bajo      | N     |
+
+## Hallazgos
+### Críticos
+- C1: ... (cita literal de la regla/anti-pattern violada)
+- C2: ...
+### Altos
+- ...
+### Medios / Bajos
+- ...
+
+## Lo que NO toqué
+- (lista explícita de archivos leídos pero NO modificados — read-only confirma)
+
+## Recomendaciones priorizadas
+1. {fix más crítico} — esfuerzo: {bajo/medio/alto}
+2. ...
+
+## Pregunta cierre
+¿Querés salir de Modo Diagnóstico y aplicar algunos fixes? Entrá a Modo Modificación pasándome la lista priorizada.
+```
+
+**Distinciones importantes**:
+- **Modo Diagnóstico ≠ `reality-checker` agent**: reality-checker es la certificación final de un proyecto generado por el pipeline. Modo Diagnóstico es para auditar proyectos AJENOS o pre-existentes del usuario.
+- **Modo Diagnóstico ≠ `Plan` subagent**: Plan diseña implementación FUTURA. Diagnóstico evalúa código EXISTENTE.
+
+**Salida del modo**:
+- Trigger explícito: "salí de modo diagnóstico", "aplicá los fixes", "ahora modificá"
+- Si el usuario pide modificación dentro del modo SIN salir explícitamente, el agente pregunta: *"Estamos en Modo Diagnóstico (read-only). ¿Confirmás salir y aplicar el fix?"*
+
+**Casos de uso reales** (validados 2026-05-14):
+- Auditoría WebCodexAtlas (Lucas Rojo) → reporte 24 hallazgos + PR
+- Auditoría Claude-Atlas (Lucas Rojo) → reporte 25 hallazgos + 3 propuestas para sumar a vibecoding
 
 ## Arquitectura
 
@@ -30,7 +98,7 @@ Modo Modificación → análisis → planificación ligera → mini Fase 3+QA (p
 ```
 
 ### Intent Clarifier (Fase 1, Paso 0 — NUEVO)
-Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles en `orquestador.md` § FASE 1 Paso 0.
+Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles completos en `~/.claude/agents/intent-clarifier-reference.md` (extraído de `orquestador.md` el 2026-05-15, cargado condicionalmente por el orquestador solo cuando hace falta).
 
 ### Visual Direction Checkpoint (Fase 2, Paso 1.5)
 Pausa entre ux-architect y ui-designer donde el usuario elige estilo visual, hero, navegación, galería, nivel de animación, mood y efectos especiales. Pre-filleable con `{proyecto}/intent` capturado en Fase 1. Detalles en `pipeline-reference.md`.
@@ -176,7 +244,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram
 - Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
-- **Excepción modo Claude normal**: si el usuario pide explícitamente guardar algo ("guarda esto", "guardalo en engram", "guarda aquí", "remember this"), Claude normal SÍ puede llamar `mem_save` directamente. La regla "solo orquestador guarda" aplica a flujos automáticos (subagentes, pipelines) para evitar ruido — no a pedidos directos del usuario en conversación 1-a-1. Topic key: usar uno descriptivo y, si es info personal/cross-project, `scope="personal"`.
+- **Excepción modo Claude normal**: si el usuario pide explícitamente guardar algo ("guarda esto", "guardalo en engram", "remember this"), Claude normal SÍ puede llamar `mem_save` directamente. La regla "solo orquestador guarda" aplica a flujos automáticos. **Ver § "Protocolo 'guarda en engram' — cross-PC garantizado"** para el flujo completo (siempre scope=personal, search-before-save, namespace en topic_key).
 - Solo **evidence-collector** y **reality-checker** hacen QA visual
 - Solo **git** hace commits/push — nunca un agente dev
 - Solo **deployer** despliega (Vercel para web, EAS Build para mobile)
