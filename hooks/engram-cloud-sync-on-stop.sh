@@ -86,15 +86,15 @@ while IFS= read -r line; do
   # Pero sync --cloud lo cubre por idempotencia si tiene scope=project tambien
   # Lo intentamos igual; si el comando falla silenciosamente, no pasa nada.
 
-  # Enroll (idempotente: si ya enrolled, no hace nada)
-  ENROLL_OUT=$(engram cloud enroll --project="$PROJECT" 2>&1)
+  # Enroll (idempotente, positional arg). engram cloud enroll <project>
+  ENROLL_OUT=$(engram cloud enroll "$PROJECT" 2>&1)
 
-  # Sync to cloud
-  SYNC_OUT=$(engram sync --cloud --project="$PROJECT" 2>&1)
+  # Sync to cloud (--project con SPACE, no =). engram sync --cloud --project X
+  SYNC_OUT=$(engram sync --cloud --project "$PROJECT" 2>&1)
 
-  # Detectar error real (no warnings)
-  if echo "$SYNC_OUT" | grep -qiE "^error|^failed|panic:|fatal:"; then
-    log error "sync failed for $PROJECT: $(echo "$SYNC_OUT" | head -1)"
+  # Detectar error real (cloud whitelist 403, sintaxis, etc.)
+  if echo "$SYNC_OUT" | grep -qiE "^engram:|^error|^failed|panic:|fatal:|status 403|forbidden"; then
+    log error "sync failed for $PROJECT: $(echo "$SYNC_OUT" | grep -iE "^engram:|^error|^failed|status|forbidden" | head -1)"
     FAILED=$((FAILED+1))
   else
     SYNCED=$((SYNCED+1))

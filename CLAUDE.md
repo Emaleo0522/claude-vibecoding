@@ -66,24 +66,29 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember this" o similar, ejecutar en orden:
 
 1. **Determinar tema** desde contexto reciente de la conversación (qué se estuvo discutiendo)
-2. **Buscar similares** antes de escribir:
+2. **Decidir el `project=` ANTES de buscar** (constraint cloud whitelist):
+   - Si el tema es específico de un proyecto existente → `project="saldoar"`, `project="claude-vibecoding"`, etc. (debe ser uno YA enrolled en cloud — ver `engram projects list`)
+   - Si es info **truly personal cross-PC** (preferencias, tareas multi-proyecto, decisiones globales) → `project="system32"` (el bucket de-facto, ya tiene 144+ obs y está en whitelist del cloud)
+   - **NUNCA inventar projects nuevos** (`personal`, `cross-pc`, etc.): el cloud server retorna 403 forbidden — solo permite los projects ya en su lista.
+3. **Buscar similares** antes de escribir:
    ```
-   results = mem_search(tema, scope="personal")
-   # también probar variantes de keyword si el primer search vuelve vacío
+   results = mem_search(tema, project="<el-decidido-en-paso-2>", scope="personal")
    ```
-3. **Decidir acción**:
+4. **Decidir acción**:
    - **Si hay match relevante (similitud alta + mismo dominio)**:
      - `mem_update(observation_id, ...)` si es refinamiento o corrección
      - `mem_save(topic_key="{family}/{nuevo-slug}", ...)` si es nuevo subtema de la misma familia
      - `mem_judge` si el nuevo contradice un existente
    - **Si NO hay match**: `mem_save` con `topic_key` nuevo y namespace lógico (ej `saldoar/proveedores/reunion-15hs`, `vibecoding/refero-integration`)
-4. **SIEMPRE `scope="personal"`** — es el único scope que auto-sincroniza al cloud entre PCs hoy (validado 2026-05-15). scope=project requiere `engram sync --cloud --project=X` manual.
-5. **Project explícito** si el cwd no lo refleja: `project="saldoar"` o `project="claude-vibecoding"` o el que corresponda; nunca dejar que se detecte como `system32` para temas reales.
-6. **Confirmar al usuario** qué topic_key usaste y por qué (linking vs nuevo).
+5. **SIEMPRE `scope="personal"`** — los saves scope=project NO auto-syncan al cloud (validado 2026-05-15). El cloud sync funciona scope-agnostic pero el filtro por defecto del MCP usa scope.
+6. **`project=` EXPLÍCITO en mem_save Y mem_search** — el MCP auto-detecta project del cwd del server (en casa=`system32`, en pc004 varía según donde abriste Claude Desktop). Sin project explícito, cada PC routea a un bucket distinto y los saves no se cruzan aunque el cloud los tenga. **Esto es crítico para cross-PC retomable**.
+7. **Confirmar al usuario** qué topic_key + project se usaron y por qué (linking vs nuevo).
 
-**Razón**: el usuario trabaja entre 3 PCs (casa, pc004 oficina, notebook). Si scope ≠ personal, los saves quedan locked a la PC que los originó y no se pueden retomar desde otra PC. El bug 1.15.10 (relation/upsert no sync) refuerza esto.
+**Razón**: validado empíricamente 2026-05-15 — obs #3111 guardado en casa con auto-detect `project=system32` → invisible desde pc004 con auto-detect `project=dashboard-pm`. Solo después de `mem_search("...", project="system32")` explícito desde pc004, la obs aparece.
 
-**Anti-patrón a evitar**: guardar como `scope=project` "porque el tema es de un proyecto". Si es info útil cross-sesión, usar `scope=personal` + `topic_key` con namespace del proyecto. El topic_key hace el agrupamiento, el scope hace el sync.
+**Bug del cloud whitelist** (deferred upstream): `engram cloud enroll <name>` registra el project localmente pero el cloud retorna 403 forbidden para nombres nuevos (`personal`, `cross-pc`, etc.). Solo los projects ya en la lista del cloud server (`system32`, `saldoar`, `claude-vibecoding`, `sistema-vibecoding`, `vetconnect`, `kahntus-portfolio`, etc. — ver `engram projects list` desde casa) sincronizan al cloud. Issue upstream a abrir: github.com/Gentleman-Programming/engram
+
+**Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC. Si necesitás un bucket personal global, usar `project="system32"` (de-facto convention) hasta que upstream permita nombres custom.
 
 ### Lectura Engram — bloque canonico (referencia para todos los agentes)
 ```
