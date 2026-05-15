@@ -61,6 +61,30 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 - **Dual-write critico**: `{proyecto}/estado` y `{proyecto}/tareas` se guardan SIEMPRE en Engram + disco (`{project_dir}/.pipeline/`)
 - **Proactive saves**: subagentes guardan descubrimientos no obvios con topic key `{proyecto}/discovery-{desc}`
 
+### Protocolo "guarda en engram" — cross-PC garantizado (modo Claude normal)
+
+Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember this" o similar, ejecutar en orden:
+
+1. **Determinar tema** desde contexto reciente de la conversación (qué se estuvo discutiendo)
+2. **Buscar similares** antes de escribir:
+   ```
+   results = mem_search(tema, scope="personal")
+   # también probar variantes de keyword si el primer search vuelve vacío
+   ```
+3. **Decidir acción**:
+   - **Si hay match relevante (similitud alta + mismo dominio)**:
+     - `mem_update(observation_id, ...)` si es refinamiento o corrección
+     - `mem_save(topic_key="{family}/{nuevo-slug}", ...)` si es nuevo subtema de la misma familia
+     - `mem_judge` si el nuevo contradice un existente
+   - **Si NO hay match**: `mem_save` con `topic_key` nuevo y namespace lógico (ej `saldoar/proveedores/reunion-15hs`, `vibecoding/refero-integration`)
+4. **SIEMPRE `scope="personal"`** — es el único scope que auto-sincroniza al cloud entre PCs hoy (validado 2026-05-15). scope=project requiere `engram sync --cloud --project=X` manual.
+5. **Project explícito** si el cwd no lo refleja: `project="saldoar"` o `project="claude-vibecoding"` o el que corresponda; nunca dejar que se detecte como `system32` para temas reales.
+6. **Confirmar al usuario** qué topic_key usaste y por qué (linking vs nuevo).
+
+**Razón**: el usuario trabaja entre 3 PCs (casa, pc004 oficina, notebook). Si scope ≠ personal, los saves quedan locked a la PC que los originó y no se pueden retomar desde otra PC. El bug 1.15.10 (relation/upsert no sync) refuerza esto.
+
+**Anti-patrón a evitar**: guardar como `scope=project` "porque el tema es de un proyecto". Si es info útil cross-sesión, usar `scope=personal` + `topic_key` con namespace del proyecto. El topic_key hace el agrupamiento, el scope hace el sync.
+
 ### Lectura Engram — bloque canonico (referencia para todos los agentes)
 ```
 # Leer de Engram (2 pasos OBLIGATORIOS — nunca usar preview truncada)
@@ -82,7 +106,7 @@ El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boo
 
 > **Detalles completos** (Boot Sequence, carga progresiva del DAG State, continuidad entre sesiones, topic keys completa, pre-compact snapshot): ver `orquestador.md`
 
-## Hook System (13 hooks, auditados 2026-04-12 — 11/11 HEALTHY)
+## Hook System (15 hooks, ultimo 2026-05-15: engram-cloud-sync-on-stop)
 
 Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
 

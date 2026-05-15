@@ -48,7 +48,11 @@
       },
       {
         "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/engram-sync.js --hook", "async": true, "timeout": 60000 }],
-        "description": "Auto-syncs Engram memories to GitHub on session stop"
+        "description": "Auto-syncs Engram memories to GitHub on session stop (legacy chunk-based sync)"
+      },
+      {
+        "hooks": [{ "type": "command", "command": "bash __CLAUDE_HOME__/hooks/engram-cloud-sync-on-stop.sh", "async": true, "timeout": 300000 }],
+        "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Guarantees cross-PC retomable. See CLAUDE.md § Protocolo guarda en engram."
       }
     ],
     "Notification": [

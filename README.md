@@ -55,7 +55,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-El script instala los 25 agentes + 13 referencias, los 14 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
+El script instala los 25 agentes + 13 referencias, los 15 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
 
 ### Windows (Claude Desktop) — 20-30 minutos guiados
 
@@ -146,7 +146,7 @@ Para **modificar un proyecto que ya está hecho**, el sistema entra en modo modi
 
 ### Lo que te protege en el camino
 
-- **14 hooks reactivos** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger.
+- **15 hooks reactivos** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger.
 - **AUTO_AUDIT pre-return**: antes de devolver código, el `frontend-developer` corre 5 reglas grep ejecutables (no paleta teal por default, no Inter como heading en moods bold, hero con media coherente, motion según dial, shadow según mood). Si falla → regenera. Si pasa → marca cambio como `VISUAL_IMPACT: high|medium|low`.
 - **Checkpoint humano automático**: cuando el cambio tiene `VISUAL_IMPACT: high`, el orquestador te muestra el resultado antes de marcar la tarea como completa. La doctrina: el agente decide solo cuando hay UNA respuesta correcta; en todo lo demás (visual, multi-opción, irreversible, iterado 2+ veces) te pregunta con su recomendación incluida.
 - **9 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar.
@@ -215,7 +215,7 @@ Para developers que quieran ir más allá:
 | [`agents/ui-designer.md`](agents/ui-designer.md) | Design system, SaaS Teal Default Detector (T1-T7), accesibilidad |
 | [`agents/frontend-developer.md`](agents/frontend-developer.md) | Implementación frontend, AUTO_AUDIT pre-return, design decision tree |
 | [`agents/evidence-collector.md`](agents/evidence-collector.md) | QA visual con Playwright, 9 capas anti-falso-positivo |
-| [`hooks/`](hooks/) | Los 14 hooks reactivos: bloqueos, advertencias, auditorías, tracking |
+| [`hooks/`](hooks/) | Los 15 hooks reactivos: bloqueos, advertencias, auditorías, tracking |
 | [`design-data/`](design-data/) | Design Intelligence Engine: 8 CSVs con 161 industrias indexadas via BM25 |
 
 ---
@@ -226,7 +226,7 @@ Para developers que quieran ir más allá:
 ~/.claude/
 ├── agents/            # 25 agentes + 13 referencias = 38 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
-├── hooks/             # 14 hooks reactivos
+├── hooks/             # 15 hooks reactivos
 ├── settings.json      # config de hooks + Engram MCP
 ├── settings.local.json # permisos para agentes
 ├── codepen-vault/     # efectos CodePen aprobados (decorativo)
