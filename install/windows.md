@@ -275,32 +275,67 @@ Edita `~/.claude/launch.json` y cambia `"mi-proyecto"` por el nombre de tu proye
 
 ---
 
-## Paso 11: Variables de entorno para assets creativos (opcional)
+## Paso 11: Variables de entorno para assets creativos — politica free-first
 
-Si tu proyecto va a usar el pipeline creativo (logos, imagenes, videos generados con IA), necesitas configurar al menos una de estas API keys:
+> **Actualizado 2026-05-18** — verificado con curl real contra fuentes primarias. Con solo `HF_TOKEN` ya podes generar imagenes y logos SIN tarjeta de credito. Cloudflare Workers AI agrega quota extra tambien sin tarjeta. Las opciones pagas son opt-in.
+>
+> Ver tambien [`.env.example`](../.env.example) en la raiz del repo con el template comentado y links de signup directos.
 
-| Variable | Servicio | Costo | Como obtener |
-|----------|----------|-------|-------------|
-| `GEMINI_API_KEY` | Google AI Studio | ~$0.02-0.04/imagen (requiere billing) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| `HF_TOKEN` | HuggingFace | Gratis | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
-| `REPLICATE_API_TOKEN` | Replicate | ~$0.05/video | [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens) |
+### Stack free real (ningun provider requiere tarjeta)
 
-**Como configurarlas en Windows:**
+| Variable | Servicio | Quota free | Como obtenerla |
+|----------|----------|------------|----------------|
+| **`HF_TOKEN`** (primario) | HuggingFace Inference | $0.10/mes (~150 imgs FLUX-schnell), reset mensual | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) — token con role `Read` |
+| **`CLOUDFLARE_ACCOUNT_ID`** + **`CLOUDFLARE_AI_TOKEN`** (secundario, recomendado) | Cloudflare Workers AI | **10,000 neurons/dia sin tarjeta** | Setup en 3 pasos abajo |
+| _sin variable_ | Pollinations.ai | **FLUX unlimited free** (FAQ oficial) | No requiere key — fallback automatico |
 
-Opcion A — Variables de entorno del sistema:
+Con solo `HF_TOKEN` ya funciona. Cloudflare multiplica la quota gratis. Pollinations es el safety net.
+
+### Setup Cloudflare Workers AI (3 minutos, sin tarjeta)
+
+1. Signup en [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) — el plan Free Workers NO pide tarjeta ([fuente oficial](https://developers.cloudflare.com/workers-ai/platform/pricing/))
+2. Account ID: dashboard > sidebar derecho > seccion "API" (32 chars hex) — copialo
+3. API Token: [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) > "Create Custom Token" > permiso `Account > Workers AI > Read` > "Create Token" (copialo, se muestra UNA sola vez)
+
+### Opt-in paga (solo si tenes billing habilitado)
+
+| Variable | Servicio | Costo | Cuando usarlo |
+|----------|----------|-------|---------------|
+| `GEMINI_API_KEY` | Google AI Studio | $0.02-0.04/img + billing | Mejor comprension LLM-nativa. Requiere billing en Google Cloud |
+| `REPLICATE_API_TOKEN` | Replicate | $0.03-0.10/video | Solo para video real. Sin esta variable, `video-agent` retorna CSS fallback animado como output valido |
+| `RECRAFT_API_KEY` | Recraft V4 Vector | $0.08/img + $5 free/mes via Vercel AI Gateway | Logos SVG nativos (sin perdida raster->vector) |
+
+### Como configurarlas en Windows
+
+**Opcion A — Variables de entorno del sistema (recomendado):**
 1. Buscar "Variables de entorno" en el menu Inicio
 2. Click en "Variables de entorno..."
 3. En "Variables de usuario", click "Nueva"
-4. Nombre: `GEMINI_API_KEY`, Valor: tu key
-5. Repetir para cada variable
+4. Nombre: `HF_TOKEN`, Valor: tu token
+5. Repetir para `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_TOKEN`, y las opt-in que necesites
 
-Opcion B — Archivo `.env` en `~/.claude/`:
-```bash
-echo "GEMINI_API_KEY=tu-key-aqui" >> ~/.claude/.env
-echo "HF_TOKEN=tu-token-aqui" >> ~/.claude/.env
+**Opcion B — Comando `setx` en PowerShell:**
+```powershell
+setx HF_TOKEN "tu-token-aqui"
+setx CLOUDFLARE_ACCOUNT_ID "tu-account-id-aqui"
+setx CLOUDFLARE_AI_TOKEN "tu-ai-token-aqui"
 ```
 
-> **Si no configuras estas variables**, el sistema funciona normalmente pero no podra generar logos, imagenes ni videos con IA. Podes agregarlas despues.
+**Opcion C — Archivo `.env` en `~/.claude/`:**
+```bash
+# En Git Bash
+echo "HF_TOKEN=tu-token-aqui" >> ~/.claude/.env
+echo "CLOUDFLARE_ACCOUNT_ID=tu-account-id-aqui" >> ~/.claude/.env
+echo "CLOUDFLARE_AI_TOKEN=tu-ai-token-aqui" >> ~/.claude/.env
+```
+
+> **Importante**: despues de setear variables nuevas, cerra y reabri Claude Desktop para que las tome.
+>
+> **Si no configuras nada**, el sistema funciona con Pollinations.ai como fallback automatico (sin auth, FLUX unlimited free). No bloquea nada.
+
+### Backend descartado
+
+- ~~Together AI~~ — el endpoint "FLUX.1-schnell-Free" promocional de blogs 2024-2025 ya **no existe** en su catalogo. Free tier actual exige $5 fondeo con tarjeta. Removido del default 2026-05-18.
 
 ---
 
