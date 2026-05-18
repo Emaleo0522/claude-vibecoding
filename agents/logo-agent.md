@@ -126,14 +126,32 @@ curl -s "https://external.api.recraft.ai/v1/images/generations" \
 Descargar el URL retornado como `logo-symbol.svg` directamente. Saltar al Paso 6.
 
 **Si `backend` es free (auto | huggingface | cloudflare | pollinations)** — cadena raster + vectorizacion:
+
 1. **FLUX.1-schnell via HuggingFace** (primario, free $0.10/mes): requiere `HF_TOKEN`
+   - **Endpoint correcto (router)**: `https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell`
+   - **NO usar** `api-inference.huggingface.co/models/...` — endpoint deprecado, retorna 404 (validado 2026-05-18)
+   - Body: `{"inputs":"<prompt>","parameters":{"width":W,"height":H,"num_inference_steps":4}}`
+   - Auth: `Authorization: Bearer $HF_TOKEN`
+   - Response: PNG/JPEG binario directo. Validar size > 10KB.
+
 2. **FLUX.1-schnell via Cloudflare Workers AI** (secundario, 10K neurons/dia free): requiere `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`
-   - Endpoint: `api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
-   - Body: `{"prompt":"...","steps":4}` -> response.result.image (base64) -> decodificar
+   - Endpoint: `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
+   - Body: `{"prompt":"...","steps":4}` → response.result.image (base64) → decodificar
+   - Resolucion default: 1024x1024 (CF ignora width/height en este modelo, hay que recortar/escalar post)
+
 3. **Pollinations.ai** (ultimo recurso, sin key, FLUX unlimited)
+   - Endpoint: `https://image.pollinations.ai/prompt/{URL_ENCODED_PROMPT}?width=W&height=H&nologo=true`
+
 4. **Gemini** (opt-in, solo si `backend=gemini` y billing OK)
 
-Validar: tamano > 10KB, `file` devuelve "JPEG" o "PNG image" (FLUX-schnell devuelve JPEG por defecto).
+Validar: tamano > 10KB, `file` devuelve "JPEG" o "PNG image" (FLUX-schnell HF devuelve JPEG por defecto, no PNG).
+
+**Prereqs Windows para SVG livianos** (criticos — si faltan, los SVG embeben PNG base64 y pesan ~330KB cada uno en vez de 5-15KB vectoriales reales):
+- **vtracer** (recomendado): `cargo install vtracer` (necesita Rust toolchain) o binary precompilado en github.com/visioncortex/vtracer/releases
+- **Inkscape** (alternativa): inkscape.org/release/ (CLI: `--export-plain-svg`)
+- **ImageMagick** (para favicon.ico + apple-touch-icon): instalar de imagemagick.org/download (Windows installer)
+
+Si NINGUNO esta disponible, el agente usa fallback "PNG base64 embedded en `<image>` dentro de SVG wrapper": funciona pero los archivos son pesados. Documentarlo en NOTAS del Return Envelope.
 
 ### Paso 4B — Green screen pipeline (alternativa para PNG transparente directo)
 
