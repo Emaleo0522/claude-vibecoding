@@ -230,7 +230,7 @@ Lista sintética de buckets más usados (verificar con `engram projects list` si
 Si tu proyecto NO está en esta lista → correr `engram projects list | grep -w "{nombre}"` antes del primer save. Si no aparece, es proyecto nuevo (Path B bootstrap CLI).
 
 - Si confirma 403/desconocido: **NO inventar** un bucket. Preguntar al usuario: (a) usar uno existente que aplique, o (b) autorizar agregar el nuevo a la whitelist (requiere SSH al server + edit `/opt/engram-cloud/.env` + `docker compose up -d cloud` + backup `.env.bak.YYYYMMDD-pre-{razon}`).
-- **NUNCA hacer SSH + restart sin confirmación explícita del usuario** — toca infra del server.
+- **NUNCA hacer SSH + restart sin confirmación EXPLÍCITA del usuario** — toca infra del server productivo. "Explícita" significa: el usuario dijo literalmente *"sí, hacé el SSH"* / *"autorizá SSH al server"* / *"dale, modificá la whitelist en Oracle"* — referencia inequívoca a la acción concreta. Un *"OK dale"*, *"sí adelante"* o *"hacelo"* en respuesta a una pregunta más genérica (ej: *"¿activamos el bucket?"*) **NO es autorización SSH**. Si la respuesta del usuario fue ambigua, preguntar explícitamente: *"¿Confirmás que vas a hacer SSH al server Oracle + editar /opt/engram-cloud/.env + docker compose up -d cloud? Esto toca infra productiva."* — esperar respuesta literal afirmativa antes de proceder. Validado 2026-05-18 tarde: pc004 hizo SSH sobre un "OK" genérico al activar el bucket cross-claude-mailbox; el usuario después aclaró que no entendía el alcance. Regla endurecida para prevenir recurrencia.
 
 **Capa 2 — Post-save verify (1 search barato, obligatorio)**:
 Después de cada `mem_save` exitoso:
@@ -268,12 +268,13 @@ Convención asíncrona para que dos instancias de Claude (ej. `pc004` Linux + `c
 - `mailbox/from-{pc-origen}/to-{pc-destino}/{YYYYMMDD-HHMMSS}-{slug}-reply` → respuesta
 - Notación de pc: `pc004` (Linux), `casa` (Windows). Ajustar si hay más instancias.
 
-**Flujo**:
+**Flujo (OPT-IN — NO ejecutar por default cada turn)**:
 
-1. **Al inicio de cada turn** en modo Claude normal (no aplica a flujos automáticos del orquestador), ejecutar 1 search barato:
+1. **Cuando el usuario lo activa explícitamente** con frases como *"chequeá el mailbox"*, *"¿hay mensajes de pc004?"*, *"revisá comunicaciones cross-PC"*, o cuando inicia un workflow conocido cross-PC (sync de cambios, ronda M2/M3, coordinación de pushes), ejecutar 1 search barato:
    ```
    pending = mem_search(query="to-{mi-pc}", project="cross-claude-mailbox", scope="personal", limit=5)
    ```
+   **NO ejecutar este search por default en cada turn**: costaría ~50-100 tokens × ~50 turns/día = ~3-5k tokens diarios solo en checks de mailbox vacíos. El opt-in elimina ese overhead cuando no se está coordinando cross-PC. Cuando hay un workflow cross-PC activo, el usuario lo señaliza y ahí sí se chequea.
 2. Si hay queries pendientes sin `*-reply` asociado → procesar antes de responder al usuario.
 3. **Para CHECKS** (lecturas, greps, `engram doctor`, `mem_search`, `git status`, etc.) → ejecutar y guardar `*-reply` directamente.
 4. **Para EDITS** (`Edit`, `Write`, `Bash` mutating, `SSH`, push, deploy) → **NO auto-aplicar**. Guardar `*-reply` con `requires_user_approval: true` y avisar al usuario en el turn actual.
