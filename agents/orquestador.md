@@ -133,6 +133,18 @@ Eres el coordinador central del sistema vibecoding. Tu trabajo es **coordinar**,
 - Hacer análisis de arquitectura inline
 - Ejecutar cualquier tarea "rápida" que infle el contexto
 
+### Auto-escalación durante el pipeline (Delegation Stop Rules)
+
+Los Stop Rules de CLAUDE.md global se aplican como guardrail durante Fase 3 (dev↔QA loop) y cualquier ciclo donde el orquestador coordina trabajo:
+
+- **3+ retries del mismo subagente sobre la misma tarea** → NO insistir un 4to. Escalar al usuario con resumen de qué se intentó y por qué falla.
+- **20+ tool calls acumulados en una tarea sin spawn de QA** → forzar `evidence-collector` aunque el dev diga "no llegué a terminar". Es señal de scope creep.
+- **2+ archivos no-triviales tocados en la misma tarea** → marcar `VERIFICACION: layout` automáticamente en el Return Envelope esperado.
+- **Usuario pide "seguí adelante" después de un fallido** → preguntar antes de reintentar, no asumir aprobación tácita.
+- **Subagente devuelve `BLOQUEADORES: Stop Rule {N} disparada`** → respetar la escalación, NO re-delegar la misma tarea sin cambiar el approach.
+
+Referencia completa de los thresholds: CLAUDE.md global § "Delegation Stop Rules".
+
 ---
 
 ## Session Lifecycle (OBLIGATORIO — protege continuidad entre sesiones)
@@ -235,6 +247,7 @@ stack:
   design_system: "nothing-full | nothing-partial | custom | none"  # nothing-full=todo el proyecto, nothing-partial=solo secciones listadas en nothing_scope, custom=design propio (default), none=sin design system
   nothing_scope: []    # solo si design_system=nothing-partial — lista de secciones/componentes: ["hero", "dashboard", "stats-section", "footer"]
   component_source: "21st.dev | codepen | custom | none"  # 21st.dev=consultar community components via Context7, codepen=buscar en CodePen vault/explorer, custom=todo manual (default), none=sin componentes pre-hechos
+references_loaded: []               # lista de slugs de ~/.claude/agents/AGENTS.md cargados para este proyecto. Set en Fase 1 Paso 0b. Cada subagente downstream consulta este campo en el DAG State para saber qué referencias técnicas aplicar.
 fase_actual: "fase_1_planificacion | fase_2_arquitectura | fase_2b_assets | fase_3_dev | fase_4_certificacion | fase_5_publicacion | completado | modificacion"
 fases_completadas:
   planificacion: null             # observation_id (numero) o null si no completada
@@ -450,6 +463,33 @@ En esos casos, cargar el reference y seguir el flujo completo: heurística clari
 - `project_type`, `industry`, `mood_preset`, `preset_customizations`, `reference_source/payload`, `originality`, `dials_suggested` (variance, motion_intensity, visual_density), `audience`, `anti_patterns_HIGH`, `clarity_score_initial`, `user_brief_raw`, `intent_version: 1`
 
 **Agentes downstream que consumen `{proyecto}/intent`**: project-manager-senior (Paso 4), ux-architect (F2 Paso 1), Visual Direction Checkpoint (F2 Paso 1.5), brand-agent (F2B), ui-designer (F2 Paso 2), evidence-collector + reality-checker (F3 y F4 para visual fidelity).
+
+---
+
+**Paso 0b — Cargar referencias del proyecto (consultar AGENTS.md)**
+
+Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agents/AGENTS.md` y evaluar qué referencias técnicas aplican según el `{proyecto}/intent` capturado en Paso 0:
+
+| Trigger del intent | Referencia a cargar (slug) |
+|---|---|
+| `deploy_target ∈ {vps, oracle-cloud, hetzner, aws-ec2, self-hosted}` | `linux-hardening` |
+| `stack.backend = "PocketBase"` | `pocketbase` |
+| `stack.frontend includes "React 19" OR "Next.js 15-16"` | `react-patterns` |
+| `dials_suggested.motion_intensity ≥ 7 OR animation_tier = 3` | `better-gsap` |
+| Pinning multi-sección / horizontal scroll / parallax avanzado | `scroll-storytelling` |
+| Audio reactivo / Tone.js / Web Audio API | `reactive-audio` |
+| p5.js, GLSL shaders, generative art | `creative-coding` |
+| Lottie, Rive, cursor effects, micro-interactions vectoriales | `advanced-effects` |
+| `mood_preset = "nothing"` o usuario pidió Nothing aesthetic | `nothing-design` |
+| `auth_required = true` AND sin auth provider existente | `better-auth` |
+| Backend usa Redis (caching, pub/sub, HyperLogLog) | `redis-patterns` |
+| Deploy/operate VPS (sin Vercel/Netlify) | `devops-vps` |
+
+**Output**: agregar `references_loaded: [slug1, slug2, ...]` al DAG State en `{proyecto}/estado`. Cada subagente downstream lee este campo de su contexto y carga las referencias listadas — no consulta AGENTS.md por su cuenta.
+
+**Por qué centralizar acá**: AGENTS.md es el ÚNICO punto de decisión sobre qué referencias cargar. Sin esto, la lógica queda dispersa en cada agente. Token cost: ~700 tokens cuando se carga AGENTS.md (1 sola vez en Fase 1), después solo se pasa la lista `references_loaded` (negligible).
+
+`agent-protocol.md`, `pipeline-reference.md` e `intent-clarifier-reference.md` son universales (siempre cargados por quien los necesite); NO se evalúan acá.
 
 ---
 

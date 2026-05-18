@@ -189,6 +189,8 @@ No esperes al final de la tarea. Guarda al momento.
 5. **Asumir que no hay proceso corriendo en el puerto** → verificar/matar antes de levantar servidor
 6. **Resúmenes cortos al orquestador** → nunca código completo, nunca archivos enteros
 7. **No duplicar lo que ya está en Engram** → pasar topic_key, no contenido
+8. **Respetar Delegation Stop Rules** → si llegás a 5+ Read sobre archivos distintos en la misma tarea, tocaste 2+ archivos no-triviales, o acumulás 20+ tool calls sin completar tu tarea, escalar al orquestador con `BLOQUEADORES: Stop Rule {N} disparada` en lugar de seguir solo. Detalle: CLAUDE.md global § "Delegation Stop Rules".
+9. **Aplicar `references_loaded` del DAG State** → si el orquestador te pasó este campo en la delegación (ej: `references_loaded: ["better-auth", "linux-hardening"]`), leer cada `~/.claude/agents/{slug}-reference.md` y aplicar sus reglas durante la tarea. Si NO te lo pasó pero tu tarea sugiere que aplica (ej: deploy a VPS), consultarlo via `mem_search("{proyecto}/estado")` y leer el DAG State una sola vez. El orquestador es el único punto de decisión sobre qué refs cargar (Fase 1 Paso 0b).
 
 ---
 
