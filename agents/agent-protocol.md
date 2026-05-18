@@ -74,13 +74,9 @@ Paso 4: mem_update(observation_id, contenido_mergeado)
 Si `mem_save({proyecto}/...)` retorna error con código `ambiguous_project` o mensaje `Project %q is not backed by known context`:
 
 1. **NO retry inmediato con mismo payload** — fallaría idéntico
-
-2. **Diagnóstico — ¿el proyecto existe en el DB o no?**:
-   - Si `engram projects list` LO contiene → proyecto existe, problema es cwd ambiguity → **Path A (recovery_token)**
-   - Si `engram projects list` NO lo contiene → proyecto nuevo → **Path B (CLI bootstrap)**
-
-3. **Path A — recovery_token (proyecto existe pero MCP no lo resuelve)**:
-   El error trae `recovery_token` y `available_projects` en el envelope. Reintentar UNA vez:
+2. **Causa**: el proyecto no está enrolled (sin git remote conocido, sin `.engram/config.json`, sin sessions previas)
+3. **Quién resuelve**: el orquestador es responsable de enrollment ANTES de delegar al agente. Ver `orquestador.md` § "Project Enrollment"
+4. **Si el agente ya recibió la delegación y el orquestador no enrolló**: el error trae `recovery_token` y `available_projects` en el envelope. Reintentar UNA vez con:
    ```
    mem_save(
      title: "...",
@@ -92,23 +88,15 @@ Si `mem_save({proyecto}/...)` retorna error con código `ambiguous_project` o me
      recovery_token: "{token-recibido-en-error}"
    )
    ```
-   Requiere que `{proyecto}` esté en `available_projects` del error (cwd-scoped). Si no está → no es path A, ir a path B.
-
-4. **Path B — CLI bootstrap (proyecto nuevo, no existe en DB)**:
-   Cuando `available_projects` NO contiene `{proyecto}` y `engram projects list` tampoco:
+5. **Si `available_projects` NO contiene `{proyecto}` Y `engram projects list` tampoco lo lista** → proyecto NUEVO, bootstrap via CLI (el MCP no puede crear proyectos, el CLI sí):
    ```bash
-   engram save "bootstrap" "first save under project={proyecto}" \
-     --project {proyecto} --scope personal --type discovery
+   engram save "bootstrap" "init {proyecto}" --project {proyecto} --scope personal --type discovery
    ```
-   El CLI crea el proyecto en el DB al vuelo. El MCP no puede (validación estricta).
+   Después del bootstrap, `mem_save(project="{proyecto}")` desde MCP funciona aunque `available_projects` siga sin listarlo (esa lista es cwd-scoped, no el full DB). Validado 2026-05-16 con vibefx.
 
-   Después del bootstrap, `mem_save` y `mem_search` desde MCP con `project="{proyecto}"` explícito funcionan, aunque `available_projects` siga sin listarlo (esa lista es cwd-scoped, no el full DB).
+6. **Cross-PC sync del proyecto nuevo**: agregar `{proyecto}` a `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env` del server cloud (SSH). Sin esto los saves quedan locales en cada PC sin replicar.
 
-5. **Para cross-PC sync** del nuevo proyecto: agregar `{proyecto}` a `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env` del server cloud (SSH). Sin esto, los saves quedan locales en cada PC sin replicar.
-
-6. **Si ambos paths fallan** → Return Envelope con `BLOQUEADORES: project '{proyecto}' no enrolled — orquestador debe correr CLI bootstrap antes de re-delegar`
-
-**Validado 2026-05-16** con `vibefx` (no en whitelist, no en cwd-scan): SSH whitelist + CLI bootstrap = full operability en una sesión.
+7. Si todo lo anterior falla → Return Envelope con `BLOQUEADORES: project '{proyecto}' no enrolled — orquestador debe correr CLI bootstrap antes de re-delegar`
 
 ### Fallback a disco (si Engram no responde)
 

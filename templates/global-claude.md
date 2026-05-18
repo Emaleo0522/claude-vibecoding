@@ -34,6 +34,26 @@ Read-only por doctrina. No enforceable técnicamente — el agente se auto-restr
 
 **Salida**: "salí de modo diagnóstico" / "aplicá los fixes" → entra a Modo Modificación.
 
+## Delegation Stop Rules — cuándo escalar al pipeline
+
+En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline:
+
+| Trigger | Umbral | Acción |
+|---|---|---|
+| Lecturas exploratorias consecutivas | 5+ archivos distintos | Spawn `Explore` o pausar |
+| Archivos leídos para entender un flow | 4+ en la misma tarea | Spawn `Explore` subagent |
+| Archivos no-triviales escritos | 2+ con cambios sustantivos | Fresh review con subagente |
+| Tool calls totales sin spawn | 20+ en una sesión | Pausar, sugerir orquestador |
+| Ediciones no-mecánicas consecutivas | 2+ con complejidad creciente | Pausar, justificar o delegar |
+| Después de incidente (`cd` mal, git accident, recovery merge) | siempre | Fresh audit antes de seguir |
+| Antes de commit/push/PR no-trivial | siempre | Fresh review (salvo docs triviales) |
+
+Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2026-05-18).
+
+## Skill & Reference Index
+
+`~/.claude/agents/AGENTS.md` mapea las 15 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
+
 ## Arquitectura
 
 Este sistema usa un **orquestador central** (1 coordinador + 24 subagentes = 25 entidades). Los subagentes solo responden al orquestador, nunca entre sí.

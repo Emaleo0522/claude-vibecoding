@@ -79,6 +79,26 @@ Este modo es **READ-ONLY POR DOCTRINA**. No es enforceable técnicamente (la har
 - Auditoría WebCodexAtlas (Lucas Rojo) → reporte 24 hallazgos + PR
 - Auditoría Claude-Atlas (Lucas Rojo) → reporte 25 hallazgos + 3 propuestas para sumar a vibecoding
 
+## Delegation Stop Rules — cuándo escalar al pipeline
+
+En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline (no asumir, preguntar):
+
+| Trigger | Umbral | Acción |
+|---|---|---|
+| Lecturas exploratorias consecutivas | 5+ archivos distintos | Spawn `Explore` o pausar |
+| Archivos leídos para entender un flow | 4+ en la misma tarea | Spawn `Explore` subagent |
+| Archivos no-triviales escritos | 2+ con cambios sustantivos | Fresh review con subagente |
+| Tool calls totales sin spawn | 20+ en una sesión | Pausar, re-planificar o sugerir orquestador |
+| Ediciones no-mecánicas consecutivas | 2+ con complejidad creciente | Pausar, justificar o delegar |
+| Después de incidente (`cd` mal, accidente git, recovery merge) | siempre | Fresh audit antes de seguir |
+| Antes de commit/push/PR no-trivial | siempre | Fresh review (salvo docs triviales) |
+
+Umbrales deterministas; "no-trivial" y "complejidad creciente" los evalúa Claude. No hay enforcement — es policy advisory. Adaptado de gentle-ai (Gentleman-Programming) — 2026-05-18.
+
+## Skill & Reference Index
+
+`~/.claude/agents/AGENTS.md` mapea las 15 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
+
 ## Arquitectura
 
 Este sistema usa un **orquestador central** (1 coordinador + 24 subagentes = 25 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
@@ -183,7 +203,7 @@ Si el MCP plugin retorna `ambiguous_project` y el proyecto NO aparece en `engram
 
 **`available_projects` del MCP es cwd-scoped, NO el listado completo del DB**. El CLI (`engram projects list`) ve ~68 proyectos, el MCP scan solo muestra los que están como sub-repos del cwd donde corre el MCP server (típicamente 2-5). Esta es la diferencia que confunde: proyectos como `discoveries` / `personal` pueden estar en el DB y aceptarse con `project=` explícito en MCP, pero no aparecen en `available_projects`.
 
-Validado 2026-05-16 con vibefx (no en cloud whitelist, no detectado por MCP cwd-scan): SSH agregando vibefx a `ENGRAM_CLOUD_ALLOWED_PROJECTS` + `engram save --project vibefx` via CLI = full operability en una sesión.
+Validado 2026-05-16 con vibefx (no en cloud whitelist, no detectado por MCP cwd-scan): SSH agregando vibefx a `ENGRAM_CLOUD_ALLOWED_PROJECTS` + `engram save --project vibefx` via CLI = full operability en una sesión (obs #3128, #3129, #3130).
 
 ### Lectura Engram — bloque canonico (referencia para todos los agentes)
 ```
