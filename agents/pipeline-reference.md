@@ -292,15 +292,27 @@ Limite: 3 llamadas por consulta
 - Cada agente creativo escribe SOLO su cajon Engram
 - NO guardar binarios ni SVG completos en Engram — solo paths y metadata
 
-### Variables de entorno requeridas
+### Variables de entorno — politica free-first (default 2026-05-18, verificada con curl real)
 
-| Variable | Servicio | Costo |
-|----------|----------|-------|
-| `GEMINI_API_KEY` | Google AI Studio | ~$0.02-0.04/img (billing requerido) |
-| `HF_TOKEN` | HuggingFace | Gratis (free tier) |
-| `REPLICATE_API_TOKEN` | Replicate | ~$0.03-0.10/video |
+Stack free real (ningun provider requiere tarjeta):
 
-Al menos una key de imagen obligatoria. Resolucion: env var del sistema -> `.env` del proyecto -> `~/.claude/.env`
+| Variable | Servicio | Quota free | Cuando se usa |
+|----------|----------|------------|---------------|
+| `HF_TOKEN` (primario) | HuggingFace Inference | $0.10/mes (~150 imgs FLUX-schnell), reset mensual | Default. image-agent y logo-agent |
+| `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN` (secundario) | Cloudflare Workers AI | **10,000 neurons/dia sin tarjeta** | Cuando HF agota su quota mensual. Centenas de imgs/dia |
+| _sin variable_ | Pollinations.ai (FLUX) | Unlimited free (FAQ oficial) | Fallback automatico, sin auth |
+
+Opt-in (requieren billing):
+
+| Variable | Servicio | Costo | Cuando |
+|----------|----------|-------|--------|
+| `GEMINI_API_KEY` | Google AI Studio | $0.02-0.04/img + billing | Opt-in via `backend: "gemini"` |
+| `REPLICATE_API_TOKEN` | Replicate (LTX-Video 2.3) | $0.03-0.10/video | Sin esta var, video-agent retorna CSS fallback animado como output VALIDO |
+| `RECRAFT_API_KEY` | Recraft V4 Vector | $0.08/img + $5 free/mes via Vercel AI Gateway | Opt-in via `backend: "recraft"` para logos SVG nativos |
+
+**Removido del default 2026-05-18**: ~~Together AI~~. El endpoint "FLUX.1-schnell-Free" promocional 2024-2025 ya no existe en su catalogo. Free tier actual exige $5 fondeo con tarjeta.
+
+Resolucion de vars: env del sistema -> `.env` del proyecto -> `~/.claude/.env`. Template completo con links de signup en `.env.example` en la raiz del repo.
 
 ## Protocolo compartido de subagentes
 - **Referencia completa**: `~/.claude/agents/agent-protocol.md`

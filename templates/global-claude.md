@@ -379,7 +379,29 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 - **Orden**: brand-agent -> (aprobacion) -> logo-agent + image-agent (paralelo) -> video-agent
 - **brand-agent SIEMPRE primero** — sin `brand.json` ningun agente creativo funciona
 - **NO auto-generar assets sin confirmacion del usuario**
-- Env vars: `GEMINI_API_KEY` o `HF_TOKEN` (imagen), `REPLICATE_API_TOKEN` (video)
+
+### Politica free-first (default 2026-05-18 — verificada con curl real, NO con marketing reciclado)
+
+Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de credito**. Opciones paga quedan como opt-in.
+
+| Agente | Free primario | Free secundario | Free fallback | Opt-in (paga) |
+|--------|---------------|------------------|----------------|----------------|
+| image-agent | HF FLUX.1-schnell (`HF_TOKEN`) — $0.10/mes free | Cloudflare Workers AI (`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`) — **10K neurons/dia sin tarjeta** | Pollinations.ai (sin key) — **FLUX unlimited free** | Gemini (`GEMINI_API_KEY` + billing) |
+| logo-agent | HF + vtracer/Inkscape | Cloudflare Workers AI + vtracer | Pollinations + vtracer | Recraft V4 Vector SVG nativo (`RECRAFT_API_KEY`, $5 free/mes via Vercel AI Gateway) o Gemini |
+| video-agent | **CSS fallback animado** (output VALIDO sin token, NO bloquea pipeline) | — | — | Replicate LTX-Video 2.3 (`REPLICATE_API_TOKEN`) |
+| brand-agent | Free siempre (texto puro) | + dembrandt MCP opcional para extraer tokens de URLs | — | — |
+
+**Backend descartado** (verificado 2026-05-18): ~~Together AI~~ — el endpoint promocional "FLUX.1-schnell-Free" de blogs 2024-2025 ya no existe. Free tier exige $5 fondeo con tarjeta.
+
+**Setup Cloudflare Workers AI** (secundario, sin tarjeta):
+1. Signup en `dash.cloudflare.com/sign-up` (no pide tarjeta para Free Workers plan)
+2. Obtener Account ID en el dashboard (32 chars hex)
+3. Crear API token en `dash.cloudflare.com/profile/api-tokens` con permiso `Account -> Workers AI -> Read`
+4. Setear `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_AI_TOKEN` como env vars (ver `.env.example` en raiz del repo)
+
+**Comportamiento sin `REPLICATE_API_TOKEN`**: video-agent retorna `STATUS=completado` con solo `fallback.css`. No bloquea pipeline.
+
+**Para revertir a modo paga** (cuando hay billing): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente.
 
 ## Best Practices Cross-Cutting (validadas en producción)
 
