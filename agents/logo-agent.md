@@ -153,6 +153,41 @@ Validar: tamano > 10KB, `file` devuelve "JPEG" o "PNG image" (FLUX-schnell HF de
 
 Si NINGUNO esta disponible, el agente usa fallback "PNG base64 embedded en `<image>` dentro de SVG wrapper": funciona pero los archivos son pesados. Documentarlo en NOTAS del Return Envelope.
 
+**CRITICO — pre-procesar el raster antes de embeber en SVG (bug validado 2026-05-18):**
+
+NUNCA embeber el JPEG/PNG crudo del modelo directamente en `<image>` dentro del SVG si despues vas a aplicar `feColorMatrix` para tintarlo al color brand. El JPEG no tiene canal alpha (asume todo opaco), y la formula tipica de tinte "alpha = -1 * input + 1.05" para invertir fondo blanco solo funciona con PNG transparente real. Si embebes JPEG, el resultado es alpha ≈ 0.05 uniforme → todo el SVG se ve casi invisible (cuadrado vacio).
+
+**Pipeline correcto cuando faltan vtracer/Inkscape**:
+
+1. Generar PNG transparente desde el JPEG raw con ffmpeg colorkey (NO requiere ImageMagick):
+```bash
+ffmpeg -y -i logo-raw.jpg -vf "colorkey=0xFFFFFF:0.35:0.18" logo-symbol-transparent.png
+```
+- Tolerancia 0.35: cubre antialiasing del modelo (pixeles casi-blancos del borde se vuelven transparentes)
+- Suavizado 0.18: degrada el alpha en los bordes para evitar aliasing duro
+- El output PNG ya tiene fondo transparente real
+
+2. Embeber el PNG transparente (no el JPEG) en cada SVG:
+```xml
+<image href="data:image/png;base64,<PNG_B64>" x="30" y="30" width="240" height="240"
+       filter="url(#colorize-primary)" />
+```
+
+3. Construir `feColorMatrix` con alpha pass-through (NO invertir el alpha del PNG, ya viene correcto):
+```xml
+<filter id="colorize-primary" color-interpolation-filters="sRGB">
+  <feColorMatrix type="matrix"
+    values="0.545 0 0 0 0
+            0.180 0 0 0 0
+            0.102 0 0 0 0
+            0     0 0 1 0"/>
+</filter>
+```
+- Filas RGB: fuerzan el output al color brand (aqui primary #8B2E1A → R=0.545, G=0.180, B=0.102)
+- Fila alpha `0 0 0 1 0`: pass-through (el alpha del PNG se respeta intacto). NO usar `0 0 0 -1 1.05` con PNG transparente — esa formula solo aplica si el PNG NO tiene canal alpha y el fondo es blanco puro.
+
+4. Para variante dark, cambiar las 3 primeras filas del feColorMatrix al hex del `text_light` del brand (ej. cream #F0E8D5 → 0.941, 0.910, 0.835).
+
 ### Paso 4B — Green screen pipeline (alternativa para PNG transparente directo)
 
 Si el logo se necesita como PNG transparente y vtracer/Inkscape no estan disponibles:
