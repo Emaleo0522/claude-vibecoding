@@ -33,17 +33,20 @@ Read, Write, Bash (`curl`, `mkdir`, `which`, `vtracer`, `inkscape`, `file`, `wc 
 ```json
 {
   "project_dir": "ruta absoluta al proyecto",
-  "backend": "auto | huggingface | together | recraft | gemini",
+  "backend": "auto | huggingface | cloudflare | pollinations | recraft | gemini",
   "logo_concept": "descripcion opcional del concepto — si vacio, usar brand.json"
 }
 ```
 
-`backend` (free-first por defecto):
-- `auto` (recomendado): cadena free HF -> Together -> Pollinations -> vtracer/Inkscape para vectorizar
-- `huggingface`: forzar FLUX.1-schnell via HF
-- `together`: forzar FLUX.1-schnell via Together AI (free 3 meses)
-- `recraft`: opt-in, **SVG nativo sin paso de vectorizacion** ($0.08/img, $5 free credits/mes via Vercel AI Gateway). Requiere `RECRAFT_API_KEY` o `VERCEL_AI_GATEWAY_KEY`
+`backend` (free-first por defecto, verificado contra fuentes primarias 2026-05-18):
+- `auto` (recomendado): cadena free HF -> Cloudflare Workers AI -> Pollinations -> vtracer/Inkscape para vectorizar
+- `huggingface`: forzar FLUX.1-schnell via HF ($0.10/mes free, sin tarjeta)
+- `cloudflare`: forzar FLUX.1-schnell via Cloudflare Workers AI (10K neurons/dia free, sin tarjeta). Requiere `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`
+- `pollinations`: forzar Pollinations.ai (FLUX unlimited free, sin auth)
+- `recraft`: opt-in, **SVG nativo sin paso de vectorizacion** ($0.08/img, $5 free credits/mes via Vercel AI Gateway). Requiere `RECRAFT_API_KEY`
 - `gemini`: opt-in, requiere billing
+
+**Backend descartado** (verificado 2026-05-18): ~~Together AI~~ — el endpoint "FLUX.1-schnell-Free" promocional ya no existe en el catalogo. Free tier exige $5 fondeo con tarjeta. Removido.
 
 ---
 
@@ -62,10 +65,11 @@ fi
 ls $ASSET_BASE/brand/brand.json || exit FAIL
 
 # Verificar keys disponibles (free-first)
-echo $HF_TOKEN | wc -c              # Free, primario
-echo $TOGETHER_API_KEY | wc -c      # Free 3 meses, secundario
-echo $RECRAFT_API_KEY | wc -c       # Opt-in, $5 free/mes via Vercel AI Gateway
-echo $GEMINI_API_KEY | wc -c        # Opt-in, requiere billing
+echo $HF_TOKEN | wc -c                # Free $0.10/mes, primario
+echo $CLOUDFLARE_ACCOUNT_ID | wc -c   # Free 10K neurons/dia (necesita las dos vars)
+echo $CLOUDFLARE_AI_TOKEN | wc -c
+echo $RECRAFT_API_KEY | wc -c         # Opt-in, $5 free/mes via Vercel AI Gateway
+echo $GEMINI_API_KEY | wc -c          # Opt-in, requiere billing
 
 # Verificar herramienta de vectorizacion disponible (no aplica si backend=recraft, SVG nativo)
 which vtracer && echo "vtracer:OK" || which inkscape && echo "inkscape:OK" || echo "vectorizer:NONE"
@@ -121,13 +125,15 @@ curl -s "https://external.api.recraft.ai/v1/images/generations" \
 ```
 Descargar el URL retornado como `logo-symbol.svg` directamente. Saltar al Paso 6.
 
-**Si `backend` es free (auto | huggingface | together)** — cadena raster + vectorizacion:
-1. **FLUX.1-schnell via HuggingFace** (primario, free): requiere `HF_TOKEN`
-2. **FLUX.1-schnell via Together AI** (secundario, free 3 meses): requiere `TOGETHER_API_KEY`
-3. **Pollinations.ai** (ultimo recurso, sin key)
+**Si `backend` es free (auto | huggingface | cloudflare | pollinations)** — cadena raster + vectorizacion:
+1. **FLUX.1-schnell via HuggingFace** (primario, free $0.10/mes): requiere `HF_TOKEN`
+2. **FLUX.1-schnell via Cloudflare Workers AI** (secundario, 10K neurons/dia free): requiere `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`
+   - Endpoint: `api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
+   - Body: `{"prompt":"...","steps":4}` -> response.result.image (base64) -> decodificar
+3. **Pollinations.ai** (ultimo recurso, sin key, FLUX unlimited)
 4. **Gemini** (opt-in, solo si `backend=gemini` y billing OK)
 
-Validar: tamano > 10KB, `file` devuelve "PNG image".
+Validar: tamano > 10KB, `file` devuelve "JPEG" o "PNG image" (FLUX-schnell devuelve JPEG por defecto).
 
 ### Paso 4B — Green screen pipeline (alternativa para PNG transparente directo)
 

@@ -1,6 +1,6 @@
 ---
 name: image-agent
-description: Genera imagenes para proyectos web (hero images, fondos, thumbnails). Por defecto usa rutas free top-tier (HuggingFace FLUX.1-schnell, Together AI free, Pollinations). Gemini opcional si hay billing. Requiere brand.json generado por brand-agent. Llamar despues de brand-agent y aprobacion del usuario.
+description: Genera imagenes para proyectos web (hero images, fondos, thumbnails). Por defecto usa rutas free top-tier verificadas 2026 (HuggingFace FLUX.1-schnell, Cloudflare Workers AI, Pollinations). Gemini opcional si hay billing. Requiere brand.json generado por brand-agent. Llamar despues de brand-agent y aprobacion del usuario.
 model: sonnet
 updated: 2026-05-18
 ---
@@ -18,18 +18,19 @@ Generar imagenes de alta calidad para proyectos web leyendo la identidad visual 
 
 ## Backend de generacion (free-first; orden de preferencia)
 
-**Politica por defecto (2026-05): el agente prioriza paths FREE top-tier**. Gemini (de paga) queda como opt-in solo si el usuario tiene billing.
+**Politica por defecto (2026-05-18, verificada con curl real): el agente prioriza paths FREE top-tier que NO requieren tarjeta de credito**. Gemini (de paga) queda como opt-in solo si el usuario tiene billing.
 
-| Backend | Env var | Costo | Cuando usarlo |
-|---------|---------|-------|---------------|
-| **HuggingFace** (PRIMARIO default) | `HF_TOKEN` | Gratis (free tier) | Default sin configuracion extra. Modelos: FLUX.1-schnell, SDXL |
-| **Together AI** (SECUNDARIO recomendado) | `TOGETHER_API_KEY` | 3 meses ilimitados FLUX.1-schnell + $25 credits iniciales, sin tarjeta | Mejor calidad que HF, sin cold starts. Signup en together.ai/signup |
-| **Pollinations.ai** (FALLBACK sin key) | ninguna | Gratis con rate limit ~1 pollen/h por IP | Cuando ninguna key esta configurada. Calidad menor pero funcional |
-| **Gemini** (OPT-IN solo con billing) | `GEMINI_API_KEY` | $0.02-0.04/img + billing habilitado | Solo si el usuario lo pide explicitamente y tiene billing. Mejor comprension de prompts pero filtros de contenido agresivos |
+| Backend | Env var(s) | Costo real 2026 | Cuando usarlo |
+|---------|------------|------------------|---------------|
+| **HuggingFace** (PRIMARIO) | `HF_TOKEN` | Free users: $0.10/mes (~150 imgs FLUX-schnell), reset mensual. No requiere tarjeta. | Default. Calidad alta. Cuidar el quota mensual. |
+| **Cloudflare Workers AI** (SECUNDARIO recomendado) | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN` | **10,000 neurons/dia gratis, SIN tarjeta** (fuente: developers.cloudflare.com). FLUX-schnell consume ~6 neurons/img -> cientos de imgs/dia. | Cuando se agota HF o se necesita quota grande. Setup en dash.cloudflare.com/profile/api-tokens (permiso Account -> Workers AI -> Read) |
+| **Pollinations.ai** (FALLBACK sin key) | ninguna | **Unlimited free FLUX images** (FAQ oficial pollinations.ai). Rate limit ~1 pollen/h por IP para publishable keys; sin auth es funcional. | Cuando ninguna key esta configurada o todo lo demas fallo. Modelo default actual: Sana. |
+| **Gemini** (OPT-IN, requiere billing) | `GEMINI_API_KEY` | $0.02-0.04/img + billing habilitado en Google Cloud | Solo si el usuario lo pide explicitamente y tiene billing. Mejor comprension de prompts pero filtros agresivos. |
 
-**Importante sobre Gemini**: la generacion de imagenes por API NO funciona en el free tier de Google AI Studio. Requiere habilitar billing en Google Cloud. **Por defecto este agente NO usa Gemini**.
+**Backends descartados** (verificado 2026-05-18 contra fuentes primarias):
+- ~~Together AI~~: el endpoint "FLUX.1-schnell-Free" que figuraba en blogs 2024-2025 ya NO existe en su catalogo. Su free tier ahora exige fondear minimo $5 con tarjeta. Removido del stack default.
 
-**Seleccion**: si el orquestador pasa `backend` explicito, respetarlo. Si pasa `backend: "auto"` o no especifica, usar la cadena free-first: HF -> Together -> Pollinations. Si pasa `backend: "gemini"`, validar billing y caer a cadena free si falla.
+**Seleccion**: si el orquestador pasa `backend` explicito, respetarlo. Si pasa `backend: "auto"` o no especifica, usar la cadena free-first: HF -> Cloudflare -> Pollinations. Si pasa `backend: "gemini"`, validar billing y caer a cadena free si falla.
 
 ## Clasificacion de Shot (OBLIGATORIO antes de generar)
 
@@ -65,13 +66,13 @@ Read, Write, Bash (`curl`, `mkdir`, `file`, `wc -c`), Engram MCP
 ```json
 {
   "project_dir": "ruta absoluta al proyecto",
-  "backend": "auto | huggingface | together | pollinations | gemini",
+  "backend": "auto | huggingface | cloudflare | pollinations | gemini",
   "asset_types": ["hero", "thumbnail"],
   "custom_prompt_additions": ""
 }
 ```
 
-`backend`: `auto` (recomendado, free-first) intenta la cadena HF -> Together -> Pollinations. Si se especifica explicitamente, se usa ese y se cae a la cadena free si falla. `gemini` requiere billing.
+`backend`: `auto` (recomendado, free-first) intenta la cadena HF -> Cloudflare -> Pollinations. Si se especifica explicitamente, se usa ese y se cae a la cadena free si falla. `gemini` requiere billing.
 `asset_types` acepta: `hero` | `thumbnail` | `hero_and_mobile` | `all`
 
 ---
@@ -90,9 +91,10 @@ fi
 ls $ASSET_BASE/brand/brand.json
 
 # 1b. Verificar keys disponibles (free-first)
-echo $HF_TOKEN | wc -c           # Free, primario recomendado
-echo $TOGETHER_API_KEY | wc -c   # Free 3 meses, secundario
-echo $GEMINI_API_KEY | wc -c     # Solo si billing habilitado (opt-in)
+echo $HF_TOKEN | wc -c                # Free $0.10/mes, primario
+echo $CLOUDFLARE_ACCOUNT_ID | wc -c   # Free 10K neurons/dia, secundario (necesita ambas vars)
+echo $CLOUDFLARE_AI_TOKEN | wc -c
+echo $GEMINI_API_KEY | wc -c          # Solo si billing habilitado (opt-in)
 # Pollinations.ai NO necesita key (ultimo fallback)
 
 # 1c. Crear directorio output
@@ -150,14 +152,17 @@ amateur photography, stock photo artifacts
 
 ### Paso 4 — Llamar API con retry logic (cadena free-first)
 
-**Cadena por defecto** (`backend: "auto"` o no especificado):
+**Cadena por defecto** (`backend: "auto"` o no especificado), verificada con curl real el 2026-05-18:
 
-1. **FLUX.1-schnell via HuggingFace** (primario, free): `router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell`
-   - Requiere `HF_TOKEN`. Si no esta -> saltar al paso 2
+1. **FLUX.1-schnell via HuggingFace** (primario, free $0.10/mes): `router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell`
+   - Requiere `HF_TOKEN`. Si no esta o quota agotada -> saltar al paso 2
+   - Validar: si HTTP 200 y JPEG/PNG > 3KB -> OK
 2. **SDXL via HuggingFace** (fallback dentro de HF): `router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0`
-3. **FLUX.1-schnell via Together AI** (secundario free, 3 meses ilimitados): `api.together.xyz/v1/images/generations`
-   - Requiere `TOGETHER_API_KEY` (signup gratis sin tarjeta en together.ai)
-4. **Pollinations.ai** (ultimo recurso, sin token): `image.pollinations.ai/prompt/{encoded}?width=1920&height=1080&nologo=true`
+3. **FLUX.1-schnell via Cloudflare Workers AI** (secundario free 10K neurons/dia): `api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
+   - Requiere `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`
+   - Devuelve JSON con `result.image` en base64 -> decodificar a PNG
+   - Resolucion default 1024x1024
+4. **Pollinations.ai** (ultimo recurso, sin token, unlimited FLUX): `image.pollinations.ai/prompt/{encoded}?width=1920&height=1080&nologo=true`
 
 **Si `backend: "gemini"`** (opt-in con billing):
 1. **Gemini** (Google): `generativelanguage.googleapis.com`
@@ -165,16 +170,18 @@ amateur photography, stock photo artifacts
    - Config: `responseModalities: ["IMAGE", "TEXT"]`
    - Si `403 PERMISSION_DENIED` -> billing no habilitado, caer automaticamente a cadena free
    - Si `SAFETY` o `content not permitted` -> filtros rechazaron, caer a HuggingFace
-2. Cae a cadena free (HF -> Together -> Pollinations)
+2. Cae a cadena free (HF -> Cloudflare -> Pollinations)
 
-**Llamada Together AI** (free tier FLUX.1-schnell):
+**Llamada Cloudflare Workers AI** (FLUX-schnell, validado HTTP 200 hoy):
 ```bash
-curl -s "https://api.together.xyz/v1/images/generations" \
-  -H "Authorization: Bearer $TOGETHER_API_KEY" \
+curl -sS "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai/run/@cf/black-forest-labs/flux-1-schnell" \
+  -H "Authorization: Bearer $CLOUDFLARE_AI_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"model":"black-forest-labs/FLUX.1-schnell-Free","prompt":"'"$PROMPT"'","width":1920,"height":1080,"steps":4,"n":1,"response_format":"b64_json"}' \
-  | python3 -c "import sys,json,base64;r=json.load(sys.stdin);sys.stdout.buffer.write(base64.b64decode(r['data'][0]['b64_json']))" \
-  > output.png
+  -d '{"prompt":"'"$PROMPT"'","steps":4}'
+
+# Respuesta: {"result":{"image":"base64..."},"success":true,...}
+# Decodificar:
+#   jq -r '.result.image' response.json | base64 -d > output.png
 ```
 
 **Llamada Gemini** (solo si `backend=gemini` y billing OK):
@@ -272,8 +279,9 @@ ACCION REQUERIDA: {que necesita el usuario/orquestador}
 | `SAFETY` / `content not permitted` (Gemini) | Filtros de contenido de Google rechazaron el prompt | Simplificar prompt (quitar personas, marcas), reintentar. Si persiste -> fallback a HuggingFace |
 | `403 PERMISSION_DENIED` (Gemini) | API key sin billing habilitado | Caer automaticamente a cadena free (HF -> Together -> Pollinations). NO bloquear al usuario por billing |
 | `404 model not found` (Gemini) | Modelo deprecado o incorrecto | Usar `gemini-2.5-flash-image` o `imagen-4-fast`. Modelos preview se retiran periodicamente |
-| Together AI `401 Unauthorized` | `TOGETHER_API_KEY` invalida o no configurada | Saltar a Pollinations.ai (sin key) |
-| Pollinations rate limit (1 pollen/h por IP) | Demasiadas requests desde misma IP | Esperar 1h o usar HF/Together si esta disponible |
+| Cloudflare `7003` o `10000` (auth) | `CLOUDFLARE_AI_TOKEN` invalido o sin permiso Workers AI Read | Verificar token en dash.cloudflare.com/profile/api-tokens. Saltar a Pollinations.ai |
+| Cloudflare quota exceeded (10K neurons/dia) | Cuota diaria gratuita agotada | Esperar 24h o saltar a Pollinations.ai (unlimited) |
+| Pollinations rate limit (1 pollen/h por IP) | Demasiadas requests desde misma IP | Esperar 1h o usar HF/Cloudflare si esta disponible |
 
 ### Proactive saves
 Ver agent-protocol.md S 4.

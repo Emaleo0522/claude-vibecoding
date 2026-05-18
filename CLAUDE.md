@@ -438,20 +438,30 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 - **brand-agent SIEMPRE primero** — sin `brand.json` ningun agente creativo funciona
 - **NO auto-generar assets sin confirmacion del usuario**
 
-### Politica free-first (default 2026-05-18)
+### Politica free-first (default 2026-05-18 — verificada con curl real, NO con marketing reciclado)
 
-Los agentes priorizan paths FREE top-tier. Opciones paga quedan como opt-in:
+Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de credito**. Opciones paga quedan como opt-in.
 
 | Agente | Free primario | Free secundario | Free fallback | Opt-in (paga) |
 |--------|---------------|------------------|----------------|----------------|
-| image-agent | HF FLUX.1-schnell (`HF_TOKEN`) | Together AI FLUX.1-schnell free 3 meses (`TOGETHER_API_KEY`) | Pollinations.ai (sin key) | Gemini (`GEMINI_API_KEY` + billing) |
-| logo-agent | HF + vtracer/Inkscape | Together AI + vtracer | Pollinations + vtracer | Recraft V4 Vector SVG nativo (`RECRAFT_API_KEY`, $5 free/mes via Vercel AI Gateway) o Gemini |
+| image-agent | HF FLUX.1-schnell (`HF_TOKEN`) — $0.10/mes free, reset mensual | Cloudflare Workers AI FLUX-schnell (`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`) — **10K neurons/dia sin tarjeta** | Pollinations.ai (sin key) — **FLUX unlimited free** | Gemini (`GEMINI_API_KEY` + billing) |
+| logo-agent | HF + vtracer/Inkscape | Cloudflare Workers AI + vtracer | Pollinations + vtracer | Recraft V4 Vector SVG nativo (`RECRAFT_API_KEY`, $5 free/mes via Vercel AI Gateway) o Gemini |
 | video-agent | **CSS fallback animado** (output VALIDO sin token, NO bloquea pipeline) | — | — | Replicate LTX-Video 2.3 (`REPLICATE_API_TOKEN`) |
 | brand-agent | Free siempre (texto puro) | + dembrandt MCP opcional para extraer tokens de URLs | — | — |
 
+**Backend descartado del stack default** (verificado contra fuentes primarias 2026-05-18):
+- ~~Together AI~~ — el endpoint promocional "FLUX.1-schnell-Free" de blogs 2024-2025 ya **NO existe** en su catalogo actual. Free tier exige $5 fondeo con tarjeta. Marketing reciclado con fechas "2026" engana.
+
+**Setup Cloudflare Workers AI** (secundario, sin tarjeta):
+1. Signup en `dash.cloudflare.com/sign-up` (Free Workers plan NO pide tarjeta — confirmado en `developers.cloudflare.com`)
+2. Obtener Account ID en el dashboard (32 chars hex)
+3. Crear API token en `dash.cloudflare.com/profile/api-tokens` con permiso `Account -> Workers AI -> Read`
+4. `setx CLOUDFLARE_ACCOUNT_ID "..."` y `setx CLOUDFLARE_AI_TOKEN "..."`
+5. Endpoint: `api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
+
 **Comportamiento sin `REPLICATE_API_TOKEN`**: video-agent retorna `STATUS=completado` con solo `fallback.css`. Para video real, opciones manuales free: Seedance (web, 100 free/dia sin tarjeta), HF Spaces (Wan 2.1, cold start), LTX-2 self-host.
 
-**Para revertir a modo paga** (cuando el usuario recupere tarjeta): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente para video.
+**Para revertir a modo paga** (cuando recuperes tarjeta): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente para video.
 
 ## Best Practices Cross-Cutting (validadas en producción)
 
