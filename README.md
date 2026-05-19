@@ -55,7 +55,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-El script instala los 25 agentes + 15 referencias técnicas, los 16 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
+El script instala los 25 agentes + 15 referencias técnicas + 1 índice central (`AGENTS.md`), los 16 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
 
 ### Windows (Claude Desktop) — 20-30 minutos guiados
 
@@ -80,7 +80,7 @@ Si te animás a portarlo, abrí un issue o PR contando qué runtime estás usand
 ### Verificación post-instalación
 
 ```bash
-# Agentes (debería ser 40: 25 agentes + 15 referencias técnicas)
+# Agentes (debería ser 41: 25 agentes + 15 referencias técnicas + AGENTS.md índice)
 ls ~/.claude/agents/*.md | wc -l
 
 # Hooks (debería ser 16)
@@ -149,7 +149,8 @@ Para **modificar un proyecto que ya está hecho**, el sistema entra en modo modi
 - **16 hooks** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger. Otros corren en background: cost tracking, session logging, sync de Engram local→GitHub y local→cloud al cerrar sesión, snapshot pre-compact.
 - **AUTO_AUDIT pre-return**: antes de devolver código, el `frontend-developer` corre 5 reglas grep ejecutables (no paleta teal por default, no Inter como heading en moods bold, hero con media coherente, motion según dial, shadow según mood). Si falla → regenera. Si pasa → marca cambio como `VISUAL_IMPACT: high|medium|low`.
 - **Checkpoint humano automático**: cuando el cambio tiene `VISUAL_IMPACT: high`, el orquestador te muestra el resultado antes de marcar la tarea como completa. La doctrina: el agente decide solo cuando hay UNA respuesta correcta; en todo lo demás (visual, multi-opción, irreversible, iterado 2+ veces) te pregunta con su recomendación incluida.
-- **9 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar.
+- **11 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar, **TDD evidence trail opt-in** (RED→GREEN→TRIANGULATE→REFACTOR cuando hay `test_commands`), **cache hash de archivos en reintentos** (skip QA si todos los archivos tocados tienen hash idéntico al último PASS, ahorra ~80% de tokens en reintentos sin cambio real).
+- **Delegation Stop Rules cuantificados**: umbrales explícitos para escalar (5+ archivos leídos consecutivos → delegar a `Explore`, 20+ tool calls sin spawn → pausar, 2+ archivos no-triviales en una tarea → fresh review). Adaptado de [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai).
 
 ---
 
@@ -176,6 +177,17 @@ El hook `engram-cloud-sync-on-stop` (incluido) empuja al cloud al cerrar sesión
 **Reglas clave** (validadas en producción 2026-05-15):
 - Todos los `mem_save` cross-PC deben usar `scope="personal"` + `project=` explícito. El auto-detect del MCP routea a buckets distintos según el cwd del cliente y rompe el cruce. Ver el protocolo "guarda en engram" completo en [`templates/global-claude.md`](templates/global-claude.md).
 - Para agregar un bucket nuevo al cloud: SSH al server, editar `.env`, `docker compose up -d cloud`. Sin allowlist explícita el server retorna 403.
+
+### Cross-Claude Mailbox Protocol — opt-in para uso multi-PC
+
+Si trabajás en 2+ PCs con instancias separadas de Claude (típicamente Linux + Windows), podés activar un canal asíncrono entre ellas vía un bucket dedicado de Engram cloud (`cross-claude-mailbox`). Una instancia deja un mensaje (`mailbox/from-{origen}/to-{destino}/{ts}-{slug}`), la otra lo lee la próxima vez que la despertás.
+
+**Es opt-in**: no se chequea por default en cada turn (ahorra ~3-5k tokens/día en sesiones que no coordinan cross-PC). Para activarlo en una sesión, decile a Claude *"chequeá el mailbox"* o *"¿hay mensajes de pc004?"*. Diseño completo (schemas query/reply, flujo checks vs edits con confirmación, anti-patrones): ver sección **Cross-Claude Mailbox Protocol** en [`templates/global-claude.md`](templates/global-claude.md).
+
+**Reglas clave**:
+- Lecturas/greps/doctor → el Claude destinatario auto-procesa y responde.
+- Edits/Bash mutating/SSH → NO auto-aplicar, escalar al usuario primero.
+- SSH al server productivo requiere autorización LITERAL EXPLÍCITA del usuario ("sí hacé el SSH"), no un "OK dale" genérico.
 
 ### Engram Sync (legacy, git) — opcional
 
@@ -254,8 +266,9 @@ Para developers que quieran ir más allá:
 
 | Archivo | Para qué |
 |---|---|
+| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 15 referencias técnicas con triggers de carga. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Comportamiento completo del orquestador: detección de modos, pipeline detallado, DAG State, fallbacks |
-| [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, reglas universales |
+| [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, reglas universales |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Detalles de cada fase, tools por agente, stack adaptable, Design Intelligence Engine |
 | [`templates/global-claude.md`](templates/global-claude.md) | El `CLAUDE.md` que se instala — toda la doctrina del sistema (Checkpoint humano, Engram, hooks, mod mode) |
 | [`agents/ux-architect.md`](agents/ux-architect.md) | Tokens de diseño, container strategy, anchor scroll con sticky |
@@ -271,7 +284,7 @@ Para developers que quieran ir más allá:
 
 ```
 ~/.claude/
-├── agents/            # 25 agentes + 15 referencias técnicas = 40 archivos .md
+├── agents/            # 25 agentes + 15 referencias técnicas + AGENTS.md índice = 41 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
 ├── hooks/             # 16 hooks (bloqueos, warnings, sync background)
 ├── settings.json      # config de hooks + Engram MCP
