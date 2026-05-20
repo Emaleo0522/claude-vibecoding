@@ -63,7 +63,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-El script instala los 25 agentes + 20 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 16 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
+El script instala los 25 agentes + 20 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 13 hooks + 3 utilities manuales, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
 
 ### Windows (Claude Desktop) — 20-30 minutos guiados
 
@@ -154,7 +154,7 @@ Para **modificar un proyecto que ya está hecho**, el sistema entra en modo modi
 
 ### Lo que te protege en el camino
 
-- **16 hooks** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger. Otros corren en background: cost tracking, session logging, sync de Engram local→GitHub y local→cloud al cerrar sesión, snapshot pre-compact.
+- **13 hooks** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger. Otros corren en background: cost tracking, session logging, sync de Engram local→GitHub y local→cloud al cerrar sesión, snapshot pre-compact. Más **3 utilities manuales** (`audit-system.js` health check, `cost-report.js`, `learning-index.js`) que ejecutás con `node` cuando los necesitás.
 - **AUTO_AUDIT pre-return**: antes de devolver código, el `frontend-developer` corre 5 reglas grep ejecutables (no paleta teal por default, no Inter como heading en moods bold, hero con media coherente, motion según dial, shadow según mood). Si falla → regenera. Si pasa → marca cambio como `VISUAL_IMPACT: high|medium|low`.
 - **Checkpoint humano automático**: cuando el cambio tiene `VISUAL_IMPACT: high`, el orquestador te muestra el resultado antes de marcar la tarea como completa. La doctrina: el agente decide solo cuando hay UNA respuesta correcta; en todo lo demás (visual, multi-opción, irreversible, iterado 2+ veces) te pregunta con su recomendación incluida.
 - **11 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar, **TDD evidence trail opt-in** (RED→GREEN→TRIANGULATE→REFACTOR cuando hay `test_commands`), **cache hash de archivos en reintentos** (skip QA si todos los archivos tocados tienen hash idéntico al último PASS, ahorra ~80% de tokens en reintentos sin cambio real).
@@ -280,8 +280,9 @@ Para developers que quieran ir más allá:
 | [`agents/ui-designer.md`](agents/ui-designer.md) | Design system, SaaS Teal Default Detector (T1-T7), accesibilidad |
 | [`agents/frontend-developer.md`](agents/frontend-developer.md) | Implementación frontend, AUTO_AUDIT pre-return, design decision tree |
 | [`agents/evidence-collector.md`](agents/evidence-collector.md) | QA visual con Playwright, 9 capas anti-falso-positivo |
-| [`hooks/`](hooks/) | Los 16 hooks: bloqueos, advertencias, auditorías, tracking, sync Engram (local+cloud) |
+| [`hooks/`](hooks/) | Los 13 hooks + 3 utilities manuales: bloqueos, advertencias, auditorías, tracking, sync Engram (local+cloud) |
 | [`design-data/`](design-data/) | Design Intelligence Engine: 8 CSVs con 161 industrias indexadas via BM25 |
+| [`.gitattributes`](.gitattributes) | Fuerza LF en archivos de texto cross-PC (Windows ↔ Linux). Previene drift CRLF/LF en commits — añadido 2026-05-20 tras audit que detectó diffs falsos de ~900 líneas por line endings |
 
 ---
 
@@ -291,7 +292,7 @@ Para developers que quieran ir más allá:
 ~/.claude/
 ├── agents/            # 25 agentes + 20 referencias técnicas + AGENTS.md (índice) + agent-protocol.md = 47 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
-├── hooks/             # 16 hooks (bloqueos, warnings, sync background)
+├── hooks/             # 13 hooks + 3 utilities (bloqueos, warnings, sync background, health check)
 ├── settings.json      # config de hooks + Engram MCP
 ├── settings.local.json # permisos para agentes
 ├── codepen-vault/     # efectos CodePen aprobados (decorativo)

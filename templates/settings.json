@@ -1,70 +1,65 @@
 {
-  "_comment": "Pixel Bridge hooks are optional. Remove the 4 pixel-bridge entries if you don't use Pixel Bridge visualization.",
   "hooks": {
     "PreToolUse": [
-      { "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/pixel-bridge/bridge.js", "async": true }], "_optional": "pixel-bridge" },
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/block-no-verify.js" }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/block-no-verify.js" }],
         "description": "Blocks git commit/push --no-verify and --no-gpg-sign"
       },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/config-protection.js" }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/config-protection.js" }],
         "description": "Warns when modifying linter/formatter/tsconfig files"
       }
     ],
     "PostToolUse": [
-      { "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/pixel-bridge/bridge.js", "async": true }], "_optional": "pixel-bridge" },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/quality-gate.js" }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/quality-gate.js" }],
         "description": "Warns about debugger, .only(), @ts-ignore in JS/TS files"
       },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/console-log-warning.js" }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/console-log-warning.js" }],
         "description": "Warns about console.log/warn/error in production JS/TS files"
       },
       {
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/suggest-compact.js", "async": true }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/suggest-compact.js", "async": true }],
         "description": "Suggests /compact every ~50 tool calls to manage context window"
       },
       {
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/cost-tracker.js", "async": true }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/cost-tracker.js", "async": true }],
         "description": "Logs tool calls by category for cost/usage analysis"
       },
       {
         "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "bash __CLAUDE_HOME__/hooks/pre-return-audit.sh", "async": true }],
+        "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/pre-return-audit.sh", "async": true }],
         "description": "Auditoría universal CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding, navbar mobile sin hamburger, prefers-reduced-motion ausente. Fail-open."
       }
     ],
     "Stop": [
-      { "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/pixel-bridge/bridge.js", "async": true }], "_optional": "pixel-bridge" },
       {
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/session-summary.js", "async": true }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-summary.js", "async": true }],
         "description": "Logs session activity for recovery and tracking"
       },
       {
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/engram-sync.js --hook", "async": true, "timeout": 60000 }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/engram-sync.js --hook", "async": true, "timeout": 60000 }],
         "description": "Auto-syncs Engram memories to GitHub on session stop (legacy chunk-based sync)"
       },
       {
-        "hooks": [{ "type": "command", "command": "bash __CLAUDE_HOME__/hooks/engram-cloud-sync-on-stop.sh", "async": true, "timeout": 300000 }],
+        "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/engram-cloud-sync-on-stop.sh", "async": true, "timeout": 300000 }],
         "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Guarantees cross-PC retomable. See CLAUDE.md § Protocolo guarda en engram."
       }
     ],
     "Notification": [
       {
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/session-start-context.js" }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-start-context.js" }],
         "description": "Loads previous session context on startup"
-      },
-      { "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/pixel-bridge/standalone/start.cmd", "async": true }], "description": "Auto-launches Pixel Bridge server on session start", "_optional": "pixel-bridge" }
+      }
     ],
     "PreCompact": [
       {
-        "hooks": [{ "type": "command", "command": "node __CLAUDE_HOME__/hooks/pre-compact-engram.js" }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/pre-compact-engram.js" }],
         "description": "Saves session snapshot, resets counter, and instructs Claude to dual-write DAG State before compaction (v2.2)"
       }
     ]

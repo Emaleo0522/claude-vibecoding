@@ -41,7 +41,7 @@ for (const [name, dir] of [['CLAUDE_DIR', CLAUDE_DIR], ['AGENTS_DIR', AGENTS_DIR
 
 // Reference files (not agents)
 const REFERENCE_SUFFIXES = ['-reference.md'];
-const NON_AGENT_FILES = ['agent-protocol.md'];
+const NON_AGENT_FILES = ['agent-protocol.md', 'AGENTS.md'];
 
 const results = [];
 let passed = 0;
@@ -101,8 +101,14 @@ function testHookIntegrity() {
   }
 
   const hookPaths = [];
+  const skippedOptional = new Set();
   for (const [hookType, hookList] of Object.entries(settings.hooks || {})) {
     for (const entry of hookList) {
+      // Skip entries marked _optional (e.g. pixel-bridge) — they shouldn't FAIL T2 if missing
+      if (entry._optional) {
+        skippedOptional.add(entry._optional);
+        continue;
+      }
       for (const hook of (entry.hooks || [])) {
         if (hook.command) {
           // Extract path from "node /path/to/file.js"
@@ -144,7 +150,10 @@ function testHookIntegrity() {
   }
 
   if (allOk) {
-    log('T2 Hook Integrity', 'PASS', `${hookPaths.length} hooks validated`);
+    const optionalNote = skippedOptional.size > 0
+      ? ` (${skippedOptional.size} optional skipped: ${[...skippedOptional].join(', ')})`
+      : '';
+    log('T2 Hook Integrity', 'PASS', `${hookPaths.length} hooks validated${optionalNote}`);
   } else {
     log('T2 Hook Integrity', 'FAIL', issues.join('. '));
   }
