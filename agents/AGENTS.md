@@ -28,6 +28,12 @@
 | `creative-coding` | p5.js, GLSL shaders, generative art, particle systems custom | `creative-coding-reference.md` | UI estándar sin generative |
 | `advanced-effects` | Lottie, Rive, cursor effects, micro-interactions vectoriales | `advanced-effects-reference.md` | Sin animaciones vectoriales |
 | `reactive-audio` | Tone.js, Web Audio API, audio que responde a scroll/data/interacción | `reactive-audio-reference.md` | Sin audio |
+| `modo-diagnostico` | User dice frase exacta: "modo diagnóstico", "audita {esto/repo}", "diagnostica X", "evalúa sin tocar", "review only" | `modo-diagnostico-reference.md` | Sin trigger explícito (default skip) |
+| `cross-claude-mailbox` | User activa OPT-IN: "chequeá mailbox", "mensajes de pc004", "sync cross-PC", o inicio de workflow conocido cross-PC (M1/M2/M3, coordinación de pushes) | `cross-claude-mailbox-reference.md` | Sin trigger OPT-IN (NO ejecutar searches al mailbox por default) |
+| `orquestador-modificacion` | Boot Sequence detecta `{proyecto}/estado.fase_actual="completado"` Y brief usa verbos modifica/agrega/quita/redesign | `orquestador-modificacion-reference.md` | Proyecto nuevo o fase_actual ≠ completado |
+| `orquestador-fase-2b` | `intent.project_type ∈ {landing, portfolio, marketing, app móvil, juego}` o user pide explícitamente "logo/imágenes/branding/hero/video" | `orquestador-fase-2b-reference.md` | API pura, dashboard interno corporativo, prototipo sin assets visuales |
+| `orquestador-edge-cases` | Error subagente / `ambiguous_project` / Engram MCP no responde / Playwright MCP no disponible / debugging pipeline fallido | `orquestador-edge-cases-reference.md` | Flujo normal sin errores |
+| `external-skills` | Frontend/xr-immersive dev en Fase 3 detecta gap NO cubierto por refs internas (gsap, scroll-storytelling, creative-coding, advanced-effects, reactive-audio, codepen-vault) Y usuario autoriza `npx skills add` | `external-skills-reference.md` | Ref interna ya cubre el efecto · proyecto fuera de Fase 3 · sin autorización explícita del usuario |
 
 ## Convenciones
 

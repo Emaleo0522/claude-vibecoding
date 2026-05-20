@@ -63,7 +63,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-El script instala los 25 agentes + 15 referencias técnicas + 1 índice central (`AGENTS.md`), los 16 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
+El script instala los 25 agentes + 20 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 16 hooks, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
 
 ### Windows (Claude Desktop) — 20-30 minutos guiados
 
@@ -88,7 +88,7 @@ Si te animás a portarlo, abrí un issue o PR contando qué runtime estás usand
 ### Verificación post-instalación
 
 ```bash
-# Agentes (debería ser 41: 25 agentes + 15 referencias técnicas + AGENTS.md índice)
+# Agentes (debería ser 47: 25 agentes + 20 referencias técnicas + agent-protocol.md + AGENTS.md índice)
 ls ~/.claude/agents/*.md | wc -l
 
 # Hooks (debería ser 16)
@@ -270,10 +270,11 @@ Para developers que quieran ir más allá:
 
 | Archivo | Para qué |
 |---|---|
-| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 15 referencias técnicas con triggers de carga. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
+| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 20 referencias técnicas con triggers de carga y skip conditions. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Comportamiento completo del orquestador: detección de modos, pipeline detallado, DAG State, fallbacks |
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, reglas universales |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Detalles de cada fase, tools por agente, stack adaptable, Design Intelligence Engine |
+| [`agents/external-skills-reference.md`](agents/external-skills-reference.md) | Skills externas via `npx skills add` — whitelist curada, opt-in en Fase 3, no contamina boot |
 | [`templates/global-claude.md`](templates/global-claude.md) | El `CLAUDE.md` que se instala — toda la doctrina del sistema (Checkpoint humano, Engram, hooks, mod mode) |
 | [`agents/ux-architect.md`](agents/ux-architect.md) | Tokens de diseño, container strategy, anchor scroll con sticky |
 | [`agents/ui-designer.md`](agents/ui-designer.md) | Design system, SaaS Teal Default Detector (T1-T7), accesibilidad |
@@ -288,7 +289,7 @@ Para developers que quieran ir más allá:
 
 ```
 ~/.claude/
-├── agents/            # 25 agentes + 15 referencias técnicas + AGENTS.md índice = 41 archivos .md
+├── agents/            # 25 agentes + 20 referencias técnicas + AGENTS.md (índice) + agent-protocol.md = 47 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
 ├── hooks/             # 16 hooks (bloqueos, warnings, sync background)
 ├── settings.json      # config de hooks + Engram MCP

@@ -1,5 +1,51 @@
 # Upgrade Log — Context Management + Best Practices
 
+## external-skills integration — 2026-05-20 ✅
+
+### Summary
+Sumar el ecosistema `npx skills add` (registry github.com/skills-sh) al sistema como **plan C opt-in** para knowledge packs comunitarios. Disparado por tweet de midudev (2026-05-16, 813 likes) promoviendo `pixel-point/animate-text`. Diseño: cero impacto en boot del orquestador, whitelist curada manualmente, instalación scoped al proyecto (nunca `-g` global), registro obligatorio en Engram para audit trail.
+
+### Archivos tocados
+- **NEW** `agents/external-skills-reference.md` — referencia condicional (~90 líneas) con whitelist inicial (`animate-text`, `frontend-design`), triggers explícitos, anti-patterns y relación con la arquitectura existente.
+- **UPDATED** `agents/AGENTS.md` — nueva fila `external-skills` con trigger explícito + skip conditions ("ref interna ya cubre · proyecto fuera de Fase 3 · sin autorización").
+- **UPDATED** `README.md`:
+  - Contador: "25 agentes + 15 referencias técnicas" → "25 agentes + 20 referencias técnicas" (incluida external-skills)
+  - Verificación post-install: "(debería ser 41)" → "(debería ser 47)"
+  - Árbol de disco: actualizado a 47 archivos .md
+  - Tabla de docs técnica: nueva fila para `external-skills-reference.md`, consolidación de fila duplicada de `AGENTS.md`
+
+### Decisiones de diseño
+
+**¿Por qué reference y no agente ejecutable?**
+Las skills externas son knowledge packs (markdown + assets), no ejecutores con tools. El concepto matchea exactamente con nuestras refs internas — no con la capa de subagentes (que tienen Return Envelope + model routing + tools).
+
+**¿Por qué whitelist manual y no auto-discover?**
+Vector de prompt injection: cualquier repo público con `SKILL.md` es válido en el registry. Auto-instalar sin curado abriría a scripts maliciosos en `scripts/` de la skill. Whitelist humana = una decisión manual por skill nueva.
+
+**¿Por qué Fase 3 dev only?**
+Las skills externas se consumen cuando el dev agent ya conoce el intent visual + brand + dials. En Fases 1-2 no hay contexto suficiente; en Fase 4-5 no se modifica código. La instalación temprana sería ruido.
+
+**¿Por qué scoped al proyecto, nunca `-g`?**
+`-g` instala en `~/.claude/skills/` global, contaminando otros proyectos y rompiendo reproducibilidad. Scoped (`<project>/.claude/skills/`) deja la skill aislada y versionable con el repo del proyecto.
+
+### Lo que NO se tocó
+- Boot Sequence del orquestador (la ref es lazy-load, cero tokens en boot)
+- Hooks (skills no son interceptables — son knowledge)
+- MCPs (skills no son tools persistentes)
+- Subagentes existentes (frontend-developer y xr-immersive-developer leerán la ref cuando matchee el trigger, sin reescritura de su agent.md)
+
+### Próximos pasos sugeridos (no aplicados)
+1. Cuando frontend-developer use una skill por primera vez, dejar un comentario en el componente con el repo + commit SHA del SKILL.md consumido (auditabilidad).
+2. Si la whitelist crece a >5 entradas, sacar la tabla a `external-skills-whitelist.md` separado.
+3. Considerar un hook `pre-skill-install` que bloquee `npx skills add` con `-g` o con repos fuera de whitelist (defensa adicional). Pendiente — no implementado en esta iteración.
+
+### Trigger del cambio
+- Tweet midudev 2026-05-16: https://x.com/midudev/status/2055633570211782835
+- Investigación: skills.sh es "npm para Agent Skills", compatible con Claude Code + Cursor + Codex + 51 agentes más
+- Decisión usuario 2026-05-20: sumar como plan C sin restringir arquitectura
+
+---
+
 ## Gentleman Audit Adaptation — M1+M2+M2.5+M3 — 2026-05-18/19 ✅
 
 ### Summary
