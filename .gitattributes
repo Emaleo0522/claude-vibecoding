@@ -1,0 +1,18 @@
+# Forzar LF para archivos de texto cross-PC (Windows ↔ Linux)
+# Validado 2026-05-20 tras drift en brand/image/logo/video-agent
+
+*.md text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+
+# Binarios — no tocar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.svg binary
+*.mp4 binary
+*.webp binary

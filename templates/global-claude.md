@@ -174,7 +174,7 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
 
 **Cloud allowlist** (resuelto self-hosted 2026-05-15): el server Oracle Cloud (`161.153.203.83`) tiene `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env`. Para agregar un bucket nuevo: SSH al server, editar `.env`, `docker compose up -d cloud`. Backup automático por convención `.env.bak.YYYYMMDD-pre-{razon}`. Issue upstream para auto-allow opt-in: github.com/Gentleman-Programming/engram
 
-**Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC.
+**Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC. Si necesitás un bucket personal global, usar `project="system32"` (de-facto convention) hasta que upstream permita nombres custom.
 
 ### Protocolo de save robusto — anti silent-fail cloud (2026-05-18)
 
@@ -278,7 +278,7 @@ El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boo
 
 > **Detalles completos** (Boot Sequence, carga progresiva del DAG State, continuidad entre sesiones, topic keys completa, pre-compact snapshot): ver `orquestador.md`
 
-## Hook System (14 hooks)
+## Hook System (13 hooks, último 2026-05-15: engram-cloud-sync-on-stop)
 
 Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
 
@@ -294,6 +294,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `cost-tracker` | **REGISTRA** tool calls por categoria (async) |
 | `session-summary` | **LOGUEA** actividad en JSONL (async) |
 | `engram-sync` | **SINCRONIZA** Engram con GitHub al parar sesion (async, 60s) |
+| `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: `engram cloud upgrade doctor` + `repair --apply` auto. Filtro defensivo para `relation/upsert` (bug upstream). |
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
 | `frontend-audit` | **EJECUTABLE manual** (no hook automático): el `frontend-developer` lo invoca con --mood/--hero/--motion para AUTO_AUDIT pre-return (T1-T5). Complementa `pre-return-audit` con reglas que requieren contexto de mood. |
 
@@ -341,6 +342,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram
 - Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
+- **Excepción modo Claude normal**: si el usuario pide explícitamente guardar algo ("guarda esto", "guardalo en engram", "remember this"), Claude normal SÍ puede llamar `mem_save` directamente. La regla "solo orquestador guarda" aplica a flujos automáticos. **Ver § "Protocolo 'guarda en engram' — cross-PC garantizado"** para el flujo completo (siempre scope=personal, search-before-save, namespace en topic_key).
 - Solo **evidence-collector** y **reality-checker** hacen QA visual
 - Solo **git** hace commits/push — nunca un agente dev
 - Solo **deployer** despliega (Vercel para web, EAS Build para mobile)
