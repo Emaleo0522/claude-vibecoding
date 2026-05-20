@@ -1,3 +1,8 @@
+---
+name: external-skills-reference
+description: Skills externas via `npx skills add` (registry github.com/skills-sh). Mecanismo opt-in para sumar knowledge packs comunitarios al proyecto sin tocar arquitectura del orquestador, subagentes, MCPs ni hooks. Cargado solo cuando frontend/xr-immersive dev en Fase 3 detecta gap no cubierto por refs internas + usuario autoriza explicitamente.
+---
+
 # external-skills-reference
 
 > **Skills externas tipo `npx skills add`** (registry github.com/skills-sh). Mecanismo opt-in para sumar knowledge packs comunitarios al proyecto **sin tocar la arquitectura del orquestador, subagentes, MCPs o hooks**.

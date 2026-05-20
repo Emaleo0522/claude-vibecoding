@@ -1,3 +1,8 @@
+---
+name: pocketbase-reference
+description: Referencia tecnica para proyectos que usan PocketBase como backend+DB (validado en produccion). Schemas, gotchas validados (boolean required, multi-tenant via user.id), reglas de seguridad por collection, JS SDK basics. Cargado solo cuando stack.backend = "PocketBase". No es el default del sistema.
+---
+
 # PocketBase — Referencia (validado en producción)
 
 Referencia técnica para proyectos que usan PocketBase como backend+DB.

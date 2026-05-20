@@ -1,3 +1,8 @@
+---
+name: better-auth-reference
+description: Referencia de Better Auth 1.5 — libreria de autenticacion estandar del sistema. Framework-agnostic, TypeScript, OAuth social, email/password, plugins (2FA, magic link, passkey, RBAC). Cargado por backend-architect, frontend-developer y rapid-prototyper cuando auth_required = true y no hay auth provider existente.
+---
+
 # Better Auth 1.5 — Referencia para Agentes
 
 ## Resumen

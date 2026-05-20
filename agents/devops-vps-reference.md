@@ -1,3 +1,8 @@
+---
+name: devops-vps-reference
+description: Referencia tecnica para deploy en VPS (Oracle Cloud, AWS EC2, DigitalOcean, Hetzner). Mixed Content HTTPS, reverse proxy con Caddy/nginx, systemd services, hardening basico. Cargado cuando deploy_target en {vps, oracle-cloud, hetzner, aws-ec2, self-hosted}. Skip cuando se usa Vercel/Netlify/Cloudflare Pages (PaaS managed).
+---
+
 # DevOps VPS — Referencia (validado en producción con Oracle Cloud)
 
 Referencia técnica para deploy en VPS (Oracle Cloud, AWS EC2, DigitalOcean, etc.).

@@ -1,3 +1,8 @@
+---
+name: intent-clarifier-reference
+description: Referencia condicional para Fase 1 Paso 0 del orquestador. Heuristica de deteccion de brief vago + 6 preguntas estructuradas (tipo, industria, mood, referencia, originalidad, audiencia) con Q3 (mood) y Q5 (originalidad) obligatorias. Cargado por el orquestador solo cuando es proyecto nuevo Y el brief es vago. Extraido de orquestador.md el 2026-05-15 para ahorrar tokens cuando el brief es claro o el proyecto se retoma.
+---
+
 # Intent Clarifier — referencia condicional
 
 > **Cargado por el orquestador en Fase 1 Paso 0** cuando se detecta que el proyecto es nuevo Y el brief del usuario es vago. Extraído de `orquestador.md` el 2026-05-15 para ahorrar tokens cuando el brief es claro o el proyecto se retoma (lo común).

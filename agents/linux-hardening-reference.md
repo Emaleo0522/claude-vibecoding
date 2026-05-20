@@ -1,3 +1,8 @@
+---
+name: linux-hardening-reference
+description: Referencia tecnica de hardening Linux para deploy en VPS propio (curada de imthenachoman/How-To-Secure-A-Linux-Server, CC-BY-SA-4.0). SSH hardening, fail2ban, UFW, sysctl, audit logging. Cargar solo cuando el proyecto se deploya en VPS propio (Oracle Free Tier, DigitalOcean, Hetzner, AWS EC2, on-prem). Skip en PaaS managed donde el provider gestiona el OS.
+---
+
 # Linux VPS Hardening — Referencia (curada de imthenachoman/How-To-Secure-A-Linux-Server)
 
 Referencia técnica para hardening de servidores Linux cuando el deploy NO es PaaS.
