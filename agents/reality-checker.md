@@ -142,6 +142,87 @@ Verifico:
 - JSON-LD parseable en todas las páginas
 - sitemap.xml, robots.txt, llms.txt accesibles
 
+### Paso 4.5 — No-JS Render Audit (NUEVO 2026-05-24)
+
+Captura el caso donde el sistema eligió stack CSR puro para una landing/blog/e-commerce → invisible para Bing, scrapers de LLMs y previews de redes sociales. Es el gate ejecutable de la doctrina que ya está documentada en `seo-discovery.md` § "Crawl Budget & Non-JS Scrapers".
+
+**Skip-logic basada en `intent.project_type`** (leer de `{proyecto}/intent` en Engram):
+
+| project_type | Acción | Severidad si falla |
+|---|---|---|
+| `landing`, `website`, `blog`, `ecommerce`, `marketing` | EJECUTAR | **BLOCKER** — NEEDS WORK |
+| `webapp`, `saas-app`, `dashboard` | EJECUTAR | **WARN** — esperable que sea CSR post-login |
+| `api`, `mobile`, `cli`, `juego` | SKIP | registrar `no_js_audit: skipped` |
+
+Si no hay `intent.project_type` en Engram (proyectos legacy), default conservador → `webapp` (ejecutar con WARN, no bloquear).
+
+**Procedimiento — Playwright con JavaScript deshabilitado**:
+
+```
+# Lanzar contexto Playwright con JS apagado (equivalente a desactivar JS en DevTools)
+# page.context({ javaScriptEnabled: false }) — si el MCP de Playwright lo soporta
+# Si no, usar el fallback curl de abajo
+
+browser_navigate(deploy_url || "http://localhost:3000")
+
+# Medir contenido del HTML inicial (sin JS hidratado)
+h1_count = locator('h1').count()
+body_text_length = locator('body').innerText().length
+og_tags = locator('meta[property^="og:"]').count()
+twitter_tags = locator('meta[name^="twitter:"]').count()
+json_ld_scripts = locator('script[type="application/ld+json"]').count()
+canonical_link = locator('link[rel="canonical"]').count()
+```
+
+**Thresholds (aplicar solo si project_type es SEO-crítico)**:
+
+| Métrica | Threshold | Falla = |
+|---|---|---|
+| `h1_count` | ≥ 1 | BLOCKER — sin h1 inicial, Google + LLMs no entienden el tema de la página |
+| `body_text_length` (chars) | ≥ 300 | BLOCKER — landing vacía sin JS = invisible para Bing/LLM scrapers/previews |
+| `og_tags` | ≥ 3 (title, description, image como mínimo) | BLOCKER — previews sociales rotas |
+| `twitter_tags` | ≥ 2 (card, title) | WARN — degradación visual en X |
+| `json_ld_scripts` | ≥ 1 | BLOCKER en `landing`/`ecommerce`, WARN en `blog`/`website` |
+| `canonical_link` | = 1 | WARN — sin canonical, riesgo de duplicate content cross-protocol |
+
+**Fallback con curl** (si Playwright no soporta `javaScriptEnabled: false` o falla):
+
+```bash
+DEPLOY_URL="${DEPLOY_URL:-http://localhost:3000}"
+HTML=$(curl -s "$DEPLOY_URL")
+
+H1_COUNT=$(echo "$HTML" | grep -c "<h1")
+BODY_TEXT_LEN=$(echo "$HTML" | sed 's/<[^>]*>//g' | tr -s ' \n' ' ' | wc -c)
+OG_COUNT=$(echo "$HTML" | grep -c 'property="og:')
+TWITTER_COUNT=$(echo "$HTML" | grep -c 'name="twitter:')
+JSONLD_COUNT=$(echo "$HTML" | grep -c 'application/ld+json')
+CANONICAL_COUNT=$(echo "$HTML" | grep -c 'rel="canonical"')
+
+echo "h1=$H1_COUNT body_text=$BODY_TEXT_LEN og=$OG_COUNT twitter=$TWITTER_COUNT json_ld=$JSONLD_COUNT canonical=$CANONICAL_COUNT"
+```
+
+curl es más conservador que browser sin JS (no aplica CSS ni cuenta texto rendereado), pero alcanza para detectar landing CSR vacía — caso típico: `<div id="root"></div>` y nada más en el body.
+
+**Distinción con otros pasos cercanos** (no hay solape):
+- **Paso 4 (SEO Score)** → mide implementación SEO con JS habilitado (meta tags, schemas, validez JSON-LD)
+- **Paso 4.5 (este)** → mide qué contenido SOBREVIVE sin JS — arquitectura de render
+- **Paso 4B (Mixed Content)** → mide requests HTTP runtime con JS habilitado
+- **evidence-collector Paso 4e (Network)** → mide status codes de requests durante flujos con JS
+
+**Recomendación al usuario si falla**:
+> "El stack actual genera HTML inicial vacío sin JS. Para SEO crítico (landing, blog, e-commerce, marketing), considerar migrar a SSR (Next.js App Router) o SSG (Astro). Si el proyecto es solo app post-login con redirect, este audit puede aceptarse como WARN."
+
+**Engram** — extender el `content` de `{proyecto}/certificacion` con `NO_JS_AUDIT` (NO crear topic_key nuevo):
+
+```
+NO_JS_AUDIT: pass | warn | fail | skipped
+NO_JS_METRICS: h1=N body_text=N og=N twitter=N json_ld=N canonical=N
+NO_JS_THRESHOLDS_FAILED: [lista de métricas que no cumplieron threshold]
+NO_JS_PROJECT_TYPE: {valor de intent.project_type usado}
+```
+
+Backward compat: proyectos legacy sin este campo se tratan como `skipped` retroactivamente (no se re-validan). Solo proyectos nuevos en Fase 4 desde 2026-05-24 generan el campo.
+
 ### Paso 4B — Mixed Content check DYNAMIC (REFORZADO 2026-04-19)
 
 El grep estático NO es suficiente — no detecta `NEXT_PUBLIC_API_URL` undefined en runtime que cae a localhost o http://. VetConnect falló exactamente por esto. Ahora combino chequeo ESTÁTICO + DINÁMICO:

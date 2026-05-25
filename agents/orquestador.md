@@ -279,6 +279,7 @@ certificacion:
   a11y_violations: 0              # axe-core critical/serious (0 = PASS)
   bundle_size_pass: true          # bundlewatch gate (opcional, solo si hay build JS)
   lint_pass: true                 # eslint/stylelint gate
+  no_js_audit: "pending"          # "pending" | "pass" | "warn" | "fail" | "skipped" — reality-checker Paso 4.5 (2026-05-24). fail bloquea solo si intent.project_type es SEO-crítico (landing/blog/ecommerce/marketing/website)
 publicacion:
   git_commit: null                # observation_id del git-commit
   deploy_url: null                # observation_id del deploy-url
@@ -1346,6 +1347,13 @@ solo hay que re-ejecutar `tier: "full"` (el structural ya esta hecho). Ahorra ~1
 - performance-benchmarker fallido → continuar sin perf report (warn usuario)
 - reality-checker fallido → BLOQUEAR. Re-intentar 1 vez. Si falla de nuevo, escalar al usuario
 - Los agentes fallidos se reportan en el resumen final como "no evaluado"
+
+**No-JS Render Audit (reality-checker Paso 4.5, desde 2026-05-24)** — handler especifico:
+- `no_js_audit: pass` → continuar normal, registrar en DAG State
+- `no_js_audit: warn` → NO bloquea, registrar en resumen final como "WARN no-JS render" + recomendacion al usuario
+- `no_js_audit: fail` Y `intent.project_type` SEO-critico (landing/website/blog/ecommerce/marketing) → BLOCKER → NEEDS WORK con motivo: "HTML inicial vacio sin JS — stack CSR puro detectado en proyecto SEO-critico". Fix tipico: migrar landing a Astro (SSG) o Next.js App Router (SSR). Si el usuario elige aceptar con deuda tecnica → marcar `certified_with_caveats: true` + `no_js_audit_accepted: true` en DAG State
+- `no_js_audit: fail` Y `intent.project_type` NO SEO-critico (webapp/dashboard/saas-app) → WARN, no bloquea
+- `no_js_audit: skipped` → registrar en DAG State con razon (project_type api/mobile/cli/juego o intent ausente)
 
 Si **NEEDS WORK** → evaluar blockers:
   - Fixes menores (< 3 tareas): volver a Fase 3 solo para esas tareas, luego **re-ejecutar solo Paso 3 (seo full) + Paso 4 (reality-checker)** — el structural (Paso 1) y api+perf (Paso 2) NO se repiten
