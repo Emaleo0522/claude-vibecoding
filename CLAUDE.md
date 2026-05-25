@@ -413,7 +413,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ## Stack, Design Systems y Componentes
 > Tabla completa del stack adaptable, Nothing Design System, y 21st.dev: ver `pipeline-reference.md`
 
-- **Stack**: el orquestador decide en Fase 1. Defaults: Next.js (apps), Vite+React (landing), Hono (backend), Drizzle (ORM), Zustand (state)
+- **Stack**: el orquestador decide en Fase 1 (lógica completa y autoritativa en `orquestador.md` § "Decisión de stack"). Defaults frecuentes: Next.js (apps), **Astro o Vite+React** (landing — Astro preferido para content-heavy, 0 JS por default), Hono (backend), Drizzle (ORM), Zustand (state). Cuando hay >1 alternativa válida, el orquestador **pregunta antes** de aplicar default (no es mandatorio). Override absoluto si el usuario especifica stack
 - **Nothing Design**: opcional, solo si el usuario lo pide. Referencia en `nothing-design-reference.md`
 - **21st.dev**: componentes community via Context7 MCP. Inspiracion + base, no copy-paste. Adaptar siempre al brand
 

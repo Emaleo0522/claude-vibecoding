@@ -221,7 +221,7 @@ El orquestador decide el stack en Fase 1. No hay stack fijo:
 
 | Capa | Opciones disponibles | Preferido |
 |------|---------------------|-----------|
-| Frontend | Next.js, SvelteKit, Nuxt, Astro, Vite+React | Next.js (apps), Vite+React (landing) |
+| Frontend | Next.js, SvelteKit, Nuxt, Astro, Vite+React | Next.js (apps), **Astro** (landing content-heavy, 0 JS) o Vite+React (landing app-like). Lógica completa: `orquestador.md` § "Decisión de stack" — el orquestador pregunta antes si hay >1 alternativa válida |
 | Backend | Hono, Express, Fastify | Hono (edge-ready, liviano) |
 | DB | PostgreSQL, SQLite, Supabase | PostgreSQL (prod), Supabase (MVP) |
 | ORM | Drizzle, Prisma | Drizzle (type-safe, edge) |
