@@ -257,6 +257,23 @@ Para que las IAs citen y recomienden el proyecto:
 6. **Robots.txt permisivo** — permitir crawlers de IA explícitamente
 7. **Structured data rico** — JSON-LD con toda la info posible
 
+## Crawl Budget & Non-JS Scrapers (2026-05-24)
+
+Realidad práctica que afecta la prioridad de los items del checklist:
+
+- **Google sí renderiza JS, pero en una segunda pasada**, más lenta y costosa. Cada página JS-renderizada gasta más **crawl budget** — el límite implícito de páginas que Googlebot procesa por dominio en un período. Sitios con mucho contenido CSR pueden quedar parcialmente sin indexar.
+- **Bing renderiza JS limitado** y solo en sitios verificados como confiables. Para muchas landings nuevas, lo que Bing ve es el HTML inicial sin JS.
+- **Scrapers de LLMs** (GPTBot, anthropic-ai, PerplexityBot, CCBot, Google-Extended) muchas veces **NO ejecutan JS** — leen solo el HTML inicial. Si el contenido depende de hidratación CSR, esos crawlers ven una página vacía → el proyecto no aparece en respuestas de ChatGPT, Claude, Perplexity, ni en datasets de training.
+- **Previews de redes sociales** (Twitter/X, Facebook, LinkedIn, WhatsApp, Discord) generalmente NO ejecutan JS — leen solo `<meta>` y `<title>` del HTML inicial. Sin OG tags server-side, no hay preview rich.
+
+**Consecuencia operativa**: en proyectos donde estos items importan (landing, blog, e-commerce, marketing site), el HTML inicial debe contener server-side:
+- `<title>` y `<meta>` de SEO + Open Graph + Twitter Card
+- JSON-LD principal del schema del proyecto
+- Contenido textual del hero / above-the-fold mínimo (h1 + párrafo descriptivo)
+- Links de navegación primaria
+
+Si el stack es CSR puro (Vite+React, CRA, etc.) y la landing es SEO-crítica, esos items se pierden. El gate ejecutable que valida esto está en **reality-checker Paso 4.5 — No-JS Render Audit** (Fase 4).
+
 ## SEO Score (cálculo propio)
 
 Calcular al finalizar. Cada item vale puntos sobre 100:
