@@ -32,7 +32,7 @@ En ambos casos, **el sistema te pregunta cuando hay decisiones interpretables** 
 
 | Tipo de proyecto | Ejemplo concreto | Stack que el sistema usa |
 |---|---|---|
-| **Landing / sitio público** | Página de un restaurante, portfolio, lanzamiento de producto | Vite + React + Tailwind o HTML estático |
+| **Landing / sitio público** | Página de un restaurante, portfolio, lanzamiento de producto | **Astro** (content-heavy, 0 JS por default) o Vite + React + Tailwind |
 | **Web app con auth** | Dashboard, CRM, SaaS MVP, panel de admin | Next.js + Better Auth + Drizzle + PostgreSQL |
 | **App móvil iOS + Android** | Delivery, fitness tracker, app de tu negocio | React Native + Expo SDK 52+ |
 | **Juego de navegador** | Plataformero 2D, puzzle, arcade | Phaser.js o PixiJS |
@@ -147,6 +147,7 @@ Fase 2  Arquitectura   →  ux-architect (CSS tokens) + ui-designer + security-e
 Fase 2B Assets visuales →  brand-agent + logo-agent + image-agent + video-agent
 Fase 3  Dev ↔ QA       →  frontend-developer, backend-architect, etc. ↔ evidence-collector
 Fase 4  Certificación  →  seo-discovery + api-tester + performance-benchmarker + reality-checker
+                          ↳ Paso 4.5 No-JS Render Audit: valida que el HTML inicial sin JS sirva a Bing, scrapers de LLMs y previews sociales
 Fase 5  Publicación    →  git (con tu confirmación) + deployer (con tu confirmación)
 ```
 
@@ -157,7 +158,7 @@ Para **modificar un proyecto que ya está hecho**, el sistema entra en modo modi
 - **13 hooks** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger. Otros corren en background: cost tracking, session logging, sync de Engram local→GitHub y local→cloud al cerrar sesión, snapshot pre-compact. Más **3 utilities manuales** (`audit-system.js` health check, `cost-report.js`, `learning-index.js`) que ejecutás con `node` cuando los necesitás.
 - **AUTO_AUDIT pre-return**: antes de devolver código, el `frontend-developer` corre 5 reglas grep ejecutables (no paleta teal por default, no Inter como heading en moods bold, hero con media coherente, motion según dial, shadow según mood). Si falla → regenera. Si pasa → marca cambio como `VISUAL_IMPACT: high|medium|low`.
 - **Checkpoint humano automático**: cuando el cambio tiene `VISUAL_IMPACT: high`, el orquestador te muestra el resultado antes de marcar la tarea como completa. La doctrina: el agente decide solo cuando hay UNA respuesta correcta; en todo lo demás (visual, multi-opción, irreversible, iterado 2+ veces) te pregunta con su recomendación incluida.
-- **11 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar, **TDD evidence trail opt-in** (RED→GREEN→TRIANGULATE→REFACTOR cuando hay `test_commands`), **cache hash de archivos en reintentos** (skip QA si todos los archivos tocados tienen hash idéntico al último PASS, ahorra ~80% de tokens en reintentos sin cambio real).
+- **12 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar, **TDD evidence trail opt-in** (RED→GREEN→TRIANGULATE→REFACTOR cuando hay `test_commands`), **cache hash de archivos en reintentos** (skip QA si todos los archivos tocados tienen hash idéntico al último PASS, ahorra ~80% de tokens en reintentos sin cambio real), **No-JS Render Audit en Fase 4** (Playwright con JS apagado mide qué contenido sobrevive — bloquea landings/blogs/ecommerce que serían invisibles a Bing/LLM scrapers/previews sociales).
 - **Delegation Stop Rules cuantificados**: umbrales explícitos para escalar (5+ archivos leídos consecutivos → delegar a `Explore`, 20+ tool calls sin spawn → pausar, 2+ archivos no-triviales en una tarea → fresh review). Adaptado de [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai).
 
 ---
@@ -316,7 +317,7 @@ El orquestador elige el stack en Fase 1 según el proyecto. **No hay stack fijo.
 
 | Capa | Opciones | Default |
 |---|---|---|
-| Frontend | Next.js, SvelteKit, Astro, Vite+React | Next.js (apps), Vite+React (landings) |
+| Frontend | Next.js, SvelteKit, Astro, Vite+React | Next.js (apps), **Astro** (landings content-heavy) o Vite+React (landings app-like). El orquestador pregunta antes si hay >1 alternativa válida |
 | Backend | Hono, Express, Fastify | Hono (edge-ready) |
 | Database | PostgreSQL, SQLite, Supabase | PostgreSQL (prod), Supabase (MVP) |
 | ORM | Drizzle, Prisma | Drizzle |

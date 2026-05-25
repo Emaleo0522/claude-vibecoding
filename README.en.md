@@ -34,7 +34,7 @@ In both cases, **the system asks when there are interpretable decisions** (visua
 
 | Project type | Concrete example | Stack the system uses |
 |---|---|---|
-| **Landing / public site** | Restaurant page, portfolio, product launch | Vite + React + Tailwind or static HTML |
+| **Landing / public site** | Restaurant page, portfolio, product launch | **Astro** (content-heavy, 0 JS by default) or Vite + React + Tailwind |
 | **Web app with auth** | Dashboard, CRM, SaaS MVP, admin panel | Next.js + Better Auth + Drizzle + PostgreSQL |
 | **iOS + Android mobile app** | Delivery, fitness tracker, your business app | React Native + Expo SDK 52+ |
 | **Browser game** | 2D platformer, puzzle, arcade | Phaser.js or PixiJS |
@@ -151,6 +151,7 @@ Phase 2  Architecture   →  ux-architect (CSS tokens) + ui-designer + security-
 Phase 2B Visual assets  →  brand-agent + logo-agent + image-agent + video-agent
 Phase 3  Dev ↔ QA      →  frontend-developer, backend-architect, etc. ↔ evidence-collector
 Phase 4  Certification  →  seo-discovery + api-tester + performance-benchmarker + reality-checker
+                           ↳ Step 4.5 No-JS Render Audit: validates the initial HTML without JS is usable by Bing, LLM scrapers and social previews
 Phase 5  Publishing     →  git (with your confirmation) + deployer (with your confirmation)
 ```
 
@@ -161,7 +162,7 @@ To **modify a project already built**, the system enters modification mode: it r
 - **16 hooks** block dangerous things in real time: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edits to secret files (`.env`, private keys), use of `--no-gpg-sign`. Others warn: `debugger` or `console.log` in production code, `@ts-ignore`, excessive animations, CSS container with "SaaS feel" cap, declared fonts not loaded, mobile navigation without hamburger. Others run in background: cost tracking, session logging, Engram sync local→GitHub and local→cloud at session close, pre-compact snapshot.
 - **Pre-return AUTO_AUDIT**: before returning code, the `frontend-developer` runs 5 executable grep rules (no default teal palette, no Inter as heading in bold moods, hero with coherent media, motion matching dial, shadow matching mood). If fails → regenerates. If passes → marks change as `VISUAL_IMPACT: high|medium|low`.
 - **Automatic human checkpoint**: when a change has `VISUAL_IMPACT: high`, the orchestrator shows you the result before marking the task complete. Doctrine: the agent decides on its own when there's ONE correct answer; for everything else (visual, multi-option, irreversible, iterated 2+ times) it asks you with its recommendation included.
-- **11 layers of anti-false-positive defense** in QA: LLM-as-judge visual fidelity (5 dimensions against reference), network inspection (Mixed Content, status 0, localhost leaks), mandatory E2E flows in auth/CRUD, reality-checker re-runs 2-3 PASS at random, **opt-in TDD evidence trail** (RED→GREEN→TRIANGULATE→REFACTOR when `test_commands` exist), **file cache hash on retries** (skip QA if all touched files have hash identical to last PASS, saves ~80% of tokens on retries without real change).
+- **12 layers of anti-false-positive defense** in QA: LLM-as-judge visual fidelity (5 dimensions against reference), network inspection (Mixed Content, status 0, localhost leaks), mandatory E2E flows in auth/CRUD, reality-checker re-runs 2-3 PASS at random, **opt-in TDD evidence trail** (RED→GREEN→TRIANGULATE→REFACTOR when `test_commands` exist), **file cache hash on retries** (skip QA if all touched files have hash identical to last PASS, saves ~80% of tokens on retries without real change), **No-JS Render Audit in Phase 4** (Playwright with JS disabled measures what content survives — blocks landings/blogs/ecommerce that would be invisible to Bing/LLM scrapers/social previews).
 - **Quantified Delegation Stop Rules**: explicit thresholds to escalate (5+ consecutive files read → delegate to `Explore`, 20+ tool calls without spawn → pause, 2+ non-trivial files in one task → fresh review). Adapted from [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai).
 
 ---
@@ -318,7 +319,7 @@ The orchestrator picks the stack in Phase 1 based on the project. **There is no 
 
 | Layer | Options | Default |
 |---|---|---|
-| Frontend | Next.js, SvelteKit, Astro, Vite+React | Next.js (apps), Vite+React (landings) |
+| Frontend | Next.js, SvelteKit, Astro, Vite+React | Next.js (apps), **Astro** (content-heavy landings) or Vite+React (app-like landings). The orchestrator asks first when there is >1 valid alternative |
 | Backend | Hono, Express, Fastify | Hono (edge-ready) |
 | Database | PostgreSQL, SQLite, Supabase | PostgreSQL (prod), Supabase (MVP) |
 | ORM | Drizzle, Prisma | Drizzle |

@@ -1,5 +1,72 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Render-aware Phase 4 + Astro default for landings — 2026-05-24 ✅
+
+### Summary
+Tres cambios sistémicos derivados de un thread de @chorch_md sobre SEO + render (SSR/SSG vs CSR). 1) Fix de drift entre `orquestador.md` (autoritativo: Astro first + pregunta al usuario) y los summaries (`CLAUDE.md` global + `pipeline-reference.md` decían Vite+React como default fijo de landings). 2) Doctrina ejecutable "Crawl Budget & Non-JS Scrapers" en `seo-discovery.md`. 3) Nuevo gate "No-JS Render Audit" como Paso 4.5 en `reality-checker.md` — captura el caso donde el sistema eligió un stack CSR puro para una landing/blog/ecommerce, que resultaría invisible para Bing, scrapers de LLMs y previews sociales.
+
+### Archivos tocados
+- **UPDATED** `CLAUDE.md` global (línea 416) y `agents/pipeline-reference.md` (línea 224): summaries de stack defaults sincronizados con `orquestador.md` § "Decisión de stack". Astro añadido explícitamente como preferido para landings content-heavy (0 JS por default). Mensaje "el orquestador pregunta antes si hay >1 alternativa válida" sumado para dejar claro que no es mandatorio.
+- **UPDATED** `agents/seo-discovery.md`: nueva sección "Crawl Budget & Non-JS Scrapers" — doctrina sobre Google segunda pasada JS (cost de crawl budget), Bing JS limitado, scrapers LLMs (GPTBot, anthropic-ai, PerplexityBot, CCBot, Google-Extended) sin JS, previews sociales sin JS. Lista de items que deben estar server-side en proyectos SEO-críticos.
+- **UPDATED** `agents/reality-checker.md`: nuevo Paso 4.5 "No-JS Render Audit" entre Paso 4 (SEO Score) y Paso 4B (Mixed Content). Gate ejecutable con Playwright `javaScriptEnabled: false` + fallback curl. Mide h1, body_text, og_tags, twitter_tags, json_ld, canonical. Skip-logic por `intent.project_type`. Threshold por métrica.
+- **UPDATED** `agents/orquestador.md`: DAG state schema `certificacion` extendido con `no_js_audit: "pending|pass|warn|fail|skipped"`. Handler específico en bloque "Si un agente Fase 4 retorna fallido" — fail+SEO-crítico = BLOCKER NEEDS WORK, fail+webapp = WARN, skipped = registrar razón.
+- **UPDATED** `README.md` + `README.en.md`: tabla "Qué podés construir" y "Stack adaptable" mencionan Astro como default content-heavy. Pipeline de Fase 4 documenta Paso 4.5. Sección "12 capas de defensa anti-falso-positivo" suma No-JS Render Audit (era 11).
+
+### Decisiones de diseño
+
+**¿Por qué el gate va en reality-checker y no en seo-discovery?**
+`seo-discovery` no tiene Playwright en su tools list (solo Read/Write/Edit/Bash/Engram). `reality-checker` sí, y ya lo usa en Paso 4B Mixed Content dinámico. Conceptualmente: `seo-discovery` implementa SEO (meta tags, JSON-LD, sitemap, llms.txt); `reality-checker` valida arquitectura de render. Responsabilidades distintas — el check no-JS es validación pura, no implementación.
+
+**¿Por qué no se crea un topic_key nuevo en Engram?**
+El campo `NO_JS_AUDIT` se extiende dentro del `content` existente de `{proyecto}/certificacion`. Backward compat: proyectos legacy (saldoar, cafe-premium, vetconnect, etc.) sin este campo se tratan como `skipped` retroactivamente. NO se re-validan. Solo proyectos nuevos en Fase 4 desde 2026-05-24 generan el campo. Migración cero.
+
+**¿Por qué tres niveles de severidad según `project_type`?**
+- `landing/website/blog/ecommerce/marketing` → fail = BLOCKER. Estos proyectos viven o mueren por SEO orgánico.
+- `webapp/saas-app/dashboard` → fail = WARN. Es esperable que sean CSR post-login.
+- `api/mobile/cli/juego` → SKIP. El check no aplica (no hay HTML público).
+- Default conservador si no hay `intent.project_type` → `webapp` (no bloquear, solo avisar).
+
+**¿Por qué se descartó "Mejora 2" (pregunta de topology landing vs app subdomain)?**
+Análisis cauteloso reveló blast radius ALTO: tocaría intent-clarifier + orquestador (decisión de stack ramificada) + project-manager-senior (planifica 2 proyectos si subdomain) + deployer (asume hoy 1 proyecto = 1 deploy) + rapid-prototyper + Visual Direction Checkpoint. No es un edit puntual sino un mini-feature que cambia el modelo "1 proyecto = 1 deploy". Diferido a sesión dedicada.
+
+### Lo que NO se tocó
+- `agent-protocol.md` (Return Envelope universal sin cambios — el `NO_JS_AUDIT` es específico de reality-checker, no se generaliza)
+- `AGENTS.md` (los triggers/skip conditions de las refs no cambian)
+- `evidence-collector.md` (su Paso 4e Network inspection mide cosa distinta — status codes runtime con JS — no hay solape)
+- Hooks (el gate corre dentro de reality-checker, no es un interceptor de tool call)
+- Mejora 2 (topology question) — backlog para sesión dedicada por impacto sistémico
+
+### Trigger del cambio
+- Thread @chorch_md 2026-05-23: https://x.com/chorch_md/status/2058221989806944557
+- Tesis del thread: separar SSG/SSR (web pública) de CSR (app) por subdominio para evitar perder SEO. Google renderiza JS pero en segunda pasada (crawl budget). Bing y scrapers de LLMs muchas veces no ejecutan JS.
+- Discusión en respuestas: Jonatan Salas propone render híbrido en un solo stack (Astro, Next App Router, vite-plugin-ssr). Joseph Ruano usa WordPress + subdomain. Chorch confirma A y B son válidos.
+- Diagnóstico inicial confundido: en la sesión, miré solo `CLAUDE.md` global y afirmé "el sistema fuerza Vite+React para landings → genera deuda SEO". El usuario recordó "habíamos trabajado para que no sea mandatorio". Verificación reveló que `orquestador.md` ya tenía Astro como default + pregunta al usuario; el drift estaba en los summaries.
+
+### Commits incluidos en este upgrade
+- `702de95` chore: normalize CRLF to LF in CLAUDE.md per .gitattributes
+- `dc06028` docs(stack): clarify defaults are evaluated, not mandatory
+- `24cfe6e` docs(seo): add Crawl Budget & Non-JS Scrapers doctrine
+- `68d975d` feat(reality-checker): add Paso 4.5 No-JS Render Audit gate
+- (este commit) README + UPGRADE_LOG sync
+
+### Engram observations
+- **#3336** (decision) `claude-vibecoding/meta/authoritative-files-vs-summaries` — regla: leer archivo autoritativo, no summary
+- **#3337** (pattern) `claude-vibecoding/meta/crlf-lf-split-commits-pattern` — split CRLF→LF + content commits
+- **#3338** (decision) `claude-vibecoding/meta/trust-user-memory-verify-before-contradict` — cuando el user recuerda algo distinto, verificar antes
+- **#3343** (architecture) `claude-vibecoding/architecture-review/2026-05-24-no-js-render-audit` — change record completo del Paso 4.5
+
+### Aprendizajes destacados
+
+1. **Drift entre archivo autoritativo y summaries del CLAUDE.md global** es la deuda de docs más común. El detalle (orquestador.md) puede tener lógica nueva (Astro first + ask user) mientras los summaries del CLAUDE.md global / pipeline-reference.md quedan viejos. Verificar archivo autoritativo antes de afirmar bugs sistémicos. Ahora los summaries linkean explícitamente a `orquestador.md § "Decisión de stack"` para reducir esa deuda.
+
+2. **Cuando el usuario recuerda algo distinto, suspender afirmación previa y verificar**. El usuario salvó este audit recordando "habíamos trabajado para que no sea mandatorio". Sin esa corrección, habría propuesto un fix innecesario y dado imagen falsa de un bug en su sistema.
+
+3. **Refinamiento del patrón CRLF→LF (obs #3337)**: si `.gitattributes` ya está configurado para LF y los archivos en HEAD ya están en LF, `git checkout HEAD` los normaliza al traerlos del index. Re-edits sobre archivos ya normalizados NO necesitan commit separado de normalización — basta con verificar `git diff --stat` post-edit (ratio cambios/longitud archivo debe ser bajo, sin warnings CRLF).
+
+4. **Análisis cauteloso pre-implementación evita scope creep**. La primera propuesta de "Mejora 2" sonaba como un edit puntual; un análisis arquitectónico reveló cascada a 6-8 archivos del pipeline + cambio del modelo "1 proyecto = 1 deploy". Diferir lo grande, ejecutar lo contenido.
+
+---
+
 ## external-skills integration — 2026-05-20 ✅
 
 ### Summary
