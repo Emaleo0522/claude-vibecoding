@@ -318,108 +318,28 @@ Si el usuario pide explícitamente "modo diagnóstico", "audita esto", "diagnost
 
 El orquestador NO posee Modo Diagnóstico — vive a nivel CLAUDE normal. Si estabas en pipeline activo y el usuario dice "audita ahora", pausar el pipeline (guardar `{proyecto}/estado`) y entrar a Modo Diagnóstico. Al salir, ofrecer retomar el pipeline desde donde quedó.
 
-## Modo Modificación (proyectos existentes)
+## Modo Modificación (proyectos existentes) — activación
 
-Cuando el usuario pide **modificar, agregar o quitar features de un proyecto ya completado** (no un proyecto nuevo):
+### Detección (deterministic — la hace el Boot Sequence)
 
-### Detección
-El orquestador detecta modo modificación si:
-- Existe `{proyecto}/estado` en Engram con `fase_actual: "completado"` o `fase_actual: 5`
-- El usuario referencia un proyecto existente + pide cambios específicos
-- El usuario dice "agrega X a [proyecto]", "quita Y", "modifica Z"
+Cargar `~/.claude/agents/orquestador-modificacion-reference.md` SOLO si se cumplen AMBAS condiciones:
 
-### Mini-pipeline (4 pasos)
-```
-0. AUDIT HERENCIA (NUEVO — obligatorio antes de tocar código) — El orquestador detecta
-   defaults heredados que violan reglas vigentes de la arquitectura ANTES de modificar nada.
-   - Identificar archivos CSS/HTML/JSX clave del proyecto (heurística: globals.css,
-     styles.css, layout.tsx, index.html, tailwind.config).
-   - Ejecutar `bash ~/.claude/hooks/pre-return-audit.sh --files="<archivos>"` sobre ellos.
-   - El hook devuelve YAML con WARN/FAIL por regla universal (container ≤1280 = SaaS feel,
-     fuentes declaradas sin <link>, anchor scroll sin scroll-padding, navbar mobile sin
-     hamburger, prefers-reduced-motion ausente cuando hay >5 animaciones).
-   - Si hay FAIL/WARN → reportar al usuario con formato:
-     "Antes de modificar, detecté N violaciones heredadas: [lista]. ¿Las fixeo dentro del
-      scope, las dejo para otra iteración, o las ignoramos explícitamente?"
-   - Esperar decisión. NO avanzar al Paso 1 sin OK del usuario.
-   - Razón: evita el "drag pattern" — arrastrar defaults heredados sin auditarlos. Ver
-     `webcodexatlas/audit-2026-05-14` en Engram (caso paradigmático: --max:1180 arrastrado).
+1. `mem_search("{proyecto}/estado")` retorna `fase_actual: "completado"` o `fase_actual: 5`
+2. El brief del usuario incluye verbos: "agrega X a {proyecto}", "quita Y", "modifica Z", "mejorá", "actualizá", "redesign", "fix"
 
-1. ANÁLISIS — El orquestador (no un subagente) evalúa:
-   - ¿Qué cajones de Engram existen para este proyecto?
-   - ¿El cambio requiere nueva arquitectura (nueva DB table, nuevo servicio) o solo UI/lógica?
-   - ¿Afecta design system, seguridad, o solo implementación?
+Si las dos NO se cumplen → proyecto nuevo, ignorar y arrancar Fase 1.
 
-2. PLANIFICACIÓN LIGERA — Generar tareas inline (sin PM):
-   - Si son ≤3 tareas simples: el orquestador las define directamente
-   - Si son >3 tareas o requieren análisis de scope: delegar a project-manager-senior con contexto del proyecto existente
-   - Actualizar `{proyecto}/tareas` en Engram (append, no sobrescribir)
-   - Numerar tareas continuando desde la última (ej: si había 12 tareas, las nuevas son 13, 14...)
+### Qué hace la ref completa cuando se carga
 
-3. EJECUCIÓN — Mini Fase 3 + QA:
-   - Mismo loop dev→QA que Fase 3 normal
-   - Usa los cajones de Engram existentes (css-foundation, design-system, security-spec)
-   - Si el cambio requiere actualizar arquitectura:
-     a) Cambio de UI/design → re-delegar a ui-designer para actualizar design-system
-     b) Nuevo endpoint → backend-architect + actualizar api-spec
-     c) Cambio de seguridad → security-engineer para actualizar security-spec
-   - NO re-ejecutar Fase 2 completa — solo los agentes afectados
-```
+- **AUDIT HERENCIA (Paso 0)**: corre `pre-return-audit.sh` sobre archivos CSS/HTML/JSX clave (globals.css, layout.tsx, tailwind.config) para detectar defaults heredados (container ≤1280, fuentes sin link, scroll-padding ausente, navbar mobile sin hamburger, prefers-reduced-motion faltante). Si hay FAIL/WARN, reporta al usuario y espera decisión ANTES de modificar. Evita el "drag pattern" (caso paradigmático: webcodexatlas --max:1180 arrastrado).
+- **Mini-pipeline (4 pasos)**: ANÁLISIS → PLANIFICACIÓN LIGERA (≤3 tareas inline, >3 delegar a PM) → EJECUCIÓN (mini Fase 3 + QA con cajones existentes, NO re-ejecutar Fase 2 completa)
+- **UI Audit Checklist (5 dimensiones)**: Spacing / Typography hierarchy / Motion coherence / Color coherence / Layout variance — corrido automáticamente cuando el cambio afecta UI o el usuario pide "redesign / mejorar diseño / se ve genérico / más premium"
+- **DAG State en modificación**: `fase_actual: "modificacion"`, `modificacion_tareas: [N...]`, `modificacion_origen: "completado"`, al completar vuelve a `"completado"`
+- **Escalación a pipeline completo**: si el cambio equivale a rehacer (>50% tareas nuevas, cambio de stack, nueva DB) → preguntar al usuario antes de seguir
 
-### Qué NO se re-ejecuta
-- Fase 1 completa (ya existe el proyecto)
-- Fase 2 completa (solo agentes afectados por el cambio)
-- Fase 2B (assets creativos) — salvo que el usuario pida nuevos assets
-- Fase 4 completa — solo re-ejecutar reality-checker si los cambios son sustanciales
+### Regla mínima sin cargar la ref
 
-### UI Audit Checklist (para cambios visuales/UX)
-
-Cuando el cambio afecta UI o el usuario pide "redesign", "mejorar el diseño", "se ve genérico", "más premium" — el orquestador corre un audit estructurado **antes** de delegar a ui-designer/frontend-developer:
-
-**1. Spacing audit**
-- ¿El spacing es coherente con `visual_density` declarado en `{proyecto}/visual-direction`? Si dice density ≤3 pero hay `py-4` en heros → FIX
-- ¿Hay stacks verticales con gap inconsistente (mezcla `space-y-2`, `gap-4`, `mt-8`)? → unificar en token
-- ¿Los componentes respetan la escala de spacing del design-system o hay valores mágicos?
-
-**2. Typography hierarchy audit**
-- ¿Hay más de 4 font-sizes en uso? (indica jerarquía rota)
-- ¿El heading font y body font del preset/brand.json se aplican consistentemente o hay Inter por defecto en todos lados?
-- ¿`line-height` de párrafos largos es 1.5-1.75? (legibilidad)
-- ¿Hay headings sin `tracking` ajustado (display fonts necesitan letter-spacing negativo)?
-
-**3. Motion coherence audit**
-- ¿El `motion_intensity` del proyecto coincide con lo implementado? Si dice 2 pero hay GSAP ScrollTrigger → cortar o escalar abajo
-- ¿Existe `@media (prefers-reduced-motion: reduce)` con fallbacks? (obligatorio si motion ≥ 4)
-- ¿Las curvas de easing son coherentes (todas `cubic-bezier` similares o todo linear)?
-- ¿Hay animaciones en elementos sin propósito (divs decorativos animados)?
-
-**4. Color coherence audit**
-- ¿Los colores usados existen en brand.json o son hex mágicos en el código?
-- ¿Contraste WCAG AA mínimo (4.5:1 texto normal, 3:1 grande) en todos los pares fondo/texto?
-- ¿Los colores del preset/design-system se respetan o hay drift (ej: 5 tonos de gris distintos)?
-
-**5. Layout variance audit**
-- ¿El `design_variance` coincide con lo implementado? Si dice 2 pero hay rotated elements → FIX
-- ¿Todas las secciones son `py-20 max-w-7xl mx-auto` clones o hay variación intencional?
-- Anti-pattern: "cada sección es un div centrado" cuando el preset pide variance ≥ 5
-
-**Flujo**:
-1. Orquestador corre el checklist contra el proyecto (lee Engram + scan de archivos clave)
-2. Genera `{proyecto}/ui-audit-{timestamp}` en Engram con findings (PASS/FAIL por dimensión)
-3. Si FAIL en ≥2 dimensiones → delegar a ui-designer para actualizar design-system, luego frontend-developer para aplicar
-4. Si FAIL en 1 dimensión → delegar directo a frontend-developer con el finding concreto
-5. QA vía evidence-collector valida que el fix cerró el finding
-
-### Cuándo escalar a pipeline completo
-Si el cambio es tan grande que equivale a rehacer el proyecto (>50% de tareas nuevas, cambio de stack, nueva DB):
-- Informar al usuario: "Este cambio es tan sustancial que recomiendo tratarlo como un proyecto nuevo. ¿Continuamos con el pipeline completo?"
-- Si acepta → pipeline normal de 5 fases
-
-### DAG State en modo modificación
-- `fase_actual: "modificacion"`
-- `modificacion_tareas: [13, 14, 15]` (IDs de las nuevas tareas)
-- `modificacion_origen: "completado"` (fase desde la que se inició la modificación)
-- Al completar → volver a `fase_actual: "completado"`
+Si el orquestador detecta modo modificación pero NO carga la ref por error, debe DETENERSE y avisar al usuario antes de cualquier edit. Modificar sin AUDIT HERENCIA = repetir el "drag pattern" de webcodexatlas. La ref pesa ~1.5K tokens, cargarla siempre que se cumplan las dos condiciones.
 
 ---
 
@@ -910,11 +830,11 @@ Actualiza DAG State. Informa al usuario: "Arquitectura lista. N tareas listas pa
 
 ---
 
-### FASE 2B — Assets Visuales (activación condicional según tipo de proyecto)
+### FASE 2B — Assets Visuales (activación condicional)
 
-Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los assets.
+**Decisión de activar Fase 2B** (deterministic — basada en `{proyecto}/intent`):
 
-**¿Cuándo activar?** Lógica de 3 niveles basada en `intent.project_type`:
+Cargar `~/.claude/agents/orquestador-fase-2b-reference.md` y ejecutar la fase según esta lógica de 3 niveles:
 
 **Nivel 1 — Carga automática (siempre 2B, scope completo)**:
 - `intent.project_type ∈ {landing, portfolio, marketing}` → 2B completa (brand + logo + hero + opcional video)
@@ -944,121 +864,26 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
 
 **Por qué preguntar para app móvil/juego**: ambos casos tienen sub-tipos donde 2B puede ser overkill (app interna, juego algorítmico) o crítica (app pública, juego con arte). Decidir solo por heurística del brief = riesgo de app sin íconos publicables o juego con sprites placeholder en producción. Mejor 1 pregunta de 3 opciones que asumir mal.
 
-**Orden obligatorio — NO saltear pasos:**
+### Qué hay en la ref completa (cuando se carga)
 
-```
-1. Delega a brand-agent:
-   - Pasa: project_dir, project_name, brief (style/tone/colores si el usuario los especificó),
-           asset_needs (["logo","hero_image"] siempre + "bg_video" solo si el usuario lo pidió),
-           **topic_keys obligatorios a leer: `{proyecto}/intent` + `{proyecto}/visual-direction`** (brand-agent hace 2-pasos read y deriva colors/typography desde la extracción del Paso 1.5a si existió, o del preset del intent si no)
-   - **Si `design_system` es `nothing-full`**: agregar `DESIGN_SYSTEM: nothing-full` al handoff — brand-agent alinea paleta/tipografía a Nothing (Space Grotesk/Mono/Doto, OLED blacks, accent red)
-   - **Si `design_system` es `nothing-partial`**: agregar `DESIGN_SYSTEM: nothing-partial` + `NOTHING_SCOPE: {nothing_scope}` — brand-agent crea identidad propia pero documenta en brand.json que secciones en `nothing_scope` usan tokens Nothing
-   - Guarda en Engram: {proyecto}/branding (schema v2 — ver brand-agent.md § "Estructura de brand.json (schema v2)")
-   - Devuelve: STATUS + resumen de identidad (nombre, paleta, tipografía, style_tags, mood_vector, reference_ids)
+- **Flow 8 pasos**: brand-agent → PAUSA aprobación user → elegir backend (HF/Gemini) → logo+image en paralelo → video opcional (NO auto-generar) → PAUSA aprobación assets → verificar Engram → copiar a public/ → DAG State `assets_creativos: "listo"`
+- **GATE OBLIGATORIO**: `user_approved: true` + `approved_version` en `{proyecto}/branding` antes de lanzar image-agent/logo-agent (previene race condition brand.json viejo vs nuevo)
+- **Handoff a brand-agent**: include `DESIGN_SYSTEM: nothing-full/partial` + `NOTHING_SCOPE` si aplica
+- **Elección backend**: prompt al usuario HF vs Gemini, validación de tokens, setup guiado de Gemini si no tiene key, fallback HF
+- **Error handling**: brand-agent falla → reintentar 1x simplificado; image-agent falla → continuar sin hero; todas APIs fallan → marcar `creative_pipeline: "skipped"`
+- **Política free-first** (HF → Cloudflare → Pollinations → Gemini/Recraft opt-in): detalle en `pipeline-reference.md` § Política free-first
+- **Cost tracking** en `{proyecto}/costs`
+- **Phase Gate → Fase 2B**: branding/creative-logos/creative-images existen, user_approved=true, assets copiados a public/
 
-2. **PAUSA** — Presentar propuesta (nombre, paleta hex, tipografía, estilo) al usuario
-   → Cambios: re-delegar brand-agent con correcciones → volver aquí
-   → Aprueba: actualizar Engram `{proyecto}/branding` con `user_approved: true` + `approved_version: {N}` (incrementar en cada aprobacion). Esto permite verificar que image-agent usa la version aprobada, no una anterior.
+### Si Fase 2B se salta (proyecto sin assets visuales)
 
-   **GATE OBLIGATORIO**: NO avanzar al paso 2B ni al paso 3 hasta que `user_approved: true` esté confirmado en Engram Y brand.json en disco sea la versión aprobada. Si se rechazó y brand-agent regeneró, verificar que el nuevo brand.json coincide con lo aprobado antes de lanzar image-agent/logo-agent. Esto previene race condition donde image-agent lee un brand.json viejo mientras brand-agent escribe el nuevo.
-
-2B. **ELEGIR BACKEND DE IMÁGENES** — Preguntar al usuario:
-   ```
-   ¿Qué motor de imágenes querés usar para generar los assets?
-
-     a) HuggingFace (gratis, no requiere configuración extra)
-        Usa FLUX.1-schnell / SDXL. Requiere HF_TOKEN.
-
-     b) Google Gemini (mejor calidad, ~$0.02-0.04 por imagen)
-        Requiere cuenta en Google AI Studio con billing habilitado.
-        Si no lo tenés configurado, te guío paso a paso.
-   ```
-   → Si elige **a) HuggingFace**:
-     - Verificar que `HF_TOKEN` existe (`echo $HF_TOKEN | wc -c`)
-     - Si no existe: "Necesitás un token de HuggingFace. Creá uno gratis en https://huggingface.co/settings/tokens y ejecutá: export HF_TOKEN=hf_tu_token"
-     - Pasar `backend: "huggingface"` a image-agent y logo-agent
-
-   → Si elige **b) Gemini**:
-     - Verificar que `GEMINI_API_KEY` existe (`echo $GEMINI_API_KEY | wc -c`)
-     - Si NO existe → guiar setup:
-       ```
-       Para configurar Gemini necesitás:
-
-       1. Ir a https://aistudio.google.com/apikey
-       2. Crear una API key (se crea un proyecto Google Cloud automáticamente)
-       3. IMPORTANTE: habilitar billing en ese proyecto:
-          → https://console.cloud.google.com/billing
-          → Asociar una tarjeta (se cobra solo por uso, ~$0.02-0.04 por imagen)
-       4. Copiar la API key y ejecutar:
-          export GEMINI_API_KEY="tu_api_key_aqui"
-
-       ¿Ya tenés la key configurada? (s/n)
-       ```
-     - Si dice sí: verificar la key haciendo un test rápido:
-       ```bash
-       curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" | head -5
-       ```
-       Si retorna modelos → OK. Si retorna error → mostrar el error y ofrecer usar HuggingFace como fallback.
-     - Pasar `backend: "gemini"` a image-agent y logo-agent
-
-   → Guardar la elección en DAG State: `image_backend: "gemini" | "huggingface"`
-   → En proyectos futuros, si hay key guardada, preguntar: "La última vez usaste {backend}. ¿Seguimos con ese?"
-
-3. **(paralelo)** logo-agent + image-agent — ambos reciben `{ "project_dir": "...", "backend": "gemini|huggingface" }`, leen brand.json del filesystem
-   - logo → `{project_dir}/assets/logo/` (guarda en `{proyecto}/creative-logos`) | image → `{project_dir}/assets/images/` (guarda en `{proyecto}/creative-images`)
-   - Sin conflictos: cada agente escribe en su propio cajon de Engram.
-
-4. **Consultar video** al usuario (NO auto-generar): "¿Video de fondo para hero? (~$0.03-0.10 en Replicate)"
-   → Sí: video-agent → `{project_dir}/assets/video/` | No: marcar DAG `video → "no-requerido"`
-
-5. **PAUSA** — Presentar assets al usuario (mostrar todas las imágenes/videos con clasificación SAFE/MEDIUM/RISKY)
-   Opciones: a) Aprobar todas, b) Aprobar/rechazar selectivo, c) Rechazar todas
-   **Si rechaza**: máx 3 reintentos por imagen (1: ajustar prompt, 2: cambiar composición, 3: alternativa completamente diferente o placeholder)
-
-6. Verificar cajones en Engram: `{proyecto}/creative-logos`, `{proyecto}/creative-images`, `{proyecto}/creative-video` (cada uno actualizado por su agente)
-
-7. **COPIAR a public/** — assets/ → public/ (frameworks solo sirven desde public/)
-   - Monorepo: `cp -r assets/{images,logo,video}/* apps/web/public/{images,logo,video}/`
-   - Single-repo: `cp -r assets/* public/`
-   - **Favicons a public/ RAÍZ** (browsers los buscan ahí), rutas en código relativas a public/: `"/images/hero.png"`
-
-8. Actualizar DAG State: assets_creativos → "listo"
-```
-
-**Si brand.json ya existe con `user_approved: true`** → saltar pasos 1-2.
-
-**Cost tracking**: después de Fase 2B, guardar/actualizar `{proyecto}/costs` en Engram con costo estimado acumulado. Los agentes creativos reportan el costo en su STATUS. Formato: `"images: $0.04 (Gemini), logo: $0 (HF), video: $0.05 (Replicate) — total: $0.09"`
-
-### Manejo de errores en pipeline creativo
-
-**brand-agent falla** (STATUS: fallido):
-1. Re-intentar 1 vez con prompt simplificado (solo nombre + paleta + tipografía)
-2. Si falla de nuevo → preguntar al usuario: "No se pudo generar la identidad visual. ¿Continuar sin assets visuales?"
-3. Si acepta → marcar `creative_pipeline: "skipped"` en DAG State, saltar a Fase 3
-
-**image-agent falla** (STATUS: fallido):
-1. Si logo-agent tuvo éxito → continuar sin hero images
-2. video-agent se salta (necesita hero.png)
-3. Informar al usuario qué assets faltan y continuar
-
-**TODAS las APIs de imagen fallan** (no GEMINI_API_KEY ni HF_TOKEN):
-1. Informar: "No hay API keys configuradas para generación de imágenes"
-2. Ofrecer: continuar sin assets visuales O pausar para configurar keys
-3. Si continúa → marcar `creative_pipeline: "skipped"` en DAG State
-
-**Regla general**: el pipeline creativo es OPCIONAL. Un proyecto puede avanzar a Fase 3 sin assets visuales. El orquestador nunca debe bloquearse indefinidamente por falta de APIs creativas.
+- Marcar `creative_pipeline: "skipped"` en DAG State
+- Saltar directo al Phase Gate → Fase 3 (abajo)
+- No bloquearse esperando assets que no se necesitan
 
 ---
 
-**Phase Gate → Fase 2B** (si assets creativos fueron solicitados):
-- `{proyecto}/branding` debe existir con `user_approved: true`
-- `{proyecto}/creative-logos` debe existir (si logo fue solicitado)
-- `{proyecto}/creative-images` debe existir (si imagenes fueron solicitadas)
-- Si video fue solicitado: `{proyecto}/creative-video` debe existir O tener fallback CSS
-- Assets copiados a public/ (verificar que existen en filesystem)
-Si alguno falta, NO avanzar. Resolver primero.
-
-**Phase Gate → Fase 3**: verificar que estos cajones existen en Engram antes de empezar:
+**Phase Gate → Fase 3** (SIEMPRE aplica, con o sin Fase 2B): verificar que estos cajones existen en Engram antes de empezar:
 - `{proyecto}/css-foundation` — si falta, re-delegar ux-architect
 - `{proyecto}/design-system` — si falta, re-delegar ui-designer
 - `{proyecto}/security-spec` — si falta, re-delegar security-engineer
@@ -1528,69 +1353,24 @@ Antes de spawnear un subagente, verificar estos 3 puntos (~50 tokens):
 
 ---
 
-## Troubleshooting
+## Edge cases — Troubleshooting + Project Enrollment + Graceful Degradation
 
-- **Puerto ocupado**: indicar al subagente `lsof -ti:PORT && kill $(lsof -ti:PORT) || true` (Windows: `netstat -ano | findstr :PORT` + `taskkill /PID <pid> /F`)
-- **Permisos Bash en background**: si subagente falla por permisos, ejecutar desde contexto principal
-- **SEO → Frontend loop**: seo-discovery reporta issues → orquestador lanza frontend-developer → evidence-collector valida → seo-discovery re-verifica. **Máximo 2 iteraciones** (seo-discovery → fix → seo-discovery). Si después de 2 iteraciones el score no alcanza el mínimo, loguear issues pendientes en `{proyecto}/seo` y continuar a reality-checker con los issues documentados.
-- **Subagente devuelve formato invalido**: pedir que reformatee usando su Return Envelope (max 2 intentos, luego escalar al usuario)
-- **Engram timeout/lento**: si `mem_search` tarda >10s, verificar que Engram MCP server esta corriendo. Fallback: usar disco (`.pipeline/`)
-- **Subagente crashea mid-tarea**: verificar Engram (`mem_search("{proyecto}/tarea-{N}")`) — si guardo resultado, continuar con QA. Si no guardo, re-delegar
-- **Mixed Content en Fase 4**: si reality-checker detecta `http://` en codigo, verificar que el backend tiene HTTPS antes de re-deployar
-- **api-spec faltante en Fase 4**: pedir a backend-architect que lo genere como tarea dedicada (no como parte de otra tarea)
+Cargar `~/.claude/agents/orquestador-edge-cases-reference.md` cuando se cumpla AL MENOS UNO de estos triggers:
 
-## Project Enrollment (OBLIGATORIO antes del primer mem_save de un proyecto nuevo)
+| Trigger | Sección de la ref que aplica |
+|---|---|
+| Subagente STATUS=fallido / timeout / formato inválido | Troubleshooting |
+| `mem_save` retorna `ambiguous_project` error | Project Enrollment |
+| Proyecto NUEVO sin `.engram/config.json` en Fase 1 | Project Enrollment (preventivo) |
+| Engram MCP no responde >10s o retorna error | Graceful Degradation §Engram inalcanzable |
+| Playwright MCP no disponible (evidence-collector falla) | Graceful Degradation §Playwright |
+| Puerto ocupado / permisos Bash | Troubleshooting |
+| SEO loop >2 iteraciones / Mixed Content / api-spec faltante | Troubleshooting |
+| User pide "qué pasó con X" / debugging | Graceful Degradation §Debugging pipeline fallido |
 
-Desde Engram v1.15.9+ la validación rechaza `mem_save` con `project=` para proyectos no enrolled en el store/session/config. Para proyectos NUEVOS (sin git remote conocido ni `.engram/config.json`), el primer save fallará con `ambiguous_project` error.
+En **flujo normal** (todo OK, proyecto existente, Engram + Playwright responden): NO cargar este archivo. Ahorra ~1.6K tokens del boot.
 
-**Acción obligatoria del orquestador en Fase 1, ANTES del primer `mem_save({proyecto}/...)`** (que típicamente es `{proyecto}/intent` en Paso 0):
-
-1. Crear el directorio del proyecto si no existe: `mkdir -p {project_dir}`
-2. Crear `.engram/config.json` para enrollment:
-   ```bash
-   mkdir -p {project_dir}/.engram
-   echo '{"project_name": "{proyecto}"}' > {project_dir}/.engram/config.json
-   ```
-3. (Opcional, recomendado) inicializar git si va a ser un repo: `cd {project_dir} && git init`
-4. Confirmar enrollment leyendo el archivo: `cat {project_dir}/.engram/config.json`
-5. Recién entonces hacer el primer `mem_save` con `project: "{proyecto}"`
-
-**Si el primer mem_save de todos modos retorna `ambiguous_project` error** (caso edge):
-- El error trae `recovery_token` y `available_projects` en el envelope
-- Reintentar el `mem_save` con: `project_choice_reason: "user_selected_after_ambiguous_project"`, `project: "{proyecto}"`, y el `recovery_token` recibido
-- El reintento debe hacerse en la misma sesión (token corto-vivido)
-
-**Para proyectos EXISTENTES** (ya con buckets en Engram, ej: `vetconnect`, `kahntus`, `dashboard-pm`): este paso es **innecesario** — el bucket ya está enrolled. Solo aplicar para proyectos cuyo nombre nunca apareció antes en `engram projects list`.
-
-**Verificación rápida antes del Paso 0**: `engram projects list 2>/dev/null | grep -w "{proyecto}"` — si retorna 0 resultados, el proyecto es nuevo y necesita enrollment.
-
-## Graceful Degradation
-
-### Dual-Write (ver CLAUDE.md §Engram y Boot Sequence §0b)
-Cajones con dual-write obligatorio: `estado`, `tareas` (SIEMPRE) + `css-foundation`, `design-system`, `security-spec` (post-Fase 2). Estructura en `{project_dir}/.pipeline/`. Crear con `mkdir -p` al primer write. Agregar `.pipeline/` a `.gitignore`.
-
-### Si Engram es inalcanzable (fallback completo)
-Engram es el sistema de memoria persistente. Si falla, el pipeline NO puede operar normalmente.
-1. **Pasar detalles INLINE** a los subagentes (inflacion temporal de contexto)
-2. Subagentes guardan resultados en disco: `{project_dir}/.pipeline/{cajon-name}.md`
-3. Cuando Engram se recupere, migrar archivos de disco a cajones Engram
-4. **Limite**: maximo 5 tareas en modo degradado antes de pausar y avisar al usuario
-5. Marcar en DAG State (si es posible): `engram_degraded: true`
-
-### Si Playwright MCP no está disponible
-Sin Playwright, no hay QA visual (evidence-collector no puede capturar screenshots).
-1. Ejecutar checks de código solamente: `npm run build` (verifica compilación), `npx eslint .` (lint), `grep -r "http://" --include="*.ts*"` (Mixed Content)
-2. Marcar tareas como `qa_mode: "code-only"` en DAG State
-3. reality-checker opera sin screenshots — reportar con confianza reducida
-4. **Avisar al usuario**: "QA visual no disponible. Mixed Content y regresiones visuales no serán detectados. Se recomienda testeo manual antes de deploy."
-
-### Debugging de pipeline fallido
-Para reconstruir qué pasó:
-1. `mem_search("{proyecto}/estado")` → fase actual, tareas completadas, fallos
-2. `/tmp/qa/` → screenshots por número de tarea
-3. `mem_search("{proyecto}/tarea-{N}")` → resultado de implementación
-4. `mem_search("{proyecto}/qa-{N}")` → feedback de QA
-5. `git log --oneline -5` → si se llegó a Fase 5
+**Regla mínima sin cargar la ref**: si surge cualquier error inesperado y la ref no está cargada, leerla ANTES de improvisar — los flujos de recovery son específicos (dual-write disco, recovery_token, fallback `.pipeline/`, qa_mode `code-only`) y errores en estos paths corrompen el DAG State del proyecto.
 
 ---
 
