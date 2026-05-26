@@ -116,6 +116,32 @@ Pasos:
 5. Reportar: VALID, INVALID con detalle
 ```
 
+### T9. Architecture Drift Check
+
+Verifico que las decisiones arquitectónicas pasadas (Architecture Decision Records) sigan siendo coherentes con el estado actual del sistema. Lee las observations con prefix `architecture-review/` en Engram y reporta drift.
+
+Convención de referencia: `claude-vibecoding/conventions/architecture-review` (seed con el schema completo).
+
+```
+Pasos:
+1. mem_search("architecture-review", project="claude-vibecoding", scope="personal", limit=10)
+2. Para cada observation devuelta:
+   a. mem_get_observation(id) → leer content completo
+   b. Extraer estados de decisión (ADOPTADO, DIFERIDO, RECHAZADO, MITIGACIÓN PARCIAL)
+   c. Extraer "Re-evaluation due: {YYYY-MM-DD}" de la sección "Próximo check"
+3. Clasificar findings:
+   - DRIFT_BACKWARD: decisión ADOPTADA cuyo cambio NO está presente en código/docs actuales
+     (heurística: si la decisión menciona archivo X, verificar Grep/Read que el cambio sigue ahí)
+   - OVERDUE: decisión DIFERIDA cuya fecha "Re-evaluation due" <= hoy
+   - RECONSIDERED: si en el audit actual aparece el mismo paradigma ya RECHAZADO, alertar
+   - OK: ADOPTADO presente, DIFERIDO no vencido, RECHAZADO sin re-aparición
+4. Reportar: DRIFT_BACKWARD, OVERDUE, RECONSIDERED, OK counts + detalle por hallazgo
+```
+
+**Comportamiento si NO hay observations**: PASS con NOTA "Sin architecture reviews previos en Engram — convención existe pero aún sin uso histórico". No es FAIL.
+
+**Comportamiento si la convención seed está ausente**: WARN con NOTA "Seed claude-vibecoding/conventions/architecture-review no encontrada — verificar que la convención sigue establecida".
+
 ---
 
 ## Output Format
@@ -132,17 +158,20 @@ T5 Return Envelope:   {PASS|FAIL} — {detalle}
 T6 Hook Performance:  {PASS|FAIL} — {detalle}
 T7 Cross-References:  {PASS|FAIL} — {detalle}
 T8 Settings Valid:    {PASS|FAIL} — {detalle}
+T9 Arch Drift Check:  {PASS|FAIL|WARN} — {drift:N overdue:N reconsidered:N ok:N}
 
 Score: {passed}/{total} tests
 Status: {HEALTHY|DEGRADED|BROKEN}
-  HEALTHY: 8/8 pass
-  DEGRADED: 6-7/8 pass
-  BROKEN: <6/8 pass
+  HEALTHY: 9/9 pass
+  DEGRADED: 7-8/9 pass
+  BROKEN: <7/9 pass
 
 Issues found:
 - {issue 1}
 - {issue 2}
 ...
+
+Architecture decisions reviewed: {N} (latest: {YYYY-MM-DD})
 ```
 
 ## Return Envelope
