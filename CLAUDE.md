@@ -15,79 +15,34 @@ Cuando se activa el modo orquestador, Claude adopta el comportamiento definido e
 
 ### Modo Diagnóstico — reglas operativas
 
-Este modo es **READ-ONLY POR DOCTRINA**. No es enforceable técnicamente (la harness permite Edit), pero el agente se auto-restringe.
+Read-only por doctrina. No enforceable técnicamente — el agente se auto-restringe.
 
-**Triggers explícitos** (frases que activan el modo):
-- "modo diagnóstico" / "modo diagnostico"
-- "audita {esto/este código/este repo}"
-- "diagnostica {X}"
-- "evalúa sin tocar"
-- "review only" / "solo revisar"
+**Triggers**: "modo diagnóstico", "audita {esto}", "diagnostica {X}", "evalúa sin tocar", "review only".
 
-**Reglas inviolables del modo**:
-- ❌ **NO** `Edit`, `Write`, `NotebookEdit` (cambios a archivos)
-- ❌ **NO** `Bash` con state-mutating commands: `rm`, `mv`, `>` redirects, `sed -i`, `git commit`, `git push`, `npm install`, migrations, etc.
-- ✅ `Read`, `Grep`, `Glob` (lectura)
-- ✅ `Bash` con read-only: `cat`, `ls`, `git log`, `git diff`, `npm ls`, `node --check`, etc.
-- ✅ `mem_search`, `mem_get_observation` (lectura Engram)
-- ⚠️ `mem_save` SOLO con `scope=personal` para guardar hallazgos del audit, NUNCA `scope=project`
-- ✅ Spawnear `Plan` o `Explore` subagents (también read-only)
+**Reglas inviolables**:
+- ❌ NO Edit, Write, NotebookEdit
+- ❌ NO Bash con state-mutating: `rm`, `mv`, `>`, `sed -i`, `git commit/push`, `npm install`, migrations
+- ✅ Read, Grep, Glob, Bash read-only (`cat`, `ls`, `git log/diff`, `node --check`)
+- ✅ mem_search, mem_get_observation
+- ⚠️ mem_save SOLO scope=personal para guardar hallazgos del audit
 
-**Output OBLIGATORIO — Reporte estructurado Markdown**:
-```
-# Diagnóstico — {nombre proyecto/path}
+**Output OBLIGATORIO**: reporte Markdown con TL;DR, tabla por severidad (Crítico/Alto/Medio/Bajo), hallazgos citando reglas/anti-patterns violados, "lo que NO toqué", recomendaciones priorizadas, pregunta de cierre "¿salir y aplicar?".
 
-## TL;DR
-{1-2 líneas con conclusión principal}
+**Distinciones**:
+- ≠ `reality-checker` (este es certificación post-dev de proyectos del pipeline)
+- ≠ `Plan` subagent (este diseña implementación futura)
 
-## Tabla resumen
-| Severidad | Count |
-| Crítico   | N     |
-| Alto      | N     |
-| Medio     | N     |
-| Bajo      | N     |
-
-## Hallazgos
-### Críticos
-- C1: ... (cita literal de la regla/anti-pattern violada)
-- C2: ...
-### Altos
-- ...
-### Medios / Bajos
-- ...
-
-## Lo que NO toqué
-- (lista explícita de archivos leídos pero NO modificados — read-only confirma)
-
-## Recomendaciones priorizadas
-1. {fix más crítico} — esfuerzo: {bajo/medio/alto}
-2. ...
-
-## Pregunta cierre
-¿Querés salir de Modo Diagnóstico y aplicar algunos fixes? Entrá a Modo Modificación pasándome la lista priorizada.
-```
-
-**Distinciones importantes**:
-- **Modo Diagnóstico ≠ `reality-checker` agent**: reality-checker es la certificación final de un proyecto generado por el pipeline. Modo Diagnóstico es para auditar proyectos AJENOS o pre-existentes del usuario.
-- **Modo Diagnóstico ≠ `Plan` subagent**: Plan diseña implementación FUTURA. Diagnóstico evalúa código EXISTENTE.
-
-**Salida del modo**:
-- Trigger explícito: "salí de modo diagnóstico", "aplicá los fixes", "ahora modificá"
-- Si el usuario pide modificación dentro del modo SIN salir explícitamente, el agente pregunta: *"Estamos en Modo Diagnóstico (read-only). ¿Confirmás salir y aplicar el fix?"*
-
-**Casos de uso reales** (validados 2026-05-14):
-- Auditoría WebCodexAtlas (Lucas Rojo) → reporte 24 hallazgos + PR
-- Auditoría Claude-Atlas (Lucas Rojo) → reporte 25 hallazgos + 3 propuestas para sumar a vibecoding
+**Salida**: "salí de modo diagnóstico" / "aplicá los fixes" → entra a Modo Modificación.
 
 ## Simplicity First en outputs (2026-05-26)
 
-Aplica a outputs en los 4 modos (normal, orquestador, modificación, diagnóstico). Origen: análisis Karpathy 4 rules 2026-05-22 (obs #3328) + aplicación 2026-05-26 tras detectar fricción real (3+ pedidos de "más corto" en sesiones). Detalle extendido con ejemplos buenos/malos: `~/.claude/agents/simplicity-first-reference.md`.
+Aplica a outputs en los 4 modos (normal, orquestador, modificación, diagnóstico). Origen: análisis Karpathy 4 rules 2026-05-22 (obs #3328) + aplicación tras detectar fricción real (3+ pedidos de "más corto" en sesiones). Detalle extendido con ejemplos buenos/malos: `simplicity-first-reference.md`.
 
 **Toda respuesta arranca con TL;DR de 1-3 oraciones que resuelva la pregunta directa.** Si la respuesta natural se acaba ahí, terminar ahí.
 
 **Subir a estructura** (tablas, headers `##`, secciones) solo si:
 - El usuario pidió análisis, comparación, plan, auditoría
-- Hay ≥3 ítems comparables con campos paralelos (la tabla es la herramienta correcta)
+- Hay ≥3 ítems comparables con campos paralelos
 - La decisión toca múltiples archivos o requiere autorización del usuario
 - El usuario pidió detalle explícito
 
@@ -96,28 +51,25 @@ Aplica a outputs en los 4 modos (normal, orquestador, modificación, diagnóstic
 - Es opinión personal o pregunta cerrada (sí/no, esto o aquello)
 - Es confirmación de estado post-acción
 
-**Anti-patterns**:
-- Headers `##` para parecer estructurado en respuestas <10 líneas
-- Tabla con 2 filas o columnas no-paralelas
-- Iniciar respuesta con análisis antes de dar la conclusión directa
+**Anti-patterns**: headers `##` para parecer estructurado en respuestas <10 líneas · tabla con 2 filas o columnas no-paralelas · iniciar con análisis antes de la conclusión directa.
 
-Excepción: el reporte obligatorio de Modo Diagnóstico (TL;DR + tabla por severidad) sigue su propio template, definido arriba en § "Modo Diagnóstico".
+Excepción: el reporte obligatorio de Modo Diagnóstico (TL;DR + tabla por severidad) sigue su propio template.
 
 ## Delegation Stop Rules — cuándo escalar al pipeline
 
-En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline (no asumir, preguntar):
+En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline:
 
 | Trigger | Umbral | Acción |
 |---|---|---|
 | Lecturas exploratorias consecutivas | 5+ archivos distintos | Spawn `Explore` o pausar |
 | Archivos leídos para entender un flow | 4+ en la misma tarea | Spawn `Explore` subagent |
 | Archivos no-triviales escritos | 2+ con cambios sustantivos | Fresh review con subagente |
-| Tool calls totales sin spawn | 20+ en una sesión | Pausar, re-planificar o sugerir orquestador |
+| Tool calls totales sin spawn | 20+ en una sesión | Pausar, sugerir orquestador |
 | Ediciones no-mecánicas consecutivas | 2+ con complejidad creciente | Pausar, justificar o delegar |
-| Después de incidente (`cd` mal, accidente git, recovery merge) | siempre | Fresh audit antes de seguir |
+| Después de incidente (`cd` mal, git accident, recovery merge) | siempre | Fresh audit antes de seguir |
 | Antes de commit/push/PR no-trivial | siempre | Fresh review (salvo docs triviales) |
 
-Umbrales deterministas; "no-trivial" y "complejidad creciente" los evalúa Claude. No hay enforcement — es policy advisory. Adaptado de gentle-ai (Gentleman-Programming) — 2026-05-18.
+Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2026-05-18).
 
 ## Skill & Reference Index
 
@@ -142,7 +94,7 @@ Modo Modificación → análisis → planificación ligera → mini Fase 3+QA (p
 ```
 
 ### Intent Clarifier (Fase 1, Paso 0 — NUEVO)
-Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles completos en `~/.claude/agents/intent-clarifier-reference.md` (extraído de `orquestador.md` el 2026-05-15, cargado condicionalmente por el orquestador solo cuando hace falta).
+Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles en `orquestador.md` § FASE 1 Paso 0.
 
 ### Visual Direction Checkpoint (Fase 2, Paso 1.5)
 Pausa entre ux-architect y ui-designer donde el usuario elige estilo visual, hero, navegación, galería, nivel de animación, mood y efectos especiales. Pre-filleable con `{proyecto}/intent` capturado en Fase 1. Detalles en `pipeline-reference.md`.
@@ -236,37 +188,14 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
      - `mem_judge` si el nuevo contradice un existente
    - **Si NO hay match**: `mem_save` con `topic_key` nuevo y namespace lógico (ej `saldoar/proveedores/reunion-15hs`, `vibecoding/refero-integration`)
 5. **SIEMPRE `scope="personal"`** — los saves scope=project NO auto-syncan al cloud (validado 2026-05-15). El cloud sync funciona scope-agnostic pero el filtro por defecto del MCP usa scope.
-6. **`project=` EXPLÍCITO en mem_save Y mem_search** — el MCP auto-detecta project del cwd del server (en casa=`system32`, en pc004 varía según donde abriste Claude Desktop). Sin project explícito, cada PC routea a un bucket distinto y los saves no se cruzan aunque el cloud los tenga. **Esto es crítico para cross-PC retomable**.
+6. **`project=` EXPLÍCITO en mem_save Y mem_search** — el MCP auto-detecta project del cwd del server (varía por PC según donde abriste Claude Desktop). Sin project explícito, cada PC routea a un bucket distinto y los saves no se cruzan aunque el cloud los tenga. **Esto es crítico para cross-PC retomable**.
 7. **Confirmar al usuario** qué topic_key + project se usaron y por qué (linking vs nuevo).
 
-**Razón**: validado empíricamente 2026-05-15 — obs #3111 guardado en casa con auto-detect `project=system32` → invisible desde pc004 con auto-detect `project=dashboard-pm`. Solo después de `mem_search("...", project="system32")` explícito desde pc004, la obs aparece.
+**Razón**: validado empíricamente 2026-05-15 — obs guardada en casa con auto-detect `project=system32` → invisible desde pc004 con auto-detect distinto. Solo después de `mem_search("...", project="<el-correcto>")` explícito desde la otra PC, la obs aparece.
 
 **Cloud allowlist** (resuelto self-hosted 2026-05-15): el server Oracle Cloud (`161.153.203.83`) tiene `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env`. Para agregar un bucket nuevo: SSH al server, editar `.env`, `docker compose up -d cloud`. Backup automático por convención `.env.bak.YYYYMMDD-pre-{razon}`. Issue upstream para auto-allow opt-in: github.com/Gentleman-Programming/engram
 
 **Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC. Si necesitás un bucket personal global, usar `project="system32"` (de-facto convention) hasta que upstream permita nombres custom.
-
-**Bootstrap de proyecto NUEVO (path limpio cuando no existe en DB todavía)**:
-
-Si el MCP plugin retorna `ambiguous_project` y el proyecto NO aparece en `engram projects list` (es decir, **no existe todavía en el DB local**), el camino correcto NO es recovery_token sino CLI bootstrap:
-
-1. **CLI bootstrap (una vez)**:
-   ```bash
-   engram save "first save title" "first content" \
-     --project NUEVO_NOMBRE --scope personal --type discovery
-   ```
-   El CLI crea el proyecto al vuelo. El MCP plugin no puede (validación estricta de proyecto existente).
-
-2. **Después del bootstrap**, el MCP plugin acepta `project="NUEVO_NOMBRE"` explícito en `mem_save` y `mem_search` aunque `available_projects` no lo liste (esa lista es cwd-scoped, no el full project list).
-
-3. **Para cross-PC sync**: agregar el proyecto al cloud whitelist también (`/opt/engram-cloud/.env` via SSH — ver § "Cloud allowlist" arriba).
-
-**Distinción crítica entre los dos paths**:
-- `recovery_token` path (existing) → proyecto EXISTE en DB, hay ambigüedad de cwd con múltiples git repos
-- `CLI bootstrap` path (NEW) → proyecto NO EXISTE todavía en DB, crearlo
-
-**`available_projects` del MCP es cwd-scoped, NO el listado completo del DB**. El CLI (`engram projects list`) ve ~68 proyectos, el MCP scan solo muestra los que están como sub-repos del cwd donde corre el MCP server (típicamente 2-5). Esta es la diferencia que confunde: proyectos como `discoveries` / `personal` pueden estar en el DB y aceptarse con `project=` explícito en MCP, pero no aparecen en `available_projects`.
-
-Validado 2026-05-16 con vibefx (no en cloud whitelist, no detectado por MCP cwd-scan): SSH agregando vibefx a `ENGRAM_CLOUD_ALLOWED_PROJECTS` + `engram save --project vibefx` via CLI = full operability en una sesión (obs #3128, #3129, #3130).
 
 ### Protocolo de save robusto — anti silent-fail cloud (2026-05-18)
 
@@ -293,7 +222,7 @@ Lista sintética de buckets más usados (verificar con `engram projects list` si
 Si tu proyecto NO está en esta lista → correr `engram projects list | grep -w "{nombre}"` antes del primer save. Si no aparece, es proyecto nuevo (Path B bootstrap CLI).
 
 - Si confirma 403/desconocido: **NO inventar** un bucket. Preguntar al usuario: (a) usar uno existente que aplique, o (b) autorizar agregar el nuevo a la whitelist (requiere SSH al server + edit `/opt/engram-cloud/.env` + `docker compose up -d cloud` + backup `.env.bak.YYYYMMDD-pre-{razon}`).
-- **NUNCA hacer SSH + restart sin confirmación EXPLÍCITA del usuario** — toca infra del server productivo. "Explícita" significa: el usuario dijo literalmente *"sí, hacé el SSH"* / *"autorizá SSH al server"* / *"dale, modificá la whitelist en Oracle"* — referencia inequívoca a la acción concreta. Un *"OK dale"*, *"sí adelante"* o *"hacelo"* en respuesta a una pregunta más genérica (ej: *"¿activamos el bucket?"*) **NO es autorización SSH**. Si la respuesta del usuario fue ambigua, preguntar explícitamente: *"¿Confirmás que vas a hacer SSH al server Oracle + editar /opt/engram-cloud/.env + docker compose up -d cloud? Esto toca infra productiva."* — esperar respuesta literal afirmativa antes de proceder. Validado 2026-05-18 tarde: pc004 hizo SSH sobre un "OK" genérico al activar el bucket cross-claude-mailbox; el usuario después aclaró que no entendía el alcance. Regla endurecida para prevenir recurrencia.
+- **NUNCA hacer SSH + restart sin confirmación EXPLÍCITA del usuario** — toca infra del server productivo. "Explícita" = el usuario dijo literalmente *"sí, hacé el SSH"* o referencia inequívoca a la acción concreta. Un *"OK dale"* a una pregunta genérica (ej: *"¿activamos el bucket?"*) **NO es autorización SSH**. Si la respuesta fue ambigua, preguntar explícitamente: *"¿Confirmás que vas a hacer SSH al server Oracle + editar .env + docker compose up -d cloud?"* — esperar respuesta literal afirmativa.
 
 **Capa 2 — Post-save verify (1 search barato, obligatorio)**:
 Después de cada `mem_save` exitoso:
@@ -331,45 +260,15 @@ Convención asíncrona para que dos instancias de Claude (ej. `pc004` Linux + `c
 - `mailbox/from-{pc-origen}/to-{pc-destino}/{YYYYMMDD-HHMMSS}-{slug}-reply` → respuesta
 - Notación de pc: `pc004` (Linux), `casa` (Windows). Ajustar si hay más instancias.
 
-**Flujo (OPT-IN — NO ejecutar por default cada turn)**:
+**Flujo**:
 
-1. **Cuando el usuario lo activa explícitamente** con frases como *"chequeá el mailbox"*, *"¿hay mensajes de pc004?"*, *"revisá comunicaciones cross-PC"*, o cuando inicia un workflow conocido cross-PC (sync de cambios, ronda M2/M3, coordinación de pushes), ejecutar 1 search barato:
+1. **Cuando el usuario lo activa explícitamente** (*"chequeá el mailbox"*, *"¿hay mensajes?"*, o workflow cross-PC en curso) — NO ejecutar por default cada turn, ahorra ~3-5k tokens diarios. Ejecutar 1 search barato:
    ```
    pending = mem_search(query="to-{mi-pc}", project="cross-claude-mailbox", scope="personal", limit=5)
    ```
-   **NO ejecutar este search por default en cada turn**: costaría ~50-100 tokens × ~50 turns/día = ~3-5k tokens diarios solo en checks de mailbox vacíos. El opt-in elimina ese overhead cuando no se está coordinando cross-PC. Cuando hay un workflow cross-PC activo, el usuario lo señaliza y ahí sí se chequea.
 2. Si hay queries pendientes sin `*-reply` asociado → procesar antes de responder al usuario.
 3. **Para CHECKS** (lecturas, greps, `engram doctor`, `mem_search`, `git status`, etc.) → ejecutar y guardar `*-reply` directamente.
 4. **Para EDITS** (`Edit`, `Write`, `Bash` mutating, `SSH`, push, deploy) → **NO auto-aplicar**. Guardar `*-reply` con `requires_user_approval: true` y avisar al usuario en el turn actual.
-
-**Schema de query**:
-```yaml
-title: "[mailbox] {pregunta corta}"
-type: question
-scope: personal
-project: cross-claude-mailbox
-topic_key: mailbox/from-{pc-origen}/to-{pc-destino}/{ts}-{slug}
-content:
-  from: {pc-origen}
-  to: {pc-destino}
-  query: "{pregunta concreta}"
-  requires_edit: false  # true si la respuesta involucra edits
-  requires_user_approval: false  # auto-true si requires_edit=true
-```
-
-**Schema de reply**:
-```yaml
-title: "[mailbox-reply] {tema}"
-type: discovery
-scope: personal
-project: cross-claude-mailbox
-topic_key: mailbox/from-{pc-respondiendo}/to-{pc-original}/{ts}-{slug}-reply
-content:
-  in_reply_to_topic_key: {topic_key de la query}
-  result: "{respuesta concreta + outputs}"
-  edits_required: []  # lista de archivos si aplica
-  requires_user_approval: true|false
-```
 
 **Anti-patrones**:
 - ❌ Auto-aplicar edits sugeridos por el otro Claude sin confirmación del usuario.
@@ -377,7 +276,7 @@ content:
 - ❌ No identificarse en `from:` (ambigüedad cross-PC).
 - ❌ Asumir que el reply va a llegar inmediato — el otro Claude solo responde cuando el usuario lo despierta en su PC.
 
-**Limitación honesta**: NO es realtime. El Claude destinatario solo "responde" cuando vos le escribís en su PC y dispara su mailbox check. Los mensajes persisten, no se pierden. Si necesitás realtime, escalar a MCP bridge custom (deferred).
+**Limitación honesta**: NO es realtime. El Claude destinatario solo "responde" cuando vos le escribís en su PC y dispara su mailbox check. Los mensajes persisten, no se pierden.
 
 ### Lectura Engram — bloque canonico (referencia para todos los agentes)
 ```
@@ -400,31 +299,29 @@ El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boo
 
 > **Detalles completos** (Boot Sequence, carga progresiva del DAG State, continuidad entre sesiones, topic keys completa, pre-compact snapshot): ver `orquestador.md`
 
-## Hook System (13 hooks, último: engram-cloud-sync-on-stop 2026-05-15)
+## Hook System (13 hooks, último 2026-05-15: engram-cloud-sync-on-stop)
 
-Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`. Total: 13 hooks automáticos + 3 utilities manuales + 1 ejecutable manual = 17 archivos en `hooks/`.
+Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
 
-| Hook | Acción |
+| Hook | Accion |
 |------|--------|
 | `block-no-verify` | **BLOQUEA** git --no-verify, git push --force, rm -rf, git reset --hard, DROP TABLE, chmod 777, curl\|sh |
 | `config-protection` | **BLOQUEA** secrets (.env, .pem, .key). **ADVIERTE** configs de linting |
 | `quality-gate` | **ADVIERTE** debugger, .only(), @ts-ignore, secrets hardcodeados |
 | `console-log-warning` | **ADVIERTE** console.log/warn/error en produccion (ignora tests) |
-| `pre-return-audit` | **ADVIERTE** reglas universales CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding-top, navbar mobile sin hamburger, prefers-reduced-motion ausente con >5 animaciones |
+| `pre-return-audit` | **ADVIERTE** reglas universales CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding-top, navbar mobile sin hamburger, prefers-reduced-motion ausente con >5 animaciones. Async, fail-open. |
 | `suggest-compact` | **ADVIERTE** cada ~50 tool calls (async) |
 | `pre-compact-engram` | **GUARDA** snapshot a disco antes de compactar (v2.2) |
 | `cost-tracker` | **REGISTRA** tool calls por categoria (async) |
 | `session-summary` | **LOGUEA** actividad en JSONL (async) |
 | `engram-sync` | **SINCRONIZA** Engram con GitHub al parar sesion (async, 60s) |
-| `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: doctor + repair auto |
+| `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: `engram cloud upgrade doctor` + `repair --apply` auto. Filtro defensivo para `relation/upsert` (bug upstream). |
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
-| `bridge` | **ENVÍA** eventos al pixel-bridge UI (opcional decorativo) |
+| `frontend-audit` | **EJECUTABLE manual** (no hook automático): el `frontend-developer` lo invoca con --mood/--hero/--motion para AUTO_AUDIT pre-return (T1-T5). Complementa `pre-return-audit` con reglas que requieren contexto de mood. |
 
 **Comportamiento**: Exit 2 = BLOCK | Exit 0 + stderr = WARN | Fail-open (nunca rompe el flujo)
 
-**Utilidades manuales** (ejecutables con `node` o `bash`, NO en settings.json): `audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
-
-**Ejecutable manual** (invocado por agentes con flags, NO en settings.json): `frontend-audit.sh` (AUTO_AUDIT pre-return del frontend-developer)
+**Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
 
 ## Herramientas, referencias y protocolo de subagentes
 > Tabla completa de tools por agente, referencias tecnicas (12 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
@@ -438,7 +335,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 
 ### Guardrails anti-generic
 - **brand.json schema v2** (brand-agent): `mood_vector` 8-dim, `reference_ids`, `anti_patterns_HIGH` ejecutables, `typography_pair`, `extraction_metadata`. Ver `brand-agent.md` § "Estructura de brand.json (schema v2)".
-- **ui-designer Paso 0e — SaaS Teal Default Detector**: 7 reglas T1-T7 que bloquean paleta teal+Inter+cards-genéricas+shadow-sm+envelope-contenido-en-moods-bold para moods editorial/luxury/brutalist/immersive/playful/y2k/industrial. Self-audit pre-return con `AUTO_AUDIT` en Return Envelope.
+- **ui-designer Paso 0e — SaaS Teal Default Detector**: 7 reglas T1-T7 que bloquean paleta teal+Inter+cards-genéricas+shadow-sm para moods editorial/luxury/brutalist/immersive/playful/y2k/industrial. Self-audit pre-return con `AUTO_AUDIT` en Return Envelope.
 - **frontend-developer Pre-return Audit**: 5 grep commands sobre código generado (teal hardcoded, Inter heading, shadow uniforme, hero media, motion coherente con dials). `AUTO_AUDIT` en tarea-{N}.
 - **Taste-skill dials obligatorios**: frontend-developer consulta `intent.dials_suggested` antes de elegir Tier de animación (CSS/Framer/GSAP) y layout (simétrico/asimétrico).
 
@@ -481,7 +378,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ## Stack, Design Systems y Componentes
 > Tabla completa del stack adaptable, Nothing Design System, y 21st.dev: ver `pipeline-reference.md`
 
-- **Stack**: el orquestador decide en Fase 1 (lógica completa y autoritativa en `orquestador.md` § "Decisión de stack"). Defaults frecuentes: Next.js (apps), **Astro o Vite+React** (landing — Astro preferido para content-heavy, 0 JS por default), Hono (backend), Drizzle (ORM), Zustand (state). Cuando hay >1 alternativa válida, el orquestador **pregunta antes** de aplicar default (no es mandatorio). Override absoluto si el usuario especifica stack
+- **Stack**: el orquestador decide en Fase 1. Defaults: Next.js (apps), Vite+React (landing), Hono (backend), Drizzle (ORM), Zustand (state)
 - **Nothing Design**: opcional, solo si el usuario lo pide. Referencia en `nothing-design-reference.md`
 - **21st.dev**: componentes community via Context7 MCP. Inspiracion + base, no copy-paste. Adaptar siempre al brand
 
@@ -512,24 +409,22 @@ Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de credito*
 
 | Agente | Free primario | Free secundario | Free fallback | Opt-in (paga) |
 |--------|---------------|------------------|----------------|----------------|
-| image-agent | HF FLUX.1-schnell (`HF_TOKEN`) — $0.10/mes free, reset mensual | Cloudflare Workers AI FLUX-schnell (`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`) — **10K neurons/dia sin tarjeta** | Pollinations.ai (sin key) — **FLUX unlimited free** | Gemini (`GEMINI_API_KEY` + billing) |
+| image-agent | HF FLUX.1-schnell (`HF_TOKEN`) — $0.10/mes free | Cloudflare Workers AI (`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`) — **10K neurons/dia sin tarjeta** | Pollinations.ai (sin key) — **FLUX unlimited free** | Gemini (`GEMINI_API_KEY` + billing) |
 | logo-agent | HF + vtracer/Inkscape | Cloudflare Workers AI + vtracer | Pollinations + vtracer | Recraft V4 Vector SVG nativo (`RECRAFT_API_KEY`, $5 free/mes via Vercel AI Gateway) o Gemini |
 | video-agent | **CSS fallback animado** (output VALIDO sin token, NO bloquea pipeline) | — | — | Replicate LTX-Video 2.3 (`REPLICATE_API_TOKEN`) |
 | brand-agent | Free siempre (texto puro) | + dembrandt MCP opcional para extraer tokens de URLs | — | — |
 
-**Backend descartado del stack default** (verificado contra fuentes primarias 2026-05-18):
-- ~~Together AI~~ — el endpoint promocional "FLUX.1-schnell-Free" de blogs 2024-2025 ya **NO existe** en su catalogo actual. Free tier exige $5 fondeo con tarjeta. Marketing reciclado con fechas "2026" engana.
+**Backend descartado** (verificado 2026-05-18): ~~Together AI~~ — el endpoint promocional "FLUX.1-schnell-Free" de blogs 2024-2025 ya no existe. Free tier exige $5 fondeo con tarjeta.
 
 **Setup Cloudflare Workers AI** (secundario, sin tarjeta):
-1. Signup en `dash.cloudflare.com/sign-up` (Free Workers plan NO pide tarjeta — confirmado en `developers.cloudflare.com`)
+1. Signup en `dash.cloudflare.com/sign-up` (no pide tarjeta para Free Workers plan)
 2. Obtener Account ID en el dashboard (32 chars hex)
 3. Crear API token en `dash.cloudflare.com/profile/api-tokens` con permiso `Account -> Workers AI -> Read`
-4. `setx CLOUDFLARE_ACCOUNT_ID "..."` y `setx CLOUDFLARE_AI_TOKEN "..."`
-5. Endpoint: `api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
+4. Setear `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_AI_TOKEN` como env vars (ver `.env.example` en raiz del repo)
 
-**Comportamiento sin `REPLICATE_API_TOKEN`**: video-agent retorna `STATUS=completado` con solo `fallback.css`. Para video real, opciones manuales free: Seedance (web, 100 free/dia sin tarjeta), HF Spaces (Wan 2.1, cold start), LTX-2 self-host.
+**Comportamiento sin `REPLICATE_API_TOKEN`**: video-agent retorna `STATUS=completado` con solo `fallback.css`. No bloquea pipeline.
 
-**Para revertir a modo paga** (cuando recuperes tarjeta): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente para video.
+**Para revertir a modo paga** (cuando hay billing): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente.
 
 ## Best Practices Cross-Cutting (validadas en producción)
 

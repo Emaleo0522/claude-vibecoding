@@ -1,10 +1,30 @@
 # Upgrade Log — Context Management + Best Practices
 
-## Drift resolution + Simplicity First — 2026-05-26 ✅
+## POST-MORTEM + Fix: drift resolution con regresión accidental — 2026-05-26 ✅
 
 ### Summary
 
-Resolución estructural del drift entre 3 versiones del CLAUDE.md que evolucionaron en paralelo desde el 2026-03-07 sin sincronización automática. Forensics reveló asimetría de mantenimiento (root 54 commits vs templates 38 y 27), 3 intentos previos de sync manual fallidos (`bf3eb9f`, `e830fb8`, `e4bf6ed`), conteos de hooks discrepantes (15/13/14 vs realidad 13). Solución: consolidar a 1 sola fuente de verdad (`CLAUDE.md` del root del repo). Adicionalmente, aplicación de Simplicity First en outputs (regla derivada de análisis Karpathy 2026-05-22 obs #3328) tras detectar fricción real (3+ pedidos de "más corto" en una sola sesión).
+Sesión 2026-05-26 tuvo 2 momentos:
+
+**Momento 1 (commit 44f4058)** — INTENTO de resolución del drift entre 3 versiones del CLAUDE.md. Forensics correcto identificó: root 54 commits, templates 38 y 27, sync manual fallido 3 veces. PERO el fix aplicado tomó el `CLAUDE.md` del root del repo como base, **sin reconocer** que ese archivo era la versión PRE-extracción (anterior a la optimización del 2026-05-15/19 que extrajo secciones a archivos `*-reference.md`). El templates/global-claude.md era en realidad la versión POST-extracción optimizada, y al eliminarlo se perdió la optimización.
+
+**Momento 2 (commit XXXXXXX, este fix)** — Usuario alertó sobre la regresión: *"intentamos perfeccionar la arquitectura, particionando orquestador y mejorando claude.md dado que estos dos cargaban y consumían muchos tokens"*. Verificación reveló 7 archivos `-reference.md` con headers explícitos "Extraído de X para reducir boot tokens" — la optimización SÍ existía y fue revertida accidentalmente. Fix: recuperar la versión optimizada desde HEAD~1, hacerla el nuevo `CLAUDE.md` del root, re-aplicar Simplicity First encima.
+
+### Causa raíz del error
+
+Apliqué obs #3338 (trust user memory) tarde, no temprano. En el audit forense detecté que el root era "más completo" (554 líneas vs 496 del template) y asumí "más completo = más correcto". No verifiqué si la diferencia era **intencional** (optimización con extracción) o **drift** (desincronización). Mismas líneas pero rol opuesto: la versión "corta" era la correcta optimizada, no la atrasada.
+
+Lección operativa: cuando hay diff significativo entre archivos del sistema, **verificar timestamps de extracción en archivos `-reference.md` ANTES de decidir cuál es la fuente de verdad**. Headers como "Extraído de X el YYYY-MM-DD" son señal explícita de optimización intencional.
+
+### Estado final correcto post-fix
+
+- `CLAUDE.md` (root del repo) = **versión optimizada con extracción aplicada** (~517 líneas: 496 base post-extracción + 21 de Simplicity First). Apunta a los `-reference.md` para detalle on-demand. **NO duplica** contenido de Modo Diagnóstico expandido, Cross-Claude Mailbox schemas, Fase 2B, etc. (esos viven en sus refs).
+- `templates/global-claude.md` = ELIMINADO definitivamente. Era la versión optimizada → ahora vive como `CLAUDE.md` del root.
+- `templates/windows-claude.md` = ELIMINADO definitivamente. Legacy desactualizado, contenido core viejo, sin overrides Windows reales.
+- `install/linux.sh` y `install/windows.md` = apuntan a `CLAUDE.md` del root (correcto).
+- `agents/simplicity-first-reference.md` = NUEVO, preservado del commit 44f4058.
+- `agents/AGENTS.md` = fila simplicity-first agregada.
+- Eliminación de `templates/windows-claude.md` = preservada (legacy verificado).
 
 ### Archivos tocados
 
