@@ -73,7 +73,7 @@ Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2
 
 ## Skill & Reference Index
 
-`~/.claude/agents/AGENTS.md` mapea las 15 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
+`~/.claude/agents/AGENTS.md` mapea las 21 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
 
 ## Arquitectura
 
@@ -324,7 +324,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 **Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
 
 ## Herramientas, referencias y protocolo de subagentes
-> Tabla completa de tools por agente, referencias tecnicas (12 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
+> Tabla completa de tools por agente, referencias tecnicas (21 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
 
 - **Protocolo compartido**: `~/.claude/agents/agent-protocol.md` (Engram 2-pasos, topic_key obligatorio, Return Envelope estandar)
 - **Design Intelligence Engine**: `~/.claude/design-data/` (search.js + 8 CSVs, 161 industrias). El motor informa, no decide. Anti-patterns HIGH son obligatorios.

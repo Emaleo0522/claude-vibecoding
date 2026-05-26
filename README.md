@@ -63,7 +63,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-El script instala los 25 agentes + 20 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 13 hooks + 3 utilities manuales, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
+El script instala los 25 agentes + 21 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 13 hooks + 3 utilities manuales, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
 
 ### Windows (Claude Desktop) — 20-30 minutos guiados
 
@@ -271,7 +271,7 @@ Para developers que quieran ir más allá:
 
 | Archivo | Para qué |
 |---|---|
-| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 20 referencias técnicas con triggers de carga y skip conditions. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
+| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 21 referencias técnicas con triggers de carga y skip conditions. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Comportamiento completo del orquestador: detección de modos, pipeline detallado, DAG State, fallbacks |
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, reglas universales |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Detalles de cada fase, tools por agente, stack adaptable, Design Intelligence Engine |
@@ -291,7 +291,7 @@ Para developers que quieran ir más allá:
 
 ```
 ~/.claude/
-├── agents/            # 25 agentes + 20 referencias técnicas + AGENTS.md (índice) + agent-protocol.md = 47 archivos .md
+├── agents/            # 25 agentes + 21 referencias técnicas + AGENTS.md (índice) + agent-protocol.md = 48 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
 ├── hooks/             # 13 hooks + 3 utilities (bloqueos, warnings, sync background, health check)
 ├── settings.json      # config de hooks + Engram MCP

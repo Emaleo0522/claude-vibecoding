@@ -159,7 +159,7 @@ To **modify a project already built**, the system enters modification mode: it r
 
 ### What protects you along the way
 
-- **16 hooks** block dangerous things in real time: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edits to secret files (`.env`, private keys), use of `--no-gpg-sign`. Others warn: `debugger` or `console.log` in production code, `@ts-ignore`, excessive animations, CSS container with "SaaS feel" cap, declared fonts not loaded, mobile navigation without hamburger. Others run in background: cost tracking, session logging, Engram sync local→GitHub and local→cloud at session close, pre-compact snapshot.
+- **13 hooks + 3 manual utilities** block dangerous things in real time: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edits to secret files (`.env`, private keys), use of `--no-gpg-sign`. Others warn: `debugger` or `console.log` in production code, `@ts-ignore`, excessive animations, CSS container with "SaaS feel" cap, declared fonts not loaded, mobile navigation without hamburger. Others run in background: cost tracking, session logging, Engram sync local→GitHub and local→cloud at session close, pre-compact snapshot. The 3 manual utilities (`audit-system.js` health check, `cost-report.js`, `learning-index.js`) run with `node` on demand.
 - **Pre-return AUTO_AUDIT**: before returning code, the `frontend-developer` runs 5 executable grep rules (no default teal palette, no Inter as heading in bold moods, hero with coherent media, motion matching dial, shadow matching mood). If fails → regenerates. If passes → marks change as `VISUAL_IMPACT: high|medium|low`.
 - **Automatic human checkpoint**: when a change has `VISUAL_IMPACT: high`, the orchestrator shows you the result before marking the task complete. Doctrine: the agent decides on its own when there's ONE correct answer; for everything else (visual, multi-option, irreversible, iterated 2+ times) it asks you with its recommendation included.
 - **12 layers of anti-false-positive defense** in QA: LLM-as-judge visual fidelity (5 dimensions against reference), network inspection (Mixed Content, status 0, localhost leaks), mandatory E2E flows in auth/CRUD, reality-checker re-runs 2-3 PASS at random, **opt-in TDD evidence trail** (RED→GREEN→TRIANGULATE→REFACTOR when `test_commands` exist), **file cache hash on retries** (skip QA if all touched files have hash identical to last PASS, saves ~80% of tokens on retries without real change), **No-JS Render Audit in Phase 4** (Playwright with JS disabled measures what content survives — blocks landings/blogs/ecommerce that would be invisible to Bing/LLM scrapers/social previews).
@@ -275,7 +275,7 @@ For developers who want to go deeper:
 
 | File | What for |
 |---|---|
-| [`agents/AGENTS.md`](agents/AGENTS.md) | Central index of the 15 technical references with load triggers. The orchestrator consults it in Phase 1 Step 0b to decide which refs apply per project (avoids indiscriminate loading) |
+| [`agents/AGENTS.md`](agents/AGENTS.md) | Central index of the 21 technical references with load triggers. The orchestrator consults it in Phase 1 Step 0b to decide which refs apply per project (avoids indiscriminate loading) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Complete orchestrator behavior: mode detection, detailed pipeline, DAG State, fallbacks |
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Shared protocol between sub-agents: Engram (2 steps), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, universal rules |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Details of each phase, tools per agent, adaptive stack, Design Intelligence Engine |
@@ -284,7 +284,7 @@ For developers who want to go deeper:
 | [`agents/ui-designer.md`](agents/ui-designer.md) | Design system, SaaS Teal Default Detector (T1-T7), accessibility |
 | [`agents/frontend-developer.md`](agents/frontend-developer.md) | Frontend implementation, pre-return AUTO_AUDIT, design decision tree |
 | [`agents/evidence-collector.md`](agents/evidence-collector.md) | Visual QA with Playwright, 9 anti-false-positive layers |
-| [`hooks/`](hooks/) | The 16 hooks: blocks, warnings, audits, tracking, Engram sync (local+cloud) |
+| [`hooks/`](hooks/) | The 13 hooks + 3 manual utilities: blocks, warnings, audits, tracking, Engram sync (local+cloud) |
 | [`design-data/`](design-data/) | Design Intelligence Engine: 8 CSVs with 161 industries indexed via BM25 |
 
 ---
@@ -293,9 +293,9 @@ For developers who want to go deeper:
 
 ```
 ~/.claude/
-├── agents/            # 25 agents + 15 technical references + AGENTS.md index = 41 .md files
+├── agents/            # 25 agents + 21 technical references + AGENTS.md (index) + agent-protocol.md = 48 .md files
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
-├── hooks/             # 16 hooks (blocks, warnings, background sync)
+├── hooks/             # 13 hooks + 3 manual utilities (blocks, warnings, background sync, health check)
 ├── settings.json      # hooks config + Engram MCP
 ├── settings.local.json # agent permissions
 ├── codepen-vault/     # approved CodePen effects (decorative)

@@ -1,5 +1,76 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Auditoría completa post-bc01124 — recovery de 3 archivos no pusheados — 2026-05-26 ✅
+
+### Contexto
+
+Después del fix bc01124 (POST-MORTEM debajo), el usuario activó Modo Diagnóstico para verificar que la regresión del 44f4058 era un caso aislado o si había más trabajo perdido. La auditoría reveló que el mismo patrón **"edits aplicados a runtime sin commit al repo"** se había producido en otros 3 archivos del sistema durante las semanas previas.
+
+### Hallazgos críticos
+
+| Archivo | Detalle | Recovery commit |
+|---|---|---|
+| `agents/self-auditor.md` | Repo del 2026-04-07 (sin T9 Architecture Drift Check). Runtime tiene T9 desde 2026-05-25 (obs #3342). 35 líneas + cambio score 8/8 → 9/9 perdidas | `8060e9c` |
+| `agents/orquestador.md` | Repo = 1599 líneas (contenido inline duplicado con refs). Runtime = 1379 líneas (con pointers). 220 líneas de drift = la partición modular del 2026-05-19 (obs #3289) nunca llegó al repo correctamente. Commit `db7ce47` creó los `*-reference.md` pero NO limpió el orquestador.md correspondientemente | `3959f55` |
+| `agents/pipeline-reference.md` | Runtime tiene tabla expandida de política free-first (5 columnas × 4 agentes, Cloudflare setup, anti-pattern Together AI explícito, env vars con costos). Repo tenía versión abreviada del mismo día sin la expansión | `26b212b` |
+
+### Impacto en tokens (boot común)
+
+| Estado | CLAUDE.md | orquestador.md | Total boot |
+|---|---|---|---|
+| Pre-44f4058 (optimizado) | ~9,955 tok | ~21,791 tok | ~31,746 tok |
+| 44f4058 (regresión) | ~11,520 tok | ~25,225 tok | ~36,745 tok |
+| bc01124 (fix #1) | ~9,955 tok ✅ | ~25,225 tok ❌ | ~35,180 tok |
+| 3959f55 (fix #2 hoy) | ~9,955 tok ✅ | ~21,791 tok ✅ | ~31,746 tok |
+
+**Ahorro neto vs el peor caso (44f4058): ~5,000 tokens por sesión.** Comparado con "todo inline sin partición": ~12,300 tokens ahorrados por sesión (en línea con el -7.9K declarado en obs #3289).
+
+### Otros fixes incluidos en este commit
+
+- **Drift de conteos en docs**: `CLAUDE.md` decía "15 referencias / 12 archivos" (real: 21). `README.md` decía "20 referencias / 47 archivos" (real: 21 / 48). `README.en.md` estaba más atrás: "15 references / 41 files / 16 hooks" (real: 21 / 48 / 13+3). Corregido en los 3 archivos.
+
+### Causa raíz del patrón "runtime no pusheado"
+
+En todos los casos: edición aplicada a `~/.claude/agents/<archivo>.md` en una sesión + obs Engram describiendo el cambio + **olvido del `git commit/push` correspondiente**. La obs declara "aplicado completo" basándose en que el runtime quedó actualizado, pero el repo nunca recibe el cambio.
+
+Combinado con el bug del 44f4058 (asumir "más completo = más correcto" sin verificar headers de extracción), el resultado es drift acumulado invisible hasta que alguien hace un audit dedicado.
+
+### Doctrina actualizada — cómo actualizar la arquitectura sin repetir el patrón
+
+**Workflow correcto cuando se modifica un agente / hook / ref técnica:**
+
+1. Editar el archivo en el repo `claude-vibecoding/` (no en `~/.claude/` directo).
+2. `cp` el archivo del repo a `~/.claude/` para que el runtime cargue la nueva versión.
+3. `git add` + `git commit` con mensaje descriptivo.
+4. `git push origin main`.
+5. **Verificación post-commit**: `git status` debe retornar "nothing to commit, working tree clean" Y `git log -1` debe mostrar el commit nuevo.
+6. Guardar obs Engram con `topic_key` apropiado **mencionando el commit SHA** (`commit XXXXXXX pusheado a origin/main`).
+
+**Anti-patrones a evitar:**
+
+- ❌ Editar `~/.claude/` primero y planear "commitear después" — el "después" se olvida.
+- ❌ Guardar obs Engram declarando "aplicado completo" sin verificar `git log` post-push.
+- ❌ Mover contenido a refs `*-reference.md` sin limpiar el archivo origen correspondientemente (la partición incompleta crea duplicación invisible — caso orquestador.md).
+- ❌ Asumir que `~/.claude/` y el repo están sincronizados por defecto. Son lugares físicamente distintos y se desincronizan por defecto.
+
+**Fuente de verdad del CLAUDE.md** (consolidada en 44f4058 + bc01124): el archivo `CLAUDE.md` del **root del repo claude-vibecoding** es la única fuente de verdad. `install/linux.sh` lo copia a `~/CLAUDE.md`, `install/windows.md` da la instrucción manual de `cp CLAUDE.md ~/CLAUDE.md`. Los templates `global-claude.md` / `windows-claude.md` ya no existen (eliminados en 44f4058).
+
+### Commits aplicados
+
+- `8060e9c` feat(self-auditor): apply pending T9 Architecture Drift Check from 2026-05-25
+- `3959f55` fix(orquestador): complete pending modular partition cleanup from 2026-05-19
+- `26b212b` docs(pipeline-reference): expand free-first policy table with 4 backends per agent
+- (este commit) docs: update counts (21 refs / 48 files / 13+3 hooks) in CLAUDE.md + README.md + README.en.md + UPGRADE_LOG entry
+
+### Lo que NO se aplicó (queda como backlog)
+
+- 2 obs con `mem_judge` candidates pending: `#3126` x2, `#3147` x1. Pendiente resolver.
+- Backlog acumulado obs #3289/#3295/#3343: AGENTS.md sin los 5 refs nuevos (verificar runtime), trigger Fase 2B app móvil, `loaded_refs` en DAG State, pre-flight `git fetch`, pregunta topology Intent Clarifier.
+- `~/.claude/agents/skills/` directorio vacío huérfano (residuo de experimento `npx skills add`).
+- Bug menor `hooks/audit-system.js` (fallback path wrong fuera del repo).
+
+---
+
 ## POST-MORTEM + Fix: drift resolution con regresión accidental — 2026-05-26 ✅
 
 ### Summary
