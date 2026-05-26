@@ -198,8 +198,9 @@ else
 fi
 
 # -- 9. Instalar CLAUDE.md global (instrucciones del sistema) --
+# Fuente de verdad única: CLAUDE.md del root del repo (2026-05-26 — consolidación post-audit drift)
 GLOBAL_CLAUDE="$HOME/CLAUDE.md"
-TEMPLATE="$REPO_ROOT/templates/global-claude.md"
+TEMPLATE="$REPO_ROOT/CLAUDE.md"
 
 if [[ -f "$TEMPLATE" ]]; then
   if [[ -f "$GLOBAL_CLAUDE" ]]; then
@@ -209,7 +210,7 @@ if [[ -f "$TEMPLATE" ]]; then
   cp "$TEMPLATE" "$GLOBAL_CLAUDE"
   info "CLAUDE.md global instalado en $GLOBAL_CLAUDE"
 else
-  warn "No se encontro templates/global-claude.md — saltando"
+  warn "No se encontro CLAUDE.md en el root del repo — saltando"
 fi
 
 # -- 10. Actualizar usuario de GitHub en agente git --

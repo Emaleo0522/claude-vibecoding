@@ -88,7 +88,7 @@ Si te animás a portarlo, abrí un issue o PR contando qué runtime estás usand
 ### Verificación post-instalación
 
 ```bash
-# Agentes (debería ser 47: 25 agentes + 20 referencias técnicas + agent-protocol.md + AGENTS.md índice)
+# Agentes (debería ser 48: 25 agentes + 21 referencias técnicas + agent-protocol.md + AGENTS.md índice)
 ls ~/.claude/agents/*.md | wc -l
 
 # Hooks (debería ser 16)
@@ -184,14 +184,14 @@ El hook `engram-cloud-sync-on-stop` (incluido) empuja al cloud al cerrar sesión
 5. Para cada proyecto que quieras sincronizar: `engram cloud enroll <project-name>`.
 
 **Reglas clave** (validadas en producción 2026-05-15):
-- Todos los `mem_save` cross-PC deben usar `scope="personal"` + `project=` explícito. El auto-detect del MCP routea a buckets distintos según el cwd del cliente y rompe el cruce. Ver el protocolo "guarda en engram" completo en [`templates/global-claude.md`](templates/global-claude.md).
+- Todos los `mem_save` cross-PC deben usar `scope="personal"` + `project=` explícito. El auto-detect del MCP routea a buckets distintos según el cwd del cliente y rompe el cruce. Ver el protocolo "guarda en engram" completo en [`CLAUDE.md`](CLAUDE.md).
 - Para agregar un bucket nuevo al cloud: SSH al server, editar `.env`, `docker compose up -d cloud`. Sin allowlist explícita el server retorna 403.
 
 ### Cross-Claude Mailbox Protocol — opt-in para uso multi-PC
 
 Si trabajás en 2+ PCs con instancias separadas de Claude (típicamente Linux + Windows), podés activar un canal asíncrono entre ellas vía un bucket dedicado de Engram cloud (`cross-claude-mailbox`). Una instancia deja un mensaje (`mailbox/from-{origen}/to-{destino}/{ts}-{slug}`), la otra lo lee la próxima vez que la despertás.
 
-**Es opt-in**: no se chequea por default en cada turn (ahorra ~3-5k tokens/día en sesiones que no coordinan cross-PC). Para activarlo en una sesión, decile a Claude *"chequeá el mailbox"* o *"¿hay mensajes de pc004?"*. Diseño completo (schemas query/reply, flujo checks vs edits con confirmación, anti-patrones): ver sección **Cross-Claude Mailbox Protocol** en [`templates/global-claude.md`](templates/global-claude.md).
+**Es opt-in**: no se chequea por default en cada turn (ahorra ~3-5k tokens/día en sesiones que no coordinan cross-PC). Para activarlo en una sesión, decile a Claude *"chequeá el mailbox"* o *"¿hay mensajes de pc004?"*. Diseño completo (schemas query/reply, flujo checks vs edits con confirmación, anti-patrones): ver sección **Cross-Claude Mailbox Protocol** en [`CLAUDE.md`](CLAUDE.md).
 
 **Reglas clave**:
 - Lecturas/greps/doctor → el Claude destinatario auto-procesa y responde.
@@ -276,7 +276,7 @@ Para developers que quieran ir más allá:
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, reglas universales |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Detalles de cada fase, tools por agente, stack adaptable, Design Intelligence Engine |
 | [`agents/external-skills-reference.md`](agents/external-skills-reference.md) | Skills externas via `npx skills add` — whitelist curada, opt-in en Fase 3, no contamina boot |
-| [`templates/global-claude.md`](templates/global-claude.md) | El `CLAUDE.md` que se instala — toda la doctrina del sistema (Checkpoint humano, Engram, hooks, mod mode) |
+| [`CLAUDE.md`](CLAUDE.md) | El `CLAUDE.md` que se instala — toda la doctrina del sistema (Checkpoint humano, Engram, hooks, mod mode) |
 | [`agents/ux-architect.md`](agents/ux-architect.md) | Tokens de diseño, container strategy, anchor scroll con sticky |
 | [`agents/ui-designer.md`](agents/ui-designer.md) | Design system, SaaS Teal Default Detector (T1-T7), accesibilidad |
 | [`agents/frontend-developer.md`](agents/frontend-developer.md) | Implementación frontend, AUTO_AUDIT pre-return, design decision tree |
@@ -367,7 +367,7 @@ El orquestador elige el stack en Fase 1 según el proyecto. **No hay stack fijo.
 Pull requests bienvenidos. Antes de mandar uno:
 
 1. Si es un cambio en agentes, hooks o reglas de la arquitectura, corré `node ~/.claude/hooks/audit-system.js` para validar que no rompiste nada.
-2. Si agregás un hook nuevo, sumalo a la tabla en `templates/global-claude.md` y al script `install/linux.sh`.
+2. Si agregás un hook nuevo, sumalo a la tabla en `CLAUDE.md` (root del repo, fuente de verdad única desde 2026-05-26) y al script `install/linux.sh`.
 3. Si modificás el README o la documentación, mantenete en el tono accesible — el sistema lo usan también personas no programadoras.
 
 Para reportar bugs o discutir features, [abrí un issue](https://github.com/Emaleo0522/claude-vibecoding/issues).

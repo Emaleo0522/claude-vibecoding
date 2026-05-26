@@ -79,6 +79,30 @@ Este modo es **READ-ONLY POR DOCTRINA**. No es enforceable técnicamente (la har
 - Auditoría WebCodexAtlas (Lucas Rojo) → reporte 24 hallazgos + PR
 - Auditoría Claude-Atlas (Lucas Rojo) → reporte 25 hallazgos + 3 propuestas para sumar a vibecoding
 
+## Simplicity First en outputs (2026-05-26)
+
+Aplica a outputs en los 4 modos (normal, orquestador, modificación, diagnóstico). Origen: análisis Karpathy 4 rules 2026-05-22 (obs #3328) + aplicación 2026-05-26 tras detectar fricción real (3+ pedidos de "más corto" en sesiones). Detalle extendido con ejemplos buenos/malos: `~/.claude/agents/simplicity-first-reference.md`.
+
+**Toda respuesta arranca con TL;DR de 1-3 oraciones que resuelva la pregunta directa.** Si la respuesta natural se acaba ahí, terminar ahí.
+
+**Subir a estructura** (tablas, headers `##`, secciones) solo si:
+- El usuario pidió análisis, comparación, plan, auditoría
+- Hay ≥3 ítems comparables con campos paralelos (la tabla es la herramienta correcta)
+- La decisión toca múltiples archivos o requiere autorización del usuario
+- El usuario pidió detalle explícito
+
+**Bajar siempre a prosa simple** si:
+- El usuario pidió "resumen", "corto", "rápido", "en palabras sencillas"
+- Es opinión personal o pregunta cerrada (sí/no, esto o aquello)
+- Es confirmación de estado post-acción
+
+**Anti-patterns**:
+- Headers `##` para parecer estructurado en respuestas <10 líneas
+- Tabla con 2 filas o columnas no-paralelas
+- Iniciar respuesta con análisis antes de dar la conclusión directa
+
+Excepción: el reporte obligatorio de Modo Diagnóstico (TL;DR + tabla por severidad) sigue su propio template, definido arriba en § "Modo Diagnóstico".
+
 ## Delegation Stop Rules — cuándo escalar al pipeline
 
 En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline (no asumir, preguntar):
@@ -134,6 +158,45 @@ Cada agente tiene `model:` en su frontmatter YAML. El orquestador lo respeta al 
 
 ### Regla de oro
 El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
+
+### Checkpoint humano — cuándo pedir "¿qué te parece?"
+
+**Doctrina (válida para orquestador, subagentes y modo Claude normal):**
+
+> El agente decide solo cuando hay UNA respuesta correcta deducible de las reglas. En todos los demás casos — decisión visual interpretable, 2+ iteraciones sobre el mismo elemento, antes de acción irreversible, multi-opción legítima, o duda honesta — debe mostrar el resultado y preguntar al usuario con su recomendación incluida. Nunca preguntar sin recomendación; nunca dejar de preguntar cuando hay duda real.
+
+**Cuándo SÍ pedir checkpoint:**
+
+1. **Decisión visual/estética** que pasa AUTO_AUDIT pero es interpretable (ej: elegir Three.js vs Lottie vs SVG para hero; paleta secundaria con 3 opciones válidas).
+2. **2+ iteraciones sobre el mismo elemento** — señal de local minimum. Parar y preguntar.
+3. **Antes de acción irreversible**: git push, deploy, PR a repo ajeno, borrar archivos, cambiar identidad visual establecida.
+4. **Multi-opción legítima** donde varias respuestas son técnicamente válidas (ej: stack default cuando el intent no lo especifica).
+5. **Duda honesta del agente** — si el agente no sabe si la decisión es correcta, esa duda es información que el usuario necesita.
+
+**Cuándo NO pedir checkpoint (para no quemar al usuario):**
+
+- Regla ya enforced por la arquitectura (ej: `--max ≤1280 = SaaS feel`) → solo aplicar y comunicar qué se aplicó.
+- Bug fix con criterio único (typo, error obvio) → fixear.
+- Decisión técnica interna equivalente (ej: `position: sticky` vs `position: fixed` cuando da igual al usuario) → aplicar.
+- Decisión explícitamente delegada por el usuario (ej: *"decidí vos las cosas técnicas"*) → respetar el contrato.
+
+**Cómo formular la pregunta (3 niveles según fricción):**
+
+| Tipo | Cuándo | Patrón |
+|---|---|---|
+| **Show & continue** | Cambio implementado, agente confía pero quiere validación pasiva | *"Cambié X por Y porque Z. Pego screenshot. Si no decís nada, sigo con W."* |
+| **Show & confirm** | Decisión interpretable post-implementación | *"Implementé X. Te muestro el resultado. ¿Sigo o ajusto?"* — espera respuesta |
+| **Show & choose** | Pre-implementación, multi-opción legítima | *"Para Y hay 3 caminos: A/B/C. Mi recomendación es B porque [razón]. ¿Cuál vamos?"* |
+
+**Reglas anti-abuso del checkpoint:**
+
+- La pregunta SIEMPRE incluye la recomendación del agente. No delegar la decisión sin opinar.
+- Agrupar checkpoints: 1 pregunta por 3-4 cambios relacionados es mejor que 3 preguntas seguidas.
+- Si la decisión es única y deducible, NO preguntar — decirlo y seguir. Una pregunta retórica enseña al usuario a desconfiar del checkpoint.
+
+**Aplicación en Return Envelope:** los subagentes que devuelven cambios visuales/UX agregan campo `VISUAL_IMPACT: high|medium|low`. Si `high`, el orquestador es responsable de mostrar el resultado al usuario antes de marcar tarea completa. Ver `agent-protocol.md` § Return Envelope.
+
+**Meta-regla:** *Reglas técnicas deterministicas → grep ejecutable. Decisiones que el grep no puede juzgar (visual, multi-opción, irreversible, iterada) → checkpoint humano con recomendación. Nunca decidir solo donde no hay UNA respuesta correcta. Nunca aprobar como gate humano donde el agente puede demostrar respuesta única.*
 
 ## Gestión de contexto
 
@@ -337,26 +400,31 @@ El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boo
 
 > **Detalles completos** (Boot Sequence, carga progresiva del DAG State, continuidad entre sesiones, topic keys completa, pre-compact snapshot): ver `orquestador.md`
 
-## Hook System (15 hooks, ultimo 2026-05-15: engram-cloud-sync-on-stop)
+## Hook System (13 hooks, último: engram-cloud-sync-on-stop 2026-05-15)
 
-Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
+Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`. Total: 13 hooks automáticos + 3 utilities manuales + 1 ejecutable manual = 17 archivos en `hooks/`.
 
-| Hook | Accion |
+| Hook | Acción |
 |------|--------|
 | `block-no-verify` | **BLOQUEA** git --no-verify, git push --force, rm -rf, git reset --hard, DROP TABLE, chmod 777, curl\|sh |
 | `config-protection` | **BLOQUEA** secrets (.env, .pem, .key). **ADVIERTE** configs de linting |
 | `quality-gate` | **ADVIERTE** debugger, .only(), @ts-ignore, secrets hardcodeados |
 | `console-log-warning` | **ADVIERTE** console.log/warn/error en produccion (ignora tests) |
+| `pre-return-audit` | **ADVIERTE** reglas universales CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding-top, navbar mobile sin hamburger, prefers-reduced-motion ausente con >5 animaciones |
 | `suggest-compact` | **ADVIERTE** cada ~50 tool calls (async) |
 | `pre-compact-engram` | **GUARDA** snapshot a disco antes de compactar (v2.2) |
 | `cost-tracker` | **REGISTRA** tool calls por categoria (async) |
 | `session-summary` | **LOGUEA** actividad en JSONL (async) |
 | `engram-sync` | **SINCRONIZA** Engram con GitHub al parar sesion (async, 60s) |
+| `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: doctor + repair auto |
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
+| `bridge` | **ENVÍA** eventos al pixel-bridge UI (opcional decorativo) |
 
 **Comportamiento**: Exit 2 = BLOCK | Exit 0 + stderr = WARN | Fail-open (nunca rompe el flujo)
 
-**Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
+**Utilidades manuales** (ejecutables con `node` o `bash`, NO en settings.json): `audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
+
+**Ejecutable manual** (invocado por agentes con flags, NO en settings.json): `frontend-audit.sh` (AUTO_AUDIT pre-return del frontend-developer)
 
 ## Herramientas, referencias y protocolo de subagentes
 > Tabla completa de tools por agente, referencias tecnicas (12 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`

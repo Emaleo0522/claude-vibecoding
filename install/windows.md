@@ -173,10 +173,12 @@ cp templates/settings.local.json ~/.claude/settings.local.json
 ## Paso 8: Instalar CLAUDE.md global
 
 ```bash
-cp templates/windows-claude.md ~/CLAUDE.md
+cp CLAUDE.md ~/CLAUDE.md
 ```
 
-> Este archivo contiene todas las instrucciones del sistema. Claude lo lee automaticamente cada vez que abris una conversacion. Incluye reglas de Windows (preview servers, puertos, etc.).
+> Este archivo contiene todas las instrucciones del sistema. Claude lo lee automaticamente cada vez que abris una conversacion. Incluye una seccion "Overrides Windows" al final con reglas especificas de Claude Desktop (preview servers, puertos, version de Next.js, etc.).
+>
+> Nota: hasta 2026-05-26 habia 2 templates separados (`templates/global-claude.md` para Linux y `templates/windows-claude.md` para Windows). Se consolidaron a un solo archivo (`CLAUDE.md` en el root del repo) con seccion "Overrides Windows" interna. Ver `UPGRADE_LOG.md` entrada 2026-05-26 para el racional.
 
 ---
 

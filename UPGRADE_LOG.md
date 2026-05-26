@@ -1,5 +1,67 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Drift resolution + Simplicity First — 2026-05-26 ✅
+
+### Summary
+
+Resolución estructural del drift entre 3 versiones del CLAUDE.md que evolucionaron en paralelo desde el 2026-03-07 sin sincronización automática. Forensics reveló asimetría de mantenimiento (root 54 commits vs templates 38 y 27), 3 intentos previos de sync manual fallidos (`bf3eb9f`, `e830fb8`, `e4bf6ed`), conteos de hooks discrepantes (15/13/14 vs realidad 13). Solución: consolidar a 1 sola fuente de verdad (`CLAUDE.md` del root del repo). Adicionalmente, aplicación de Simplicity First en outputs (regla derivada de análisis Karpathy 2026-05-22 obs #3328) tras detectar fricción real (3+ pedidos de "más corto" en una sola sesión).
+
+### Archivos tocados
+
+- **MERGED** `CLAUDE.md` (root) — agregada sección "Checkpoint humano" que existía solo en template Linux. Corregido conteo de hooks 15→13 con tabla expandida (faltaban `pre-return-audit`, `engram-cloud-sync-on-stop`, `bridge`). Agregada nueva sección "## Simplicity First en outputs (2026-05-26)" entre Modo Diagnóstico y Delegation Stop Rules.
+- **NEW** `agents/simplicity-first-reference.md` — referencia operativa con ejemplos buenos/malos, triggers detallados, cross-references a obs Engram. Ref opt-in (cargada cuando hace falta).
+- **UPDATED** `agents/AGENTS.md` — nueva fila `simplicity-first` con trigger "agente duda si va corto o largo".
+- **CHANGED INSTALLER PATH** `install/linux.sh:202` — `TEMPLATE` apunta a `CLAUDE.md` (root) en vez de `templates/global-claude.md`. Mismo en `install/windows.md:176` (manual instructions).
+- **DELETED** `templates/global-claude.md` — redundante post-consolidación. El root es la fuente única ahora.
+- **DELETED** `templates/windows-claude.md` — legacy desactualizado. Sus 54 líneas únicas resultaron ser contenido core viejo (no overrides Windows reales — esos ya están en `CLAUDE.md` § "Overrides Windows").
+- **UPDATED** `README.md` + `README.en.md` — refs a `templates/global-claude.md` cambiados a `CLAUDE.md`. Conteos: 47→48 archivos en agents/, 20→21 referencias técnicas.
+
+### Decisiones de diseño
+
+**¿Por qué el root del repo y no un nuevo `templates/CLAUDE.md`?**
+El root es visible al clonar el repo. Los devs lo encuentran sin mirar `templates/`. Mantener el folder `templates/` solo para `settings.json` / `settings.local.json` que sí necesitan staging (sin sustitución de variables).
+
+**¿Por qué eliminar `windows-claude.md` en lugar de mergearlo?**
+Audit con `comm -23` reveló 54 líneas únicas. Inspección mostró que NO eran overrides Windows (esos están en sección "Overrides Windows" del global). Eran contenido core obsoleto que no se sincronizó cuando el global avanzó. Conservar habría sido conservar drift.
+
+**¿Por qué Simplicity First como regla core + ref opcional, no full inline?**
+Mismo patrón que `orquestador.md` / `pipeline-reference.md`: regla core breve para que esté siempre en contexto (anclaje permanente), detalle extendido en ref para no inflar boot de cada sesión. Mantiene la regla operativa sin violar la propia regla a nivel meta.
+
+**¿Por qué NO mergear el root con el global como propuse al inicio?**
+El audit reveló que ambos archivos tenían contenido único valioso en direcciones opuestas: el root tenía detalle operativo (template embebido de Modo Diagnóstico, casos de uso reales, bootstrap CLI con vibefx), el global tenía "Checkpoint humano" que el root no tenía. La consolidación tomó el root como base (más actualizado) + mergeó Checkpoint humano + corrigió conteo de hooks.
+
+### Lo que NO se tocó
+
+- `agents/` (excepto AGENTS.md y el nuevo simplicity-first-reference.md) — los 47 archivos existentes se preservan intactos.
+- Hooks (los 13 + 3 utilities) — sin cambios funcionales. Solo se corrigió el conteo en la doc.
+- `settings.json`, `settings.local.json` — sin cambios.
+- Engram observations existentes — sin migración necesaria. La nueva fuente de verdad respeta toda la estructura previa.
+
+### Cómo evitarlo en el futuro (preventive)
+
+La causa raíz del drift era arquitectónica: 3 archivos paralelos sin sync automático. La solución estructural (1 sola fuente de verdad) elimina la posibilidad técnica de drift entre Linux y Windows. **No hay forma de des-sincronizarlos porque no hay 2 archivos para des-sincronizar.**
+
+Para drift FUTURO entre `CLAUDE.md` del root y `~/.claude/CLAUDE.md` de cada PC (que SÍ pueden divergir, porque uno es del repo y el otro es la copia operativa): el patrón aprendido (obs Engram #3337) sigue válido — usar `git checkout HEAD -- <archivo>` + `git add --renormalize` cuando hay drift CRLF/LF, separar normalize commit del content commit.
+
+### Engram observations relacionadas
+
+- `#3336` Authoritative files vs summaries — leer archivo correcto antes de afirmar (2026-05-25)
+- `#3337` CRLF→LF split commits pattern (2026-05-25)
+- `#3338` Trust user memory verify before contradict (2026-05-25)
+- `#3343` Architecture review No-JS Render Audit Paso 4.5 (2026-05-25)
+- `#3346` Convención agentes proyectos satélite NO van al repo (2026-05-26)
+- (este upgrade) `#XXXX` Drift resolution + Simplicity First — guardado post-commit
+
+### Aprendizajes destacados
+
+1. **El "más actualizado" no siempre es el más completo**. Los 3 archivos tenían contenido único en direcciones distintas. Forensics empírica (git log + diff) es la única forma confiable de saber qué sobrevive del merge.
+2. **3 intentos manuales previos** (`bf3eb9f`, `e830fb8`, `e4bf6ed`) intentaron cerrar el drift sin éxito sostenido. La solución manual no escala — la estructural (1 archivo) sí.
+3. **Identificar archivos huérfanos antes de sincronizar**. En el audit detectamos `pen-packager.md` que pertenece al proyecto satélite vibefx (no a claude-vibecoding). Casi lo pusheamos por error al repo principal. Regla nueva en obs #3346.
+4. **El nombre engaña**. `templates/global-claude.md` no era "global" sino Linux. `templates/windows-claude.md` no tenía overrides Windows reales. Verificar contenido, no asumir por nombre.
+5. **Simplicity First aplica al output del modelo, no al código generado**. El sistema ya tenía guardrails contra over-engineering en código (`pre-return-audit`). La fricción real estaba en respuestas verbosas en chat. Esta regla cierra ese gap.
+
+---
+
 ## Render-aware Phase 4 + Astro default for landings — 2026-05-24 ✅
 
 ### Summary

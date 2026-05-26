@@ -34,6 +34,7 @@
 | `orquestador-fase-2b` | `intent.project_type ∈ {landing, portfolio, marketing, app móvil, juego}` o user pide explícitamente "logo/imágenes/branding/hero/video" | `orquestador-fase-2b-reference.md` | API pura, dashboard interno corporativo, prototipo sin assets visuales |
 | `orquestador-edge-cases` | Error subagente / `ambiguous_project` / Engram MCP no responde / Playwright MCP no disponible / debugging pipeline fallido | `orquestador-edge-cases-reference.md` | Flujo normal sin errores |
 | `external-skills` | Frontend/xr-immersive dev en Fase 3 detecta gap NO cubierto por refs internas (gsap, scroll-storytelling, creative-coding, advanced-effects, reactive-audio, codepen-vault) Y usuario autoriza `npx skills add` | `external-skills-reference.md` | Ref interna ya cubre el efecto · proyecto fuera de Fase 3 · sin autorización explícita del usuario |
+| `simplicity-first` | Agente o Claude normal duda si su output natural va corto o largo. Reglas core ya en CLAUDE.md global § "Simplicity First en outputs"; cargar el ref solo cuando se necesitan ejemplos buenos/malos extendidos | `simplicity-first-reference.md` | Output trivial donde la respuesta es obvia (1 línea) — la regla core del CLAUDE.md ya alcanza |
 
 ## Convenciones
 
