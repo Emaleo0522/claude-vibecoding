@@ -310,7 +310,9 @@ Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de crédito
 1. Signup en `dash.cloudflare.com/sign-up` (Free Workers plan NO pide tarjeta — confirmado en `developers.cloudflare.com`)
 2. Obtener Account ID en el dashboard (32 chars hex)
 3. Crear API token en `dash.cloudflare.com/profile/api-tokens` con permiso `Account → Workers AI → Read`
-4. `setx CLOUDFLARE_ACCOUNT_ID "..."` y `setx CLOUDFLARE_AI_TOKEN "..."`
+4. Setear como env vars persistentes:
+   - Linux/macOS: agregar `export CLOUDFLARE_ACCOUNT_ID="..."` y `export CLOUDFLARE_AI_TOKEN="..."` a `~/.bashrc` (o `~/.zshrc`)
+   - Windows: `setx CLOUDFLARE_ACCOUNT_ID "..."` y `setx CLOUDFLARE_AI_TOKEN "..."` (reabrir terminal después)
 5. Endpoint: `api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`
 
 **Comportamiento sin `REPLICATE_API_TOKEN`**: video-agent retorna `STATUS=completado` con solo `fallback.css`. Para video real, opciones manuales free: Seedance (web, 100 free/día sin tarjeta), HF Spaces (Wan 2.1, cold start), LTX-2 self-host.
