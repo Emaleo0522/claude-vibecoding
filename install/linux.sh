@@ -152,15 +152,11 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 25 agentes + 13 referencias en ~/.claude/agents/ --
+# -- 8. Instalar 25 agentes + 21 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
-mkdir -p "$CLAUDE_AGENTS/skills"
+mkdir -p "$CLAUDE_AGENTS"
 
 cp "$REPO_ROOT/agents/"*.md "$CLAUDE_AGENTS/"
-# Copiar skills si existen
-if ls "$REPO_ROOT/agents/skills/"*.md &>/dev/null; then
-  cp "$REPO_ROOT/agents/skills/"*.md "$CLAUDE_AGENTS/skills/"
-fi
 
 AGENT_COUNT=$(ls "$CLAUDE_AGENTS/"*.md 2>/dev/null | wc -l)
 info "Agentes instalados en $CLAUDE_AGENTS ($AGENT_COUNT archivos)"

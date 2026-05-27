@@ -97,26 +97,23 @@ cd claude-vibecoding
 
 ---
 
-## Paso 7: Copiar los 38 archivos de agentes (25 agentes + 13 referencias)
+## Paso 7: Copiar los 48 archivos de agentes (25 agentes + 21 referencias + AGENTS.md + agent-protocol.md)
 
 En Git Bash, **dentro de la carpeta `claude-vibecoding`**:
 ```bash
 # Crear la carpeta de agentes
-mkdir -p ~/.claude/agents/skills
+mkdir -p ~/.claude/agents
 
-# Copiar los 38 archivos
+# Copiar los 48 archivos
 cp agents/*.md ~/.claude/agents/
 
-# Copiar skills si hay
-cp agents/skills/*.md ~/.claude/agents/skills/ 2>/dev/null
-
-# Verificar — debe decir 38
+# Verificar — debe decir 48
 ls ~/.claude/agents/*.md | wc -l
 ```
 
 Los 25 agentes: orquestador, project-manager-senior, ux-architect, ui-designer, security-engineer, frontend-developer, backend-architect, rapid-prototyper, mobile-developer, game-designer, xr-immersive-developer, codepen-explorer, build-resolver, brand-agent, image-agent, logo-agent, video-agent, evidence-collector, reality-checker, seo-discovery, api-tester, performance-benchmarker, git, deployer, self-auditor.
 
-Las 13 referencias: agent-protocol, better-auth-reference, better-gsap-reference, react-patterns-reference, redis-patterns-reference, pocketbase-reference, devops-vps-reference, nothing-design-reference, scroll-storytelling-reference, advanced-effects-reference, creative-coding-reference, reactive-audio-reference, pipeline-reference.
+Las 21 referencias: agent-protocol (compartido), pipeline-reference, AGENTS.md (índice), intent-clarifier-reference, modo-diagnostico-reference, cross-claude-mailbox-reference, orquestador-modificacion-reference, orquestador-fase-2b-reference, orquestador-edge-cases-reference, simplicity-first-reference, better-auth-reference, better-gsap-reference, react-patterns-reference, redis-patterns-reference, pocketbase-reference, devops-vps-reference, linux-hardening-reference, nothing-design-reference, scroll-storytelling-reference, advanced-effects-reference, creative-coding-reference, reactive-audio-reference, external-skills-reference.
 
 ---
 
