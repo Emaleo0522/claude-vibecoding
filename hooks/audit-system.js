@@ -42,6 +42,10 @@ for (const [name, dir] of [['CLAUDE_DIR', CLAUDE_DIR], ['AGENTS_DIR', AGENTS_DIR
 // Reference files (not agents)
 const REFERENCE_SUFFIXES = ['-reference.md'];
 const NON_AGENT_FILES = ['agent-protocol.md', 'AGENTS.md'];
+// Agents from satellite projects (live in ~/.claude/agents/ but NOT in claude-vibecoding repo).
+// Each one is owned by its own repo (see obs claude-vibecoding/meta/satellite-projects-vs-main-system-namespace).
+// Skipping them avoids false positives in T1 (Extra), T3 (no protocol ref), T9 (missing from tools table).
+const KNOWN_SATELLITES = ['pen-packager.md']; // vibefx — github.com/Emaleo0522/vibefx
 
 const results = [];
 let passed = 0;
@@ -73,6 +77,7 @@ function testCatalogSync() {
     .filter(f => f.endsWith('.md'))
     .filter(f => !REFERENCE_SUFFIXES.some(s => f.endsWith(s)))
     .filter(f => !NON_AGENT_FILES.includes(f))
+    .filter(f => !KNOWN_SATELLITES.includes(f))
     .map(f => f.replace('.md', ''));
 
   const missingInDisk = EXPECTED_AGENTS.filter(a => !agentFiles.includes(a));
@@ -166,7 +171,8 @@ function testProtocolCompliance() {
   const agentFiles = fs.readdirSync(AGENTS_DIR)
     .filter(f => f.endsWith('.md'))
     .filter(f => !REFERENCE_SUFFIXES.some(s => f.endsWith(s)))
-    .filter(f => !NON_AGENT_FILES.includes(f));
+    .filter(f => !NON_AGENT_FILES.includes(f))
+    .filter(f => !KNOWN_SATELLITES.includes(f));
 
   let compliant = 0;
   const issues = [];
@@ -401,7 +407,8 @@ function testModelRouting() {
   const agentFiles = fs.readdirSync(AGENTS_DIR)
     .filter(f => f.endsWith('.md'))
     .filter(f => !REFERENCE_SUFFIXES.some(s => f.endsWith(s)))
-    .filter(f => !NON_AGENT_FILES.includes(f));
+    .filter(f => !NON_AGENT_FILES.includes(f))
+    .filter(f => !KNOWN_SATELLITES.includes(f));
 
   const VALID_MODELS = ['sonnet', 'opus', 'haiku'];
   let allValid = true;
@@ -446,15 +453,32 @@ function testModelRouting() {
 // T9: CLAUDE.md Agent Count Consistency
 // ============================================================
 function testClaudeMdConsistency() {
-  const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-  if (!fs.existsSync(claudeMdPath)) {
-    // Try Desktop/claude
-    const altPath = path.join(HOME, 'Desktop', 'claude', 'CLAUDE.md');
-    if (!fs.existsSync(altPath)) {
-      log('T9 CLAUDE.md Sync', 'PASS', 'CLAUDE.md not in cwd (OK for non-project dir)');
-      return;
+  // Priority order (B8 fix audit v2):
+  // 1. ~/.claude/CLAUDE.md (global runtime — fuente de verdad post 2026-05-26)
+  // 2. cwd/CLAUDE.md (proyecto local — solo si es un vibecoding CLAUDE.md)
+  // 3. ~/Desktop/claude/CLAUDE.md (overlay legacy del proyecto)
+  // The heuristic "is this a vibecoding CLAUDE.md?" avoids reading an empty
+  // project overlay when running from outside the repo.
+  const candidates = [
+    path.join(CLAUDE_DIR, 'CLAUDE.md'),
+    path.join(process.cwd(), 'CLAUDE.md'),
+    path.join(HOME, 'Desktop', 'claude', 'CLAUDE.md')
+  ];
+
+  let claudeMdPath = null;
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      const content = fs.readFileSync(candidate, 'utf8');
+      // Heuristic: vibecoding CLAUDE.md mentions both "orquestador" and "Hook System"
+      if (content.includes('orquestador') && content.includes('Hook System')) {
+        claudeMdPath = candidate;
+        break;
+      }
     }
-    testClaudeMdFile(altPath);
+  }
+
+  if (!claudeMdPath) {
+    log('T9 CLAUDE.md Sync', 'PASS', 'No vibecoding CLAUDE.md found (OK for non-project dir)');
     return;
   }
   testClaudeMdFile(claudeMdPath);
@@ -471,7 +495,8 @@ function testClaudeMdFile(claudeMdPath) {
     const agentFiles = fs.readdirSync(AGENTS_DIR)
       .filter(f => f.endsWith('.md'))
       .filter(f => !REFERENCE_SUFFIXES.some(s => f.endsWith(s)))
-      .filter(f => !NON_AGENT_FILES.includes(f));
+      .filter(f => !NON_AGENT_FILES.includes(f))
+    .filter(f => !KNOWN_SATELLITES.includes(f));
     const actual = agentFiles.length;
 
     if (claimed !== actual) {
@@ -486,6 +511,7 @@ function testClaudeMdFile(claudeMdPath) {
     .filter(f => f.endsWith('.md'))
     .filter(f => !REFERENCE_SUFFIXES.some(s => f.endsWith(s)))
     .filter(f => !NON_AGENT_FILES.includes(f))
+    .filter(f => !KNOWN_SATELLITES.includes(f))
     .map(f => f.replace('.md', ''));
 
   // Determine where the tools table lives
