@@ -273,6 +273,7 @@ Para developers que quieran ir más allá:
 
 | Archivo | Para qué |
 |---|---|
+| [`agents/PIPELINE-AGENTS.md`](agents/PIPELINE-AGENTS.md) | **Tabla de los 25 agentes** organizada por fase del pipeline con descripción 1-línea de cada uno + link al `.md` completo. Bilingüe (es+en). Referencia para humanos, no se carga al boot |
 | [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 21 referencias técnicas con triggers de carga y skip conditions. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Comportamiento completo del orquestador: detección de modos, pipeline detallado, DAG State, fallbacks |
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, reglas universales |

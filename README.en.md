@@ -277,6 +277,7 @@ For developers who want to go deeper:
 
 | File | What for |
 |---|---|
+| [`agents/PIPELINE-AGENTS.md`](agents/PIPELINE-AGENTS.md) | **Table of the 25 agents** organized by pipeline phase, with a 1-line description of each + link to the full `.md`. Bilingual (es+en). Human reference, not loaded at boot |
 | [`agents/AGENTS.md`](agents/AGENTS.md) | Central index of the 21 technical references with load triggers. The orchestrator consults it in Phase 1 Step 0b to decide which refs apply per project (avoids indiscriminate loading) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Complete orchestrator behavior: mode detection, detailed pipeline, DAG State, fallbacks |
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Shared protocol between sub-agents: Engram (2 steps), Return Envelope, VISUAL_IMPACT, Delegation Stop Rules, universal rules |
