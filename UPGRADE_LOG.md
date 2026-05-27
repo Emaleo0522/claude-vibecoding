@@ -60,7 +60,10 @@ Combinado con el bug del 44f4058 (asumir "más completo = más correcto" sin ver
 - `8060e9c` feat(self-auditor): apply pending T9 Architecture Drift Check from 2026-05-25
 - `3959f55` fix(orquestador): complete pending modular partition cleanup from 2026-05-19
 - `26b212b` docs(pipeline-reference): expand free-first policy table with 4 backends per agent
-- (este commit) docs: update counts (21 refs / 48 files / 13+3 hooks) in CLAUDE.md + README.md + README.en.md + UPGRADE_LOG entry
+- `ec32e93` docs: update counts (21 refs / 48 files / 13+3 hooks) in CLAUDE.md + README.md + README.en.md + UPGRADE_LOG entry
+- `55d0e66` docs(pipeline-reference): make Cloudflare env setup OS-agnostic (Linux+Windows)
+- `d252799` docs(readme): add Simplicity First in outputs to "What protects you" section
+- `45b2999` fix(install): remove dead agents/skills/ dir references (B1+B5 audit v2)
 
 ### Lo que NO se aplicó (queda como backlog)
 
