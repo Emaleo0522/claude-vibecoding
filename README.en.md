@@ -8,13 +8,17 @@
 
 A multi-agent system to build software end-to-end with Claude. From a simple landing to an app with auth + database. **It walks with you through every key decision, without asking permission for every comma.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-orange.svg)](LICENSE)
 ![Status](https://img.shields.io/badge/status-stable-success)
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows-lightgrey)
 
 > Lee esto en Español: [README.md](README.md)
 
 > **Important note on language**: the system's internal prompts and agent communication run in **Spanish** (that's how the orchestrator is wired). Generated projects can be in any language — variable names, comments and commits are in English (standard programming convention). If you don't speak Spanish, you can still use it — agents will respond in your language if you ask, but the canonical triggers (`modo orquestador --`, `retomar X --`, `modo diagnóstico`) are Spanish phrases.
+
+---
+
+> ⚠️ **Noncommercial use.** This software is under [PolyForm Noncommercial License 1.0.0](LICENSE). Personal, educational, research and nonprofit use permitted without restriction. **Any commercial use requires a separate license** — contact **emaleo0522@gmail.com**.
 
 ---
 
@@ -390,7 +394,11 @@ To report bugs or discuss features, [open an issue](https://github.com/Emaleo052
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+**PolyForm Noncommercial License 1.0.0** — see [LICENSE](LICENSE).
+
+Allows personal, educational, nonprofit, public research, hobby, and experimentation use. **Commercial use requires a separate license** — contact **emaleo0522@gmail.com**.
+
+**License history:** this repository was under MIT License from 2026-03-07 to 2026-05-27. Changed to PolyForm Noncommercial 1.0.0 to prevent unauthorized commercial resale. Versions distributed under MIT retain those rights over those specific versions — MIT cannot be revoked retroactively. The new license applies to this version and all future ones.
 
 ---
 

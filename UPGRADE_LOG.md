@@ -1,5 +1,60 @@
 # Upgrade Log — Context Management + Best Practices
 
+## License change: MIT → PolyForm Noncommercial 1.0.0 — 2026-05-27 ✅
+
+### Resumen
+
+Cambio de licencia para prevenir uso comercial / reventa sin autorización. **MIT** (que permite explícitamente *"copy, modify, merge, publish, distribute, sublicense, **and/or sell**"*) → **PolyForm Noncommercial License 1.0.0** (uso personal/educativo/nonprofit/investigación permitido sin restricción; uso comercial requiere licencia separada).
+
+### Por qué PolyForm Noncommercial (vs alternativas)
+
+- **vs MIT/Apache/BSD**: estas permiten venta. No cumplen el objetivo.
+- **vs AGPL-3.0**: permite uso comercial pero obliga publicar SaaS modificado. Más permisivo que lo que se quiere.
+- **vs BSL (Business Source License)**: similar pero más complejo (define "Change Date" en que revierte a Apache). Para el caso simple no aporta.
+- **vs Creative Commons (CC BY-NC)**: la propia Creative Commons recomienda explícitamente NO usar sus licencias para software (falta cláusulas de patentes y otros aspectos específicos del código).
+- **PolyForm Noncommercial 1.0.0** ✓ — diseñada específicamente para software, sin loopholes, redacción clara, sin "Change Date" que confunda. Permite personal use, hobby, charitable orgs, educational, public research, government.
+
+### Cambios aplicados
+
+- `LICENSE` — texto completo PolyForm Noncommercial 1.0.0 (oficial de polyformproject.org) + copyright Leonardo Emanuel Mansilla + sección Commercial Use (bilingüe) con email de contacto + sección License History
+- `README.md` — badge "License: MIT" → "License: PolyForm Noncommercial 1.0.0" (color orange) + aviso visible bajo los badges sobre uso no comercial + email de contacto + sección Licencia al final reescrita con history nota
+- `README.en.md` — mismo trato bilingüe (badge + warning + License section)
+
+### Disclaimer importante
+
+**MIT no se puede revocar retroactivamente.** Cualquiera que haya clonado o forkeado este repositorio antes de 2026-05-27 mantiene los derechos MIT sobre esas versiones específicas. La nueva licencia aplica a:
+- La versión actual (este commit y posteriores)
+- Cualquier código nuevo que se agregue desde ahora
+
+Esto está documentado explícitamente en LICENSE (sección "License History") y en la sección Licencia del README.
+
+### Lo que sigue siendo legal hacer (PolyForm Noncommercial)
+
+- Uso personal, hobby, experimentación
+- Estudio, investigación pública
+- Uso en organizaciones sin fines de lucro, educativas, de salud pública, ambientales, gubernamentales
+- Modificar y redistribuir (siempre que sea no comercial y mantenga la licencia)
+
+### Lo que YA NO es legal hacer
+
+- Vender el software o derivados
+- Ofrecerlo como producto comercial / SaaS pago
+- Incorporarlo en producto comercial de empresa con fines de lucro
+- Sublicenciar a terceros
+
+Para esos casos: **emaleo0522@gmail.com** (licencia comercial separada).
+
+### Decisión NO tomada
+
+- **Trademark del nombre "Claude Vibecoding"**: no registrado (requiere trámite en INPI Argentina, separado del scope de este commit). Si en el futuro se quiere, se puede sumar — la licencia y el trademark son independientes.
+- **CLA (Contributor License Agreement)**: no implementado todavía. Si se reciben contribuciones externas en el futuro, considerar agregar CLA para mantener la capacidad de relicenciar.
+
+### Disclaimer legal
+
+No soy abogado. Este cambio se hizo basado en análisis comparativo de licencias disponibles. Para enforcement de la licencia ante violaciones, consultar abogado de propiedad intelectual.
+
+---
+
 ## Auditoría completa post-bc01124 — recovery de 3 archivos no pusheados — 2026-05-26 ✅
 
 ### Contexto

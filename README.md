@@ -8,11 +8,15 @@
 
 Un sistema multiagente para construir software de principio a fin con Claude. Desde una landing simple hasta una app con auth + base de datos. **Te acompaña en cada decisión clave, sin pedirte permiso para cada coma.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm_Noncommercial_1.0.0-orange.svg)](LICENSE)
 ![Status](https://img.shields.io/badge/status-stable-success)
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows-lightgrey)
 
 > Read this in English: [README.en.md](README.en.md)
+
+---
+
+> ⚠️ **Uso no comercial.** Este software está bajo [PolyForm Noncommercial License 1.0.0](LICENSE). Uso personal, educativo, investigación y organizaciones sin fines de lucro permitidos sin restricción. **Cualquier uso comercial requiere licencia separada** — contactar a **emaleo0522@gmail.com**.
 
 ---
 
@@ -388,7 +392,11 @@ Para reportar bugs o discutir features, [abrí un issue](https://github.com/Emal
 
 ## Licencia
 
-MIT — ver [LICENSE](LICENSE).
+**PolyForm Noncommercial License 1.0.0** — ver [LICENSE](LICENSE).
+
+Permite uso personal, educativo, en organizaciones sin fines de lucro, investigación pública, hobby y experimentación. **Uso comercial requiere licencia separada** — contactar a **emaleo0522@gmail.com**.
+
+**Historia de licencia:** este repositorio estuvo bajo MIT License desde 2026-03-07 hasta 2026-05-27. Cambiado a PolyForm Noncommercial 1.0.0 para prevenir reventa comercial sin autorización. Versiones distribuidas bajo MIT mantienen esos derechos sobre esas versiones específicas — MIT no se puede revocar retroactivamente. La nueva licencia aplica a esta versión y todas las futuras.
 
 ---
 
