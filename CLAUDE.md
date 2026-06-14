@@ -358,6 +358,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 - **reality-checker Paso 4B — Mixed Content dinámico**: browser_navigate + network inspection runtime (no solo grep estático).
 - **reality-checker Paso 8 — Design Tools Usage Audit**: verifica intent + visual-direction + brand.json schema v2 + AUTO_AUDITs presentes.
 - **reality-checker Paso 9 — Evidence Trail Mandatory**: cada PASS cita path de screenshot/log/URL.
+- **reality-checker Paso 5 R2+R4 — ejes 4R faltantes** (patrón gentle-ai v1.40.1, añadido 2026-06-14): R2 claridad/código muerto + R4 resiliencia/manejo de fallos, como revisores read-only "find don't fix". Completa cobertura 4R (R1=security-engineer, R3=evidence-collector). Flujo crítico sin estado de error → blocker.
 - **api-tester ESCALATE**: si `api-spec` missing y proyecto tiene backend → NO fallback silencioso, BLOQUEADOR al orquestador.
 - **performance-benchmarker deploy_url obligatorio**: PageSpeed Insights contra URL pública cuando existe.
 

@@ -334,6 +334,32 @@ grep -rn "prefers-reduced-motion" --include="*.ts" --include="*.tsx" --include="
 ```
 Si el proyecto usa Lenis, GSAP scroll, canvas generativo o audio reactivo y NO respeta `prefers-reduced-motion` → issue de accesibilidad.
 
+#### R2 — Claridad y código muerto (review read-only "find, don't fix" — patrón 4R de gentle-ai v1.40.1)
+Revisor read-only: reportar findings con evidencia (`archivo:línea` + por qué importa), NUNCA arreglar acá. Señales grep + pase semántico del agente sobre los archivos core:
+```bash
+# Código muerto / deuda confirmada
+grep -rn "TODO\|FIXME\|XXX\|HACK\|@ts-ignore\|eslint-disable" --include="*.ts" --include="*.tsx" --include="*.js" . | grep -v node_modules | head
+# Exports sin usar (señal de dead code) — si el proyecto tiene la dep
+npx ts-prune 2>/dev/null | head -15 || echo "ts-prune no disponible, pase manual del agente"
+```
+Además, pase semántico (no grep) sobre 3-5 archivos core: magic numbers repetidos sin constante nombrada, lógica duplicada en ≥3 lugares, listas de parámetros >5, naming que oculta intención.
+**Severidad**: `issue` por defecto. Sube a `blocker` solo si el código muerto incluye lógica de auth/credenciales abandonada o ramas de seguridad inalcanzables.
+
+#### R4 — Resiliencia y manejo de fallos (review read-only "find, don't fix" — patrón 4R de gentle-ai v1.40.1)
+Revisor read-only de modos de fallo no observados en QA visual:
+```bash
+# fetch/async sin manejo de error cercano
+grep -rn "fetch(\|axios\.\|\.then(" --include="*.ts" --include="*.tsx" . | grep -v node_modules | head -20
+```
+Pase del agente sobre los resultados + componentes de data-fetching. Reportar:
+- Componente que hace data-fetching sin estado de **loading Y de error** visibles al usuario.
+- Dependencia externa (API, CDN, modelo IA) sin fallback ni timeout.
+- Operación de red **crítica** (pago, auth, submit de form) sin retry ni mensaje de error al usuario.
+- `fetch`/`await` sin `try/catch` ni `.catch()` en flujos que el usuario dispara.
+**Severidad**: estado de error ausente en flujo crítico (pago/auth/submit) → `blocker` (NEEDS WORK). Resto → `issue`.
+
+> **Cobertura 4R completa**: R1 Risk = security-engineer (Fase 2) + Paso 6 acá · R3 Reliability = evidence-collector (Fase 3) + Pasos 2/3 acá · R2 Claridad + R4 Resiliencia = estos dos checks. Los 4 son revisores read-only: encuentran y reportan con evidencia, no arreglan (el fix vuelve al dev-agent vía el orquestador).
+
 #### Cross-browser nota
 Agregar en el reporte final: "QA ejecutado en Chromium headless. Testear Safari/Firefox manualmente antes de launch a producción."
 
@@ -608,6 +634,7 @@ Sin evidencia citada → el criterio NO cuenta como PASS. "Lo revisé visualment
 - **Lock file ausente, en .gitignore, o con vulnerabilities HIGH/CRITICAL sin mitigación** (Paso 6.2) — supply chain integrity
 - **Mobile contract test — cualquier match sin guard md:/useMediaQuery** (Paso 7): overflow-x, font-size <16px en inputs, `<video>` sin playsInline, hover sin touch fallback, parallax sin media query
 - **VPS Hardening (si deploy = VPS)** (Paso 6.3): smoke-test <4/5, Lynis <70, password auth habilitada, UFW inactiva, Fail2Ban sshd jail no activo, puertos open no documentados
+- **R4 Resiliencia (Paso 5)** — flujo crítico (pago/auth/submit de form) sin estado de error visible al usuario, o dependencia externa crítica sin fallback/timeout
 
 ## Rating
 - **CERTIFIED**: abrumadora evidencia de que cumple la spec en todos los viewports, performance aceptable, 0 errores en consola, todos los user journeys funcionan

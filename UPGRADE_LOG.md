@@ -4,7 +4,7 @@
 
 ### Resumen
 
-Tres cambios tras auditar el sistema contra las releases de Gentleman de jun-2026 (Engram v1.16.2/3, gentle-pi v0.5.0, gentle-ai v1.38–1.40.1):
+Cuatro cambios tras auditar el sistema contra las releases de Gentleman de jun-2026 (Engram v1.16.2/3, gentle-pi v0.5.0, gentle-ai v1.38–1.40.1):
 
 1. **Endurecimiento de `block-no-verify.js`** — cerrados 3 bypasses de comandos destructivos detectados al comparar con el hard-deny de gentle-pi v0.5.0:
    - `git -C <dir> push --force` ahora se bloquea (el regex viejo exigía `git push` adyacente; el flag global `-C <dir>` lo evadía).
@@ -16,13 +16,16 @@ Tres cambios tras auditar el sistema contra las releases de Gentleman de jun-202
 
 3. **Contrato de lifecycle de memoria** (`CLAUDE.md` § "Contrato de lifecycle de memoria" + regla 5 en `orquestador.md`) — adaptado de gentle-pi v0.5.0, availability-gated. Al recuperar memoria: preferir `mem_review` action `list` si está disponible → fallback graceful a `mem_search`/`mem_context`; tratar `needs_review` como contexto stale a verificar contra evidencia (no verdad); nunca auto-marcar `mark_reviewed` sin confirmación del usuario. Funciona hoy aunque el Engram cloud (v1.16.1) aún no exponga la feature; se activa al actualizar a ≥v1.16.2. Caveat: `mark_reviewed` es local-only (no sincroniza cross-PC todavía).
 
+4. **Ejes 4R faltantes en reality-checker** (`reality-checker.md` Paso 5 + trigger de FAIL + traza en CLAUDE.md) — adaptado de los 4R review agents de gentle-ai v1.40.1. Agregados como revisores read-only "find, don't fix": **R2 Claridad** (código muerto, magic numbers, lógica duplicada, naming que oculta intención) y **R4 Resiliencia** (data-fetching sin estado loading/error, dependencias externas sin fallback/timeout, flujos críticos pago/auth/submit sin manejo de error). Completa la cobertura 4R: R1 Risk = security-engineer, R3 Reliability = evidence-collector, R2+R4 = estos. Flujo crítico sin estado de error → blocker (NEEDS WORK).
+
 ### Por qué
 
-El audit confirmó que el sistema está sano y maduro; la mayoría de las features de Gentleman son Pi/OpenCode-native (no aplican a Claude-native). Estos tres cambios son los de mayor retorno y menor riesgo: seguridad concreta (gaps reales verificados) + ahorro de tokens en lo mecánico sin tocar calidad + frescura de memoria contra drift (mapea a la doctrina de Checkpoint humano).
+El audit confirmó que el sistema está sano y maduro; la mayoría de las features de Gentleman son Pi/OpenCode-native (no aplican a Claude-native). Estos cuatro cambios son los de mayor retorno y menor riesgo: seguridad concreta (gaps reales verificados) + ahorro de tokens en lo mecánico sin tocar calidad + frescura de memoria contra drift + cobertura completa de revisión de código (los 4 ejes adversariales), todo mapeando a la doctrina de Checkpoint humano.
 
 ### Backlog (no aplicado, evaluado)
 
-- Dimensiones 4R (R2 claridad + R4 resiliencia) en reality-checker/self-auditor.
+- Upgrade Engram 1.16.1→1.16.3 (CLI casa+pc004, luego Oracle); seguro pero baja prioridad (mark_reviewed no sincroniza cross-PC).
+- Hook estilo-GGA (review LLM pre-commit vía zen-delegate contra anti-patterns HIGH).
 - Upgrade Engram 1.16.1→1.16.3 (seguro; baja prioridad porque mark_reviewed no sincroniza cross-PC aún).
 
 ## License change: MIT → PolyForm Noncommercial 1.0.0 — 2026-05-27 ✅
