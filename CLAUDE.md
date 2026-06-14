@@ -289,6 +289,15 @@ else:
     # cajon no existe — informar al orquestador
 ```
 
+### Contrato de lifecycle de memoria — `needs_review` (2026-06-14)
+
+Adaptado de gentle-pi v0.5.0. **Availability-gated**: funciona hoy aunque nuestro Engram (cloud Oracle v1.16.1) aún no exponga la feature; se activa solo cuando actualicemos a ≥v1.16.2 (`mem_review` vive en el profile `--tools=agent` que ya usamos).
+
+1. **Preferir `mem_review` (action `list`) si está disponible** → si no existe/no responde, fallback a `mem_search`/`mem_context` **sin fallar la tarea** (degradación graceful).
+2. **`needs_review` = contexto stale**, NO verdad. Una observación marcada `needs_review` (su `review_after` venció) se trata como **sospechosa: verificar contra evidencia actual antes de confiar en ella**, y si es interpretable, surfacearla al usuario (mapea a la doctrina de Checkpoint humano).
+3. **NUNCA auto-marcar `mark_reviewed`** sin confirmación explícita del usuario o un comando dedicado de mantenimiento de memoria. Marcar revisado es una decisión del usuario, no del agente.
+4. **Caveat cross-PC**: `mark_reviewed` es local-only (no sincroniza casa↔pc004 todavía, validado 2026-06-14). No asumir que revisar en una PC se refleja en la otra.
+
 ### Perfil personal del usuario
 El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boot Sequence**. Los hooks NO pueden llamar MCPs. En modo Claude normal, llamar `mem_context(scope="personal")` manualmente al inicio.
 

@@ -193,6 +193,7 @@ mem_session_summary(
 2. **Cajones atómicos**: un propósito por cajón. No mezclar tareas con decisiones
 3. **Stack va en estado**: se guardan en `{proyecto}/estado`, no en cajón aparte
 4. **Subagentes leen solo sus cajones** (ver tabla abajo)
+5. **Lifecycle `needs_review`** (availability-gated, ver `CLAUDE.md` § "Contrato de lifecycle de memoria"): al recuperar memoria, preferir `mem_review` action `list` si está disponible → fallback a `mem_search`/`mem_context` sin fallar. Una observación `needs_review` (review_after vencido) es **contexto stale a verificar contra evidencia, no verdad** — si es interpretable, surfacearla al usuario (Checkpoint humano). **Nunca** llamar `mark_reviewed` automáticamente; solo tras confirmación explícita del usuario. El orquestador es dueño de la recuperación de memoria y pasa el contexto seleccionado a los subagentes en sus prompts.
 
 **Qué cajón lee cada agente:**
 | Agente | Lee de Engram | Escribe en Engram |

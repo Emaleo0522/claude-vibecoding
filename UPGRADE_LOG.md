@@ -1,5 +1,30 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Hardening seguridad + Delegación Zen + Contrato lifecycle memoria — 2026-06-14 ✅
+
+### Resumen
+
+Tres cambios tras auditar el sistema contra las releases de Gentleman de jun-2026 (Engram v1.16.2/3, gentle-pi v0.5.0, gentle-ai v1.38–1.40.1):
+
+1. **Endurecimiento de `block-no-verify.js`** — cerrados 3 bypasses de comandos destructivos detectados al comparar con el hard-deny de gentle-pi v0.5.0:
+   - `git -C <dir> push --force` ahora se bloquea (el regex viejo exigía `git push` adyacente; el flag global `-C <dir>` lo evadía).
+   - `chmod -R 777` y `chmod 0777` ahora se bloquean (antes solo `chmod 777` literal).
+   - Nuevo bloqueo de `chown -R` / `chown --recursive`.
+   - Verificado con 15 casos de test: 8 destructivos bloqueados, 7 seguros permitidos, 0 falsos positivos (incl. `git commit -m 'fix push -f bug'`).
+
+2. **Delegación Zen** (`hooks/zen-delegate.js` + sección en CLAUDE.md) — delegación de tareas mecánicas a modelos open-source vía opencode Go. Solo 2 modelos aprobados por eval real (deepseek-v4-flash para estructura/JSON, qwen3.7-plus para copy castellano); deepseek-v4-pro, kimi-k2.6 y minimax-m3 rechazados por reasoning leakage. Reglas de calidad inviolables: validación por muestreo, output marcado como delegado, nunca delegar decisiones visuales/QA/arquitectura.
+
+3. **Contrato de lifecycle de memoria** (`CLAUDE.md` § "Contrato de lifecycle de memoria" + regla 5 en `orquestador.md`) — adaptado de gentle-pi v0.5.0, availability-gated. Al recuperar memoria: preferir `mem_review` action `list` si está disponible → fallback graceful a `mem_search`/`mem_context`; tratar `needs_review` como contexto stale a verificar contra evidencia (no verdad); nunca auto-marcar `mark_reviewed` sin confirmación del usuario. Funciona hoy aunque el Engram cloud (v1.16.1) aún no exponga la feature; se activa al actualizar a ≥v1.16.2. Caveat: `mark_reviewed` es local-only (no sincroniza cross-PC todavía).
+
+### Por qué
+
+El audit confirmó que el sistema está sano y maduro; la mayoría de las features de Gentleman son Pi/OpenCode-native (no aplican a Claude-native). Estos tres cambios son los de mayor retorno y menor riesgo: seguridad concreta (gaps reales verificados) + ahorro de tokens en lo mecánico sin tocar calidad + frescura de memoria contra drift (mapea a la doctrina de Checkpoint humano).
+
+### Backlog (no aplicado, evaluado)
+
+- Dimensiones 4R (R2 claridad + R4 resiliencia) en reality-checker/self-auditor.
+- Upgrade Engram 1.16.1→1.16.3 (seguro; baja prioridad porque mark_reviewed no sincroniza cross-PC aún).
+
 ## License change: MIT → PolyForm Noncommercial 1.0.0 — 2026-05-27 ✅
 
 ### Resumen
