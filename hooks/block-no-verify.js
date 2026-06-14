@@ -44,7 +44,8 @@ process.stdin.on('end', () => {
     }
 
     // Detectar git push --force / -f (puede sobrescribir historia remota)
-    if (/git\s+push\s+.*(-f\b|--force\b|--force-with-lease\b)/.test(command)) {
+    // Cubre el bypass `git -C <dir> push --force` (cerrado por gentle-pi v0.5.0, hardening 2026-06-14)
+    if (/\bgit\s+(?:-C\s+\S+\s+)?push\b[^;|&\n]*(--force\b|--force-with-lease\b|\s-[A-Za-z]*f\b)/.test(command)) {
       process.stderr.write(
         'BLOCKED: git push --force detected. This can overwrite remote history. ' +
         'Ask the user for explicit permission.'
@@ -89,11 +90,20 @@ process.stdin.on('end', () => {
       process.exit(2);
     }
 
-    // Detectar chmod 777 (permisos excesivos)
-    if (/\bchmod\s+777\b/.test(command)) {
+    // Detectar chmod 777 (permisos excesivos) — cubre flags recursivos -R y 0777 (hardening 2026-06-14)
+    if (/\bchmod\s+(?:-\S+\s+)*0?777\b/.test(command)) {
       process.stderr.write(
         'BLOCKED: chmod 777 detected. This grants full permissions to everyone. ' +
         'Use more restrictive permissions (e.g., 755). Ask the user if 777 is intended.'
+      );
+      process.exit(2);
+    }
+
+    // Detectar chown -R (cambio recursivo de ownership puede romper un sistema) (hardening 2026-06-14)
+    if (/\bchown\s+(-[A-Za-z]*R\b|--recursive)/.test(command)) {
+      process.stderr.write(
+        'BLOCKED: chown -R detected. Recursive ownership change can break a system. ' +
+        'Ask the user for explicit permission.'
       );
       process.exit(2);
     }

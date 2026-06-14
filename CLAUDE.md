@@ -426,6 +426,27 @@ Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de credito*
 
 **Para revertir a modo paga** (cuando hay billing): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente.
 
+## Delegación Zen — modelos opencode Go para tareas mecánicas (2026-06-10)
+
+Plan Go de opencode ($10/mes, cuotas $12/5h · $60/mes) da acceso API a modelos open-source. Script único: `node ~/.claude/hooks/zen-delegate.js` (requiere `OPENCODE_API_KEY`, ya en user env). Log de uso: `~/.claude/logs/zen-delegate.jsonl` (`--report` para resumen).
+
+**Solo 2 modelos APROBADOS** (eval real 2026-06-10, 3 tareas representativas — deepseek-v4-pro, kimi-k2.6 y minimax-m3 RECHAZADOS por reasoning leakage/respuestas vacías):
+
+| `--task` | Modelo | Usar para |
+|---|---|---|
+| `structured` | deepseek-v4-flash | Clasificación en lote, JSON/datos de prueba, resúmenes de docs, etiquetado masivo |
+| `copy` | qwen3.7-plus | Borradores de contenido en castellano (descripciones producto, copy secciones) |
+
+**Reglas de calidad (inviolables)**:
+- Output delegado NUNCA va a producción directo: Claude valida SIEMPRE (muestreo ≥10% en lotes, revisión completa en piezas únicas).
+- Copy delegado se audita contra `brand.json` + anti-patterns HIGH antes de usar.
+- En reportes al usuario, marcar contenido delegado como `[delegado: {modelo}]` — el usuario sabe qué generó quién.
+- NUNCA delegar: decisiones visuales/marca, veredictos QA (evidence-collector/reality-checker), arquitectura, respuestas directas al usuario, código que toca seguridad/auth.
+- Si el output delegado falla validación 2 veces → hacerlo Claude directamente, no insistir (el ahorro no justifica el loop).
+- Modelos nuevos del catálogo Go requieren pasar el eval (`zen-eval/run-eval.py`) antes de adoptarse.
+
+**Cuándo delegar (heurística)**: la tarea es mecánica + el prompt cabe en pocas líneas + validar por muestreo es más barato que generarlo yo. Si voy a tener que leer TODO el output en detalle, no hay ahorro — hacerlo directo.
+
 ## Best Practices Cross-Cutting (validadas en producción)
 
 > Las best practices de SEO, performance web, accesibilidad, WebGL safety y Mixed Content ya están integradas en los agentes que las aplican (frontend-developer.md, seo-discovery.md, evidence-collector.md, xr-immersive-developer.md). Esta sección solo contiene patterns que NO están en ningún agente.
