@@ -63,7 +63,7 @@ La mayoría de las sesiones son modo normal. En modo normal tenés a disposició
 
 | Situación | Reflejo |
 |---|---|
-| Entender código que cruza 2+ archivos / un flow | Spawn `Explore` — te devuelve la conclusión, no te llena el contexto con file dumps |
+| Entender código que cruza 2+ archivos / un flow | Si el proyecto tiene índice `.codegraph/` → tools `codegraph_explore`/`codegraph_node`; si no → spawn `Explore`. Ambos devuelven la conclusión sin llenar el contexto con file dumps |
 | Tarea con agente especializado (auth, frontend, security, SEO, perf, deploy) | Usá ese agente en vez de improvisar inline |
 | Antes de trabajo pesado en un dominio (auth, VPS, React 19, GSAP, scroll, Redis…) | Mirá `AGENTS.md` y cargá la ref ANTES de empezar |
 | Pregunta sobre librería/framework/API/CLI | Context7 MCP antes de responder de memoria |
@@ -73,6 +73,8 @@ La mayoría de las sesiones son modo normal. En modo normal tenés a disposició
 **Regla de oro normal-mode:** preferí **retrieval estructurado / delegación** antes que exploración manual ruidosa. Una llamada a `Explore` o a una ref que te da la conclusión vale más que 6 greps que queman contexto. Es la misma meta que la gestión de tokens: menos ruido, igual o más calidad.
 
 **No confundir con checkpoint:** usar un agente/ref/skill NO requiere permiso — es tu trabajo. Sí pedí confirmación antes de acciones irreversibles (push, deploy, borrar, tocar identidad visual establecida).
+
+**codegraph — retrieval estructurado del código (MCP, 2026-06-18):** si el proyecto tiene índice `.codegraph/`, preferí los tools `codegraph_explore` / `codegraph_node` / `codegraph_callers` / `codegraph_impact` ANTES de grep manual o de spawnear `Explore` — devuelven símbolos rankeados + blast radius + código fuente verbatim en 1 llamada (precisión verificada exacta en piloto vetconnect 2026-06-18; ~58% menos tool calls). Indexar un proyecto nuevo: `codegraph init .` una vez. Solo en proyectos medianos+ (en una landing de ~10 archivos el overhead fijo del MCP no amortiza → seguí con `Explore`/grep). Sin índice → `Explore`/grep como siempre.
 
 Esta sección es el lado positivo de las **Delegation Stop Rules** de abajo: acá está *qué alcanzar proactivamente*; abajo, *cuándo ya es tan grande que conviene escalar al pipeline*.
 
