@@ -55,6 +55,27 @@ Aplica a outputs en los 4 modos (normal, orquestador, modificación, diagnóstic
 
 Excepción: el reporte obligatorio de Modo Diagnóstico (TL;DR + tabla por severidad) sigue su propio template.
 
+## Modo Claude normal — aprovechá tu toolkit (no sos Claude pelado)
+
+La mayoría de las sesiones son modo normal. En modo normal tenés a disposición —y solés subutilizar— los mismos recursos que el pipeline: **24 subagentes** (`Explore`, `Plan`, frontend-developer, security-engineer, api-tester, seo-discovery, deployer…), **~21 referencias on-demand** indexadas en `~/.claude/agents/AGENTS.md`, **skills**, **MCPs** (Context7, Playwright, Supabase, Vercel…) y **Engram**. Alcanzalos por reflejo, antes de moler a mano.
+
+**Reflejos por defecto (no pedir permiso, usar):**
+
+| Situación | Reflejo |
+|---|---|
+| Entender código que cruza 2+ archivos / un flow | Spawn `Explore` — te devuelve la conclusión, no te llena el contexto con file dumps |
+| Tarea con agente especializado (auth, frontend, security, SEO, perf, deploy) | Usá ese agente en vez de improvisar inline |
+| Antes de trabajo pesado en un dominio (auth, VPS, React 19, GSAP, scroll, Redis…) | Mirá `AGENTS.md` y cargá la ref ANTES de empezar |
+| Pregunta sobre librería/framework/API/CLI | Context7 MCP antes de responder de memoria |
+| Diseño de implementación con trade-offs reales | Spawn `Plan` |
+| Descubrimiento no-obvio que sirve cross-sesión | `mem_save` (scope=personal) — no lo pierdas |
+
+**Regla de oro normal-mode:** preferí **retrieval estructurado / delegación** antes que exploración manual ruidosa. Una llamada a `Explore` o a una ref que te da la conclusión vale más que 6 greps que queman contexto. Es la misma meta que la gestión de tokens: menos ruido, igual o más calidad.
+
+**No confundir con checkpoint:** usar un agente/ref/skill NO requiere permiso — es tu trabajo. Sí pedí confirmación antes de acciones irreversibles (push, deploy, borrar, tocar identidad visual establecida).
+
+Esta sección es el lado positivo de las **Delegation Stop Rules** de abajo: acá está *qué alcanzar proactivamente*; abajo, *cuándo ya es tan grande que conviene escalar al pipeline*.
+
 ## Delegation Stop Rules — cuándo escalar al pipeline
 
 En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline:
