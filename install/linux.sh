@@ -193,6 +193,15 @@ else
   warn "No se encontraron hooks en $REPO_ROOT/hooks/ — saltando"
 fi
 
+# -- 8d. Instalar MCP registry (inventario legible de MCPs) --
+MCP_REGISTRY_SRC="$REPO_ROOT/mcp.registry.json"
+if [[ -f "$MCP_REGISTRY_SRC" ]]; then
+  cp "$MCP_REGISTRY_SRC" "$HOME/.claude/mcp.registry.json"
+  info "MCP registry instalado en $HOME/.claude/mcp.registry.json"
+else
+  warn "No se encontro mcp.registry.json en el repo — saltando"
+fi
+
 # -- 9. Instalar CLAUDE.md global (instrucciones del sistema) --
 # Fuente de verdad única: CLAUDE.md del root del repo (2026-05-26 — consolidación post-audit drift)
 GLOBAL_CLAUDE="$HOME/CLAUDE.md"

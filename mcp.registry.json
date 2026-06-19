@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updated": "2026-06-19",
+  "note": "Fuente de verdad legible del inventario de MCPs. Mantenido a mano. Leído por hooks/mcp-registry.js y por healthcheck.js. status LIVE/CONFIG_ONLY refleja configuración base; la disponibilidad real por sesión depende de la conexión (claude.ai-hosted) y de tokens.",
+  "statuses": {
+    "LIVE": "verificado activo (core del sistema)",
+    "CONFIG_ONLY": "configurado/disponible al conectar, no verificado live este run",
+    "PENDING_TOKEN": "configurado pero esperando un token/credencial",
+    "OPTIONAL": "opcional, se activa bajo demanda",
+    "MISSING": "declarado pero no instalado"
+  },
+  "servers": [
+    { "id": "engram", "capability": "memory", "status": "LIVE", "env": [], "notes": "Memoria persistente cross-sesión + cloud Oracle. Binario en ~/go/bin/engram." },
+    { "id": "context7", "capability": "documentation", "status": "LIVE", "env": [], "notes": "Docs de librerías + componentes 21st.dev. Preferir antes de responder de memoria." },
+    { "id": "playwright", "capability": "browser", "status": "LIVE", "env": [], "notes": "QA visual: screenshots, network, console. Solo Chromium." },
+    { "id": "codegraph", "capability": "code-retrieval", "status": "OPTIONAL", "env": [], "notes": "Retrieval estructurado del código. Solo activo si el proyecto tiene índice .codegraph/." },
+    { "id": "supabase", "capability": "database", "status": "CONFIG_ONLY", "env": [], "notes": "DB/migrations/edge functions." },
+    { "id": "vercel", "capability": "deploy", "status": "PENDING_TOKEN", "env": ["VERCEL_TOKEN"], "notes": "Deploy web. CLI autenticado para deployer-agent." },
+    { "id": "netlify", "capability": "deploy", "status": "CONFIG_ONLY", "env": [], "notes": "Deploy alternativo." },
+    { "id": "figma", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Design-to-code / code-to-design. Solo al compartir URL Figma o pedirlo." },
+    { "id": "canva", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Diseño y export de assets." },
+    { "id": "excalidraw", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Diagramas." },
+    { "id": "huggingface", "capability": "image-gen", "status": "CONFIG_ONLY", "env": ["HF_TOKEN"], "notes": "FLUX.1-schnell free-first para image-agent/logo-agent." },
+    { "id": "notion", "capability": "project-management", "status": "CONFIG_ONLY", "env": [], "notes": "Superficie de gestión de proyectos." },
+    { "id": "gmail", "capability": "email", "status": "CONFIG_ONLY", "env": [], "notes": "Lectura/etiquetado/borradores de correo." },
+    { "id": "google-calendar", "capability": "calendar", "status": "CONFIG_ONLY", "env": [], "notes": "Eventos/agenda." },
+    { "id": "google-drive", "capability": "storage", "status": "CONFIG_ONLY", "env": [], "notes": "Archivos en Drive." },
+    { "id": "three-js-viewer", "capability": "3d-preview", "status": "OPTIONAL", "env": [], "notes": "Preview de escenas Three.js para xr-immersive-developer." }
+  ]
+}

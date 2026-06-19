@@ -41,7 +41,7 @@ for (const [name, dir] of [['CLAUDE_DIR', CLAUDE_DIR], ['AGENTS_DIR', AGENTS_DIR
 
 // Reference files (not agents)
 const REFERENCE_SUFFIXES = ['-reference.md'];
-const NON_AGENT_FILES = ['agent-protocol.md', 'AGENTS.md'];
+const NON_AGENT_FILES = ['agent-protocol.md', 'AGENTS.md', 'PIPELINE-AGENTS.md'];
 // Agents from satellite projects (live in ~/.claude/agents/ but NOT in claude-vibecoding repo).
 // Each one is owned by its own repo (see obs claude-vibecoding/meta/satellite-projects-vs-main-system-namespace).
 // Skipping them avoids false positives in T1 (Extra), T3 (no protocol ref), T9 (missing from tools table).
@@ -249,8 +249,16 @@ function testSettingsStructure() {
 // T5: Hook Performance
 // ============================================================
 function testHookPerformance() {
+  // Excluir scripts cuya latencia NO importa para el flujo per-tool-call:
+  // utilidades manuales on-demand (audit-system, healthcheck, drift-check, mcp-registry)
+  // y hooks async/largos por diseño (engram-sync corre en Stop, 60s).
+  // healthcheck.js además orquesta a audit-system.js: medirlo acá dispararía una cadena de spawn.
+  const MANUAL_UTILS = new Set([
+    'audit-system.js', 'engram-sync.js',
+    'healthcheck.js', 'drift-check.js', 'mcp-registry.js',
+  ]);
   const hookFiles = fs.readdirSync(HOOKS_DIR)
-    .filter(f => f.endsWith('.js') && f !== 'audit-system.js' && f !== 'engram-sync.js');
+    .filter(f => f.endsWith('.js') && !MANUAL_UTILS.has(f));
 
   let allFast = true;
   const timings = [];

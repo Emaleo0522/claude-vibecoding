@@ -1,5 +1,23 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Observabilidad: healthcheck unificado + drift-check + MCP registry — 2026-06-19 ✅
+
+### Resumen
+
+Tres utilidades manuales nuevas (Node puro, sin dependencias), inspiradas tras comparar la arquitectura contra Claude-Atlas (fork del sistema que invirtió en una capa de ingeniería/observabilidad). Tomadas con disciplina de tokens: son scripts on-demand, NO hooks reactivos — no se cablean en `settings.json`, no corren por tool call, cuestan tokens solo al invocarse. TDD en `tests/` (27 tests, node assert, sin framework).
+
+1. **`hooks/drift-check.js`** — compara por hash sha256 la copia viva (`~/.claude/agents`, `hooks/`, `CLAUDE.md`) contra el repo y reporta MATCH/DRIFT/MISSING/EXTRA. Resuelve el dolor histórico de quedar desincronizado sin enterarse (ver incidente `.gitattributes` 2026-05-20). Fail-open: SKIP si no encuentra el repo (ej. Windows/casa). En su primera corrida real detectó drift legítimo en `CLAUDE.md` (la doctrina viva estaba 1 oración adelante del repo) — ya reconciliado.
+
+2. **`mcp.registry.json` + `hooks/mcp-registry.js`** — inventario legible y validable de los 16 MCPs por estado (LIVE/CONFIG_ONLY/PENDING_TOKEN/OPTIONAL/MISSING), reemplazando la lista en prosa. JSON nativo (js-yaml no está disponible → sin dependencias, portable a casa).
+
+3. **`hooks/healthcheck.js`** — "¿estoy listo?" en un comando: agrega audit-system + drift-check + MCP registry + presencia de Engram con veredicto único READY/NOT READY. FAIL solo en audit BROKEN o schema MCP roto; drift/degraded/engram-ausente/pending-token son WARN (no bloquean). Fail-open por sub-chequeo.
+
+**Fixes pre-existentes detectados en el proceso** (`hooks/audit-system.js`):
+- `PIPELINE-AGENTS.md` (índice añadido 2026-05-27) clasificado como no-agente en `NON_AGENT_FILES` — destrababa 4 tests (T1/T3/T8/T9) que lo trataban como agente sin frontmatter. Baseline pasó de 7/11 BROKEN a 11/11 HEALTHY.
+- `testHookPerformance` (T5) ahora excluye utilidades manuales del muestreo de latencia (no son perf-sensibles y `healthcheck.js` dispararía una cadena de spawn).
+
+**Verificación**: 27/27 tests verdes · audit 11/11 HEALTHY · drift CLEAN · `settings.json` intacto (scripts NO cableados) · review read-only por subagente (0 críticos/altos). Instalador `install/linux.sh` actualizado (paso 8d copia el registry). READMEs (es/en) y conteos actualizados (agents 49, hooks 20).
+
 ## Hardening seguridad + Delegación Zen + Contrato lifecycle memoria — 2026-06-14 ✅
 
 ### Resumen

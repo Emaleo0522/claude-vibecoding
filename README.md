@@ -92,17 +92,22 @@ Si te animás a portarlo, abrí un issue o PR contando qué runtime estás usand
 ### Verificación post-instalación
 
 ```bash
-# Agentes (debería ser 48: 25 agentes + 21 referencias técnicas + agent-protocol.md + AGENTS.md índice)
+# Agentes (debería ser 49: 25 agentes + 21 referencias técnicas + agent-protocol.md + AGENTS.md + PIPELINE-AGENTS.md)
 ls ~/.claude/agents/*.md | wc -l
 
-# Hooks (debería ser 16)
+# Hooks (debería ser 20: 13 reactivos + 7 utilidades/scripts .js/.sh)
 ls ~/.claude/hooks/ | wc -l
 
 # CLAUDE.md presente en ~
 head -3 ~/CLAUDE.md
 
-# Health check completo (recomendado)
-node ~/.claude/hooks/audit-system.js
+# Health check unificado (recomendado): audit + drift + MCP registry + Engram en un comando
+node ~/.claude/hooks/healthcheck.js
+
+# Chequeos individuales:
+node ~/.claude/hooks/audit-system.js          # catálogo de agentes, hooks, settings, protocolo
+node ~/.claude/hooks/drift-check.js            # repo ↔ ~/.claude en sync (por hash)
+node ~/.claude/hooks/mcp-registry.js           # inventario de MCPs por estado
 ```
 
 ---
@@ -159,7 +164,7 @@ Para **modificar un proyecto que ya está hecho**, el sistema entra en modo modi
 
 ### Lo que te protege en el camino
 
-- **13 hooks** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger. Otros corren en background: cost tracking, session logging, sync de Engram local→GitHub y local→cloud al cerrar sesión, snapshot pre-compact. Más **3 utilities manuales** (`audit-system.js` health check, `cost-report.js`, `learning-index.js`) que ejecutás con `node` cuando los necesitás.
+- **13 hooks** bloquean cosas peligrosas en tiempo real: `git --no-verify`, `git push --force`, `rm -rf`, `DROP TABLE`, `chmod 777`, edición de archivos secretos (`.env`, claves privadas), uso de `--no-gpg-sign`. Otros avisan: `debugger` o `console.log` en código de producción, `@ts-ignore`, animaciones excesivas, container CSS con cap "SaaS feel", fuentes declaradas sin cargar, navegación móvil sin hamburger. Otros corren en background: cost tracking, session logging, sync de Engram local→GitHub y local→cloud al cerrar sesión, snapshot pre-compact. Más **6 utilities manuales** que ejecutás con `node` cuando los necesitás: `healthcheck.js` (estado del sistema en un comando: agrega audit + drift + MCP registry + Engram con veredicto READY/NOT READY), `audit-system.js` (health check del catálogo), `drift-check.js` (detecta si tu copia viva `~/.claude/` se desincronizó del repo, por hash), `mcp-registry.js` (inventario de MCPs por estado, leído de `mcp.registry.json`), `cost-report.js` y `learning-index.js`.
 - **AUTO_AUDIT pre-return**: antes de devolver código, el `frontend-developer` corre 5 reglas grep ejecutables (no paleta teal por default, no Inter como heading en moods bold, hero con media coherente, motion según dial, shadow según mood). Si falla → regenera. Si pasa → marca cambio como `VISUAL_IMPACT: high|medium|low`.
 - **Checkpoint humano automático**: cuando el cambio tiene `VISUAL_IMPACT: high`, el orquestador te muestra el resultado antes de marcar la tarea como completa. La doctrina: el agente decide solo cuando hay UNA respuesta correcta; en todo lo demás (visual, multi-opción, irreversible, iterado 2+ veces) te pregunta con su recomendación incluida.
 - **12 capas de defensa anti-falso-positivo** en QA: visual fidelity LLM-as-judge (5 dimensiones contra referencia), network inspection (Mixed Content, status 0, leaks de localhost), E2E flows obligatorios en auth/CRUD, reality-checker re-corre 2-3 PASS al azar, **TDD evidence trail opt-in** (RED→GREEN→TRIANGULATE→REFACTOR cuando hay `test_commands`), **cache hash de archivos en reintentos** (skip QA si todos los archivos tocados tienen hash idéntico al último PASS, ahorra ~80% de tokens en reintentos sin cambio real), **No-JS Render Audit en Fase 4** (Playwright con JS apagado mide qué contenido sobrevive — bloquea landings/blogs/ecommerce que serían invisibles a Bing/LLM scrapers/previews sociales).
@@ -298,9 +303,10 @@ Para developers que quieran ir más allá:
 
 ```
 ~/.claude/
-├── agents/            # 25 agentes + 21 referencias técnicas + AGENTS.md (índice) + agent-protocol.md = 48 archivos .md
+├── agents/            # 25 agentes + 21 referencias + AGENTS.md + agent-protocol.md + PIPELINE-AGENTS.md = 49 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
-├── hooks/             # 13 hooks + 3 utilities (bloqueos, warnings, sync background, health check)
+├── hooks/             # 13 hooks reactivos + 6 utilidades manuales + 1 script .sh extra (bloqueos, warnings, sync, healthcheck, drift-check)
+├── mcp.registry.json  # inventario legible de MCPs (leído por mcp-registry.js y healthcheck.js)
 ├── settings.json      # config de hooks + Engram MCP
 ├── settings.local.json # permisos para agentes
 ├── codepen-vault/     # efectos CodePen aprobados (decorativo)
