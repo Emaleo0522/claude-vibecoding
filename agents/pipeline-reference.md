@@ -338,3 +338,36 @@ Ninguna key es obligatoria — el pipeline degrada graciosamente: image-agent pr
 
 ### Coordinacion cross-agent
 Ver tabla completa de inputs/outputs por agente en `orquestador.md` § "Que cajon lee cada agente".
+
+## Anti-generic + QA hardening (fix 2026-04-19 — movido desde CLAUDE.md global 2026-07-02, plan #3521)
+
+El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falsos positivos de QA. Introducido tras auditoría que reveló que un proyecto (VetConnect) fue aprobado con landing plano + auth roto.
+
+### Guardrails anti-generic
+- **brand.json schema v2** (brand-agent): `mood_vector` 8-dim, `reference_ids`, `anti_patterns_HIGH` ejecutables, `typography_pair`, `extraction_metadata`. Ver `brand-agent.md` § "Estructura de brand.json (schema v2)".
+- **ui-designer Paso 0e — SaaS Teal Default Detector**: 7 reglas T1-T7 que bloquean paleta teal+Inter+cards-genéricas+shadow-sm para moods editorial/luxury/brutalist/immersive/playful/y2k/industrial. Self-audit pre-return con `AUTO_AUDIT` en Return Envelope. T4 v2 (2026-07-01): catálogo de 9 arquetipos de hero + anti-repetición vía `vibecoding/hero-archetype-log`.
+- **frontend-developer Pre-return Audit**: 5 grep commands sobre código generado (teal hardcoded, Inter heading, shadow uniforme, hero media, motion coherente con dials). `AUTO_AUDIT` en tarea-{N}.
+- **Taste-skill dials obligatorios**: frontend-developer consulta `intent.dials_suggested` antes de elegir Tier de animación (CSS/Framer/GSAP) y layout (simétrico/asimétrico).
+
+### QA hardening — defensa anti-falso-positivo
+- **evidence-collector Paso 4b**: verifica AUTO_AUDIT upstream (ui-designer + frontend-developer) PASS antes de screenshots.
+- **evidence-collector Paso 4c**: Visual Fidelity LLM-as-judge — compara screenshot vs `visual-direction.reference_for_qa` en 5 dimensiones (palette, typography, composition, mood, density). Threshold ≥7/10. Mood Vector divergencia ≤10. Guardrail anti-derivative.
+- **evidence-collector Paso 4d**: E2E flows obligatorios en tareas auth/CRUD/forms (signup→login→dashboard→logout, error states).
+- **evidence-collector Paso 4e**: Network inspection OBLIGATORIA — Mixed Content, local leak, status 0/4xx/5xx.
+- **evidence-collector Paso 4f**: testea contra `deploy_url` si existe (no localhost).
+- **reality-checker Paso 2B — False Positive Guardrail**: re-ejecuta 2-3 qa-{N} PASS aleatorios, si falla → blocker crítico.
+- **reality-checker Paso 4B — Mixed Content dinámico**: browser_navigate + network inspection runtime (no solo grep estático).
+- **reality-checker Paso 8 — Design Tools Usage Audit**: verifica intent + visual-direction + brand.json schema v2 + AUTO_AUDITs presentes.
+- **reality-checker Paso 9 — Evidence Trail Mandatory**: cada PASS cita path de screenshot/log/URL.
+- **reality-checker Paso 5 R2+R4 — ejes 4R faltantes** (patrón gentle-ai v1.40.1, añadido 2026-06-14): R2 claridad/código muerto + R4 resiliencia/manejo de fallos, como revisores read-only "find don't fix". Completa cobertura 4R (R1=security-engineer, R3=evidence-collector). Flujo crítico sin estado de error → blocker.
+- **api-tester ESCALATE**: si `api-spec` missing y proyecto tiene backend → NO fallback silencioso, BLOQUEADOR al orquestador.
+- **performance-benchmarker deploy_url obligatorio**: PageSpeed Insights contra URL pública cuando existe.
+
+### Topic keys extendidos en Engram (añadidos al pipeline)
+- `{proyecto}/intent` — Fase 1 Paso 0 (Intent Clarifier): mood_preset, dials_suggested, reference_source, anti_patterns_HIGH
+- `{proyecto}/visual-direction` (schema extendido) — Fase 2 Paso 1.5: extraction_status, extracted_palette, extracted_typography, reference_for_qa, awesome_design_md_refs
+- `{proyecto}/branding` (schema v2) — Fase 2B: mood_vector, reference_ids, anti_patterns_HIGH ejecutables
+- `{proyecto}/design-system` (extendido con AUTO_AUDIT) — Fase 2: 7 reglas T1-T7 PASS
+- `{proyecto}/qa-{N}` (extendido con AUTO_AUDIT_VERIFIED, VISUAL_FIDELITY, NETWORK_AUDIT, E2E_FLOWS) — Fase 3
+- `{proyecto}/certificacion` (extendido con DESIGN_TOOLS_AUDIT, FALSE_POSITIVE_GUARDRAIL, MIXED_CONTENT_DYNAMIC, EVIDENCE_TRAIL) — Fase 4
+- `vibecoding/hero-archetype-log` (project=claude-vibecoding, scope=personal, CROSS-PROYECTO, una sola observation con mem_update-append) — ui-designer lo consulta ANTES de elegir arquetipo de hero (regla T4 v2) y lo actualiza tras fijar el design-system. Anti-repetición enforced: no repetir el arquetipo de los últimos 2 proyectos. Detalle en ui-designer.md § "Anti-repetición de arquetipo hero" (ADR #3517 P4.3/P4.4)

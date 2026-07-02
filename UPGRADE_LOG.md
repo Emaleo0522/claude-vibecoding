@@ -1,5 +1,23 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Optimización tokens/ruido — CLAUDE.md -31% + orquestador -24% — 2026-07-02 ✅
+
+### Resumen
+
+Análisis sección-por-sección (2 agentes paralelos con medición real) de CLAUDE.md global (~12.6K tok, carga en TODA sesión) y orquestador.md (~24K tok, carga al activar pipeline). Diagnóstico: el problema no es presupuesto sino **dilución de atención** — reglas críticas enterradas pierden adherencia en sesiones largas. Criterio rector: extraer SOLO con trigger de carga 100% confiable; si hay que saber la regla ANTES del error (Overrides Windows, Best Practices CSS, Zen, Checkpoint humano), queda inline aunque cueste tokens. Plan completo en Engram #3521.
+
+1. **Regresión 44f4058 reconciliada** (commit c8a73cc): Mailbox y Modo Diagnóstico habían vuelto como copia completa sin puntero a sus refs — ahora resumen 4 líneas + regla de seguridad inline + puntero (patrón simplicity-first).
+2. **Nueva `agents/engram-save-reference.md`**: protocolo "guarda en engram" (7 pasos) + save robusto anti silent-fail (3 capas) + apéndice lifecycle `needs_review` movidos desde CLAUDE.md. Inline quedan las invariantes (project= explícito, scope=personal, verify post-save, **prohibición SSH sin confirmación literal**).
+3. **QA hardening + topic keys extendidos** movidos a `pipeline-reference.md` (solo corren en pipeline; cada agente ya lleva sus reglas). CLAUDE.md queda con resumen 3 líneas + puntero.
+4. **Dedup free-first**: la tabla de agentes creativos + setup Cloudflare + backends descartados estaba DUPLICADA entre CLAUDE.md y pipeline-reference.md (y desactualizada en CLAUDE.md) — ahora única fuente en la ref.
+5. **Nueva `agents/orquestador-vdc-reference.md`** (~16KB → ref de 1 uso): Pasos 1.5a/b/c completos (extracción polimórfica, pre-fill 8 decisiones, template, schema del save). Stub inline conserva: cuándo se ejecuta, prerequisito intent, esencia anti-loop máx 3 "rehacer preset", NO "decidí vos", y el Phase Gate.
+6. **Nueva `agents/orquestador-fase45-reference.md`**: detalle de FASE 4 (4 pasos con tiers, skip conditions, No-JS handler) + FASE 5 (git→deployer). Stub inline conserva las reglas inviolables: orden de re-certificación (solo seo-full + reality-checker se repiten), límite 3 ciclos, reality-checker fallido bloquea, **pre-autorización git/deploy**.
+7. Punteros actualizados: orquestador:196 (lifecycle → ref), CLAUDE.md Reglas clave, whitelist mailbox. AGENTS.md indexa las 3 refs nuevas con triggers/skip.
+
+**Resultado medido**: CLAUDE.md 12.6K → 8.6K tok (-31%) · orquestador.md 24.1K → 18.2K tok (-24%). Las 4 extracciones previas (intent-clarifier, fase-2b, modificación, edge-cases) se auditaron como correctas — no se revirtió nada.
+
+**Verificación**: grep 0 punteros rotos a secciones movidas · frontmatter válido en las 3 refs · empalmes del orquestador verificados línea por línea (1380→961) · extracción verbatim vía sed (cero retipeo) · backup pre-cirugía en scratchpad · drift-check CLEAN post-push.
+
 ## Composition Variety System (P4) — catálogo de arquetipos hero + espacios fluidos — 2026-07-01 ✅
 
 ### Resumen

@@ -35,6 +35,9 @@
 | `orquestador-edge-cases` | Error subagente / `ambiguous_project` / Engram MCP no responde / Playwright MCP no disponible / debugging pipeline fallido | `orquestador-edge-cases-reference.md` | Flujo normal sin errores |
 | `external-skills` | Frontend/xr-immersive dev en Fase 3 detecta gap NO cubierto por refs internas (gsap, scroll-storytelling, creative-coding, advanced-effects, reactive-audio, codepen-vault) Y usuario autoriza `npx skills add` | `external-skills-reference.md` | Ref interna ya cubre el efecto · proyecto fuera de Fase 3 · sin autorización explícita del usuario |
 | `simplicity-first` | Agente o Claude normal duda si su output natural va corto o largo. Reglas core ya en CLAUDE.md global § "Simplicity First en outputs"; cargar el ref solo cuando se necesitan ejemplos buenos/malos extendidos | `simplicity-first-reference.md` | Output trivial donde la respuesta es obvia (1 línea) — la regla core del CLAUDE.md ya alcanza |
+| `engram-save` | Usuario pide guardar memoria ("guardá", "guardalo", "remember this") o hay que diagnosticar sync cloud. Invariantes core ya en CLAUDE.md § "Protocolos de guardado" | `engram-save-reference.md` | Save simple donde las invariantes inline alcanzan (project= explícito + scope=personal + verify) |
+| `orquestador-vdc` | Orquestador llega a Fase 2 Paso 1.5 (Visual Direction Checkpoint) en proyecto con UI | `orquestador-vdc-reference.md` | API pura / CLI / backend-only (`intent.ui_applicable=false`) |
+| `orquestador-fase45` | Orquestador: todas las tareas de Fase 3 en PASS → entra a Fase 4 | `orquestador-fase45-reference.md` | Pipeline aún en Fases 1-3 |
 
 ## Convenciones
 
