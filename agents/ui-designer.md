@@ -121,12 +121,33 @@ IF intent.mood_preset IN [editorial-magazine, soft-luxury, neo-brutalism,
         BLOCK → "Sin contraste tipográfico. En mood {mood_preset} heading y
                 body deben ser familias distintas (ej. serif + sans, display + mono)."
 
-  REGLA T4 — Estructura hero genérica:
+  REGLA T4 — Estructura hero genérica (v2 — 2026-07-01, ADR #3517 P4.3):
+    CATÁLOGO DE ARQUETIPOS — elegir 1 EXPLÍCITAMENTE (coherente con mood +
+    visual-direction.hero) y documentarlo en el design-system:
+      A1 split-classic    (texto izq ~50% + media der)
+      A2 split-inverted   (media izq + texto der)
+      A3 full-bleed-overlay (media edge-to-edge + texto superpuesto)
+      A4 editorial-centered (tipografía centrada, media secundaria o ausente)
+      A5 typographic-only (display gigante, sin media dominante)
+      A6 asymmetric-broken (grid roto, offset/overlap deliberado)
+      A7 collage-stack    (múltiples medias apiladas/rotadas)
+      A8 bento-grid       (celdas modulares)
+      A9 diagonal-flow    (eje diagonal / clip-path)
+
     IF hero.structure MATCHES "centered-headline + subtext + 2-ctas + 3-feature-cards":
       IF mood_preset != swiss-minimal:
-        BLOCK → "Estructura hero SaaS estándar en mood {mood_preset}. Revisar
-                pattern de style-presets.csv columna 'Reference Sites' y romper
-                simetría — asimetría, imagen dominante, split 70/30, etc."
+        BLOCK → "Estructura hero SaaS estándar en mood {mood_preset}. Elegir
+                arquetipo A3-A9 del catálogo."
+    IF archetype == A1 (split-classic):
+      IF mood_preset IN [neo-brutalism, y2k-revival, immersive-storytelling,
+                         soft-luxury, playful-illustrated, editorial-magazine]:
+        BLOCK → "A1 split-classic es el default estadístico del modelo — mode
+                collapse documentado 2026-07-01 (5 proyectos consecutivos con el
+                mismo esqueleto pese a moods distintos). En mood expresivo elegir
+                A3-A9, salvo justificación explícita escrita en el design-system."
+    IF archetype REPITE el usado en los últimos 2 proyectos (log Engram — ver
+       "Anti-repetición de arquetipo hero" más abajo):
+      BLOCK → "Arquetipo {X} ya usado en los últimos 2 proyectos. Elegir otro."
 
   REGLA T5 — Border radius uniforme:
     IF all_components.border_radius IN [8, 12, 16]
@@ -154,20 +175,33 @@ IF intent.mood_preset IN [editorial-magazine, soft-luxury, neo-brutalism,
       IF Nivel 1 NO es full-bleed (section bg con max-w fijo):
         BLOCK → "Section bg debe ser full-bleed en mood {mood_preset}."
       IF Nivel 2 envelope sin max-w (full-bleed total):
-        BLOCK → "Envelope de contenido sin max-w disperso en monitores ultrawide
+        BLOCK → "Envelope de contenido sin cap disperso en monitores ultrawide
                 (2K/4K/21:9). Mood {mood_preset} pide `container-bold`:
-                max-width 1600-1920px + padding-x max(24px,5vw) + mx-auto.
+                max-width min(94vw, 115rem) /* ancla 1600-1920px */ +
+                padding-x max(24px,5vw) + mx-auto.
                 Esto preserva bg full-bleed pero agrupa atomic components."
-      IF Nivel 2 envelope con max-w ≤ 1280px:
-        BLOCK → "Envelope ≤1280px se siente SaaS-genérico en mood {mood_preset}.
-                Usar container-bold (1600-1920px)."
+      IF Nivel 2 envelope con cap px rígido angosto (≤ ~1280px / 80rem):
+        BLOCK → "Envelope angosto se siente SaaS-genérico en mood {mood_preset}.
+                Usar container-bold con fórmula fluida: min(94vw, 115rem)."
     IF mood_preset IN [swiss-minimal, editorial-magazine, dashboard-dense]:
-      IF Nivel 2 envelope sin max-w o > 1400px:
-        WARN → "Mood {mood_preset} se beneficia de container-fixed (≤1280px)
-                para legibilidad."
+      IF Nivel 2 envelope sin max-w o cap > ~1400px:
+        WARN → "Mood {mood_preset} se beneficia de container-fixed
+                (min(92vw, 80rem), ancla ~1280px) para legibilidad."
+
+    NOTA doctrina fluida (2026-07-01): los valores px son ANCLAS orientativas.
+    La fuente canónica de fórmulas y doctrina es ux-architect.md § "Container
+    strategy by mood" + § "Doctrina de espacio fluido". No repetir valores acá
+    fuera de los mensajes de bloqueo.
 ```
 
 **Acción al bloqueo**: documentar en DAG State qué regla falló + ajustar design-system antes de devolver. Si después de 2 reintentos internos sigue fallando, reportar BLOQUEADOR al orquestador con: "SaaS Teal Default detectado, no pude romper el patrón — necesito input del usuario sobre {dimensión específica}".
+
+**Anti-repetición de arquetipo hero (2026-07-01 — enforced, ADR #3517 P4.4)**:
+1. ANTES de elegir arquetipo (T4): leer el log en Engram con 2 pasos obligatorios —
+   `mem_search("vibecoding/hero-archetype-log", project="claude-vibecoding", scope="personal")` → `mem_get_observation(id)`.
+   Si los últimos 2 proyectos del log usaron el arquetipo candidato → elegir otro del catálogo.
+2. DESPUÉS de fijar el design-system: actualizar el MISMO log con `mem_update(observation_id, ...)` appendeando una línea `{YYYY-MM-DD} · {proyecto} · {arquetipo}` — NO crear observation nueva (anti-duplicados). Si el log no existe aún, crearlo una única vez con `mem_save(topic_key="vibecoding/hero-archetype-log", project="claude-vibecoding", scope="personal", title="Hero archetype log — registro cross-proyecto")`.
+3. Si Engram no responde → degradación graceful: NO fallar la tarea; documentar en NOTAS del Return Envelope "archetype-log no consultado (Engram down)" y evitar A1 split-classic por default.
 
 **Checklist diferenciación obligatoria** (complemento — el design-system debe incluir EXPLÍCITAMENTE):
 
@@ -408,7 +442,7 @@ AUTO_AUDIT:
   T1_palette_not_teal: PASS | FAIL ({hex detectado})
   T2_heading_not_generic: PASS | FAIL ({familia detectada})
   T3_typographic_contrast: PASS | FAIL ({heading}={body})
-  T4_hero_structure_varied: PASS | FAIL ({estructura detectada})
+  T4_hero_structure_varied: PASS ({arquetipo A1-A9 elegido}) | FAIL ({estructura detectada})
   T5_radius_coherent_with_mood: PASS | FAIL
   T6_shadow_coherent_with_mood: PASS | FAIL
   T7_envelope_strategy: PASS | FAIL ({estrategia detectada})

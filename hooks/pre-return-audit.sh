@@ -67,8 +67,15 @@ add_finding() {
 # R1 — container max ≤1280 (SaaS feel). Permite excepciones documentadas (prose, form).
 for f in $RELEVANT; do
   case "$f" in *.css|*.scss)
-    # Buscar max-width:1[01]XXpx o --max:1[01]XXpx en :root o equivalente
-    HITS=$(grep -nE '(max-width|--max|--envelope-max|--container-xl):\s*1[01][0-9][0-9]px' "$f" 2>/dev/null | grep -vE 'prose|2xl|form|input|--container-(sm|md|lg)' | head -3)
+    # Buscar max-width:1[0-2]XXpx o --max:1[0-2]XXpx en :root o equivalente
+    # Fix 2026-07-01: el rango anterior 1[01] solo cubría 1000-1199px — los valores
+    # más comunes (1200px, 1280px) escapaban al detector pese a que el mensaje
+    # decía "1180-1280". Ampliado a 1[012] = 1000-1299px. Ver ADR #3517 P4.
+    # Doctrina fluida 2026-07-01 (P4.5): el output recomendado es fórmula
+    # min()/clamp() (ux-architect § "Doctrina de espacio fluido") — esas fórmulas
+    # NO matchean este grep y eso es intencional: R1 detecta el anti-patrón
+    # (cap px rígido angosto), no audita el patrón correcto.
+    HITS=$(grep -nE '(max-width|--max|--envelope-max|--container-xl):\s*1[012][0-9][0-9]px' "$f" 2>/dev/null | grep -vE 'prose|2xl|form|input|--container-(sm|md|lg)' | head -3)
     if [ -n "$HITS" ]; then
       add_finding "R1[container-cap-saas-feel]: $f → max-width 1180-1280px detectado en container global. Regla ux-architect.md: usar 1600-1920px para moods bold. Excepciones: max-w-prose (texto), forms. Líneas: $(echo "$HITS" | head -1 | cut -d: -f1)"
     fi

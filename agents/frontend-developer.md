@@ -609,7 +609,7 @@ El script corre 5 checks determinísticos (grep patterns compilados):
 
 **Check adicional T7 — Envelope strategy (NUEVO — 2026-05-08, refinado)**:
 
-Hay 2 niveles que NO confundir: section bg full-bleed (Nivel 1) vs envelope de contenido (Nivel 2). Para moods bold, el bg debe ser full-bleed pero el contenido necesita max-width 1600-1920px (`container-bold`) para no dispersarse en ultrawide.
+Hay 2 niveles que NO confundir: section bg full-bleed (Nivel 1) vs envelope de contenido (Nivel 2). Para moods bold, el bg debe ser full-bleed pero el contenido necesita un cap fluido `min(94vw, 115rem)` /* ancla 1600-1920px */ (`container-bold`) para no dispersarse en ultrawide. Doctrina canónica de espacio fluido: ux-architect.md § "Doctrina de espacio fluido" (px = anclas orientativas, nunca valor final pelado).
 
 ```bash
 # Solo si mood_preset ∈ {neo-brutalism, y2k-revival, immersive-storytelling,
@@ -625,15 +625,15 @@ grep -rE "maxWidth:\s*['\"]?(1[0-2][0-9]{2}|[0-9]{1,3})px" src/components/ 2>/de
 # Check 3: AUSENCIA total de max-w / mx-auto en navbar y footer-grid
 # (full-bleed sin cap = dispersión en ultrawide)
 grep -lE "<nav|role=.navigation" src/components/Navbar* | while read f; do
-  if ! grep -E "max-w-\[1[6-9][0-9]{2}px\]|max-w-\[20[0-9]{2}px\]|mx-auto" "$f" > /dev/null; then
+  if ! grep -E "max-w-\[1[6-9][0-9]{2}px\]|max-w-\[20[0-9]{2}px\]|max-w-\[(min|clamp)\(|mx-auto" "$f" > /dev/null; then
     echo "WARN: Navbar sin container-bold cap → dispersa en ultrawide ($f)"
   fi
 done
 ```
-- Check 1 → FAIL: envelope demasiado tight para mood bold. Subir a `max-w-[1800px]`.
-- Check 2 → FAIL: inline maxWidth ≤1280 → SaaS feel. Subir a 1600-1920.
+- Check 1 → FAIL: envelope demasiado tight para mood bold. Subir al cap fluido `max-w-[min(94vw,115rem)]`.
+- Check 2 → FAIL: inline maxWidth ≤1280 → SaaS feel. Subir al cap fluido (ancla 1600-1920px).
 - Check 3 → WARN: navbar/footer sin cap → dispersa en monitores ultrawide.
-- Refactor recomendado: `mx-auto + max-w-[1800px] + px-[max(24px,5vw)]` para envelope de contenido. Section bg queda full-bleed (sin tocar).
+- Refactor recomendado: `mx-auto + max-w-[min(94vw,115rem)] + px-[max(24px,5vw)]` para envelope de contenido (px fijos tipo `max-w-[1800px]` aceptables solo como fallback documentado). Section bg queda full-bleed (sin tocar).
 - En moods conservadores (swiss-minimal/editorial/dashboard-dense): el envelope ≤1280px es OK; omitir Check 1+2.
 
 Output: YAML con `saas_teal_check`, `heading_font_check`, `hero_media_check`, `motion_coherent`, `shadow_coherent`, `envelope_strategy`, `fail_count`, `verdict`.

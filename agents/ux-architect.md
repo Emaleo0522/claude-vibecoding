@@ -134,7 +134,7 @@ El CSS foundation NO es un template fijo. Los valores de tipografía, spacing, m
   --container-sm: 640px;
   --container-md: 768px;
   --container-lg: 1024px;
-  --container-xl: [spec]; /* 1280px normal, 1440px para inmersivo, 960px para editorial */
+  --container-xl: [spec]; /* FLUIDO, nunca px fijo pelado: fórmula min({92-94}vw, {ancla-del-mood}) — anclas orientativas: ~80rem/1280px conservador, ~90rem/1440px inmersivo, ~60rem/960px editorial. Ver "Container strategy by mood" + "Doctrina de espacio fluido" */
 
   /* Scroll behavior — evita que el sticky header tape los anchor targets */
   --scroll-pad-top: 5.5rem; /* ajustar a la altura real del header sticky + 1rem de aire */
@@ -149,11 +149,11 @@ El CSS foundation NO es un template fijo. Los valores de tipografía, spacing, m
 
 **Nivel 2 — Envelope de contenido (atomic components, navbar, footer-grid, content blocks)**:
 
-| Mood preset | Estrategia envelope | Tokens recomendados |
+| Mood preset | Estrategia envelope | Tokens recomendados (fórmula fluida — el px es ANCLA orientativa, no valor final) |
 |---|---|---|
-| swiss-minimal, editorial-magazine, dashboard-dense | `container-fixed` | `--envelope-max: 1280px; --envelope-px: 24px;` |
-| balanced, corporate-modern | `container-fixed` | `--envelope-max: 1280px; --envelope-px: max(24px, 4vw);` |
-| neo-brutalism, y2k-revival, immersive-storytelling, soft-luxury, playful-illustrated, monochrome-industrial | **`container-bold`** (NUEVO) | `--envelope-max: 1800px; --envelope-px: max(24px, 5vw);` |
+| swiss-minimal, editorial-magazine, dashboard-dense | `container-fixed` | `--envelope-max: min(92vw, 80rem); --envelope-px: 24px;` /* ancla ~1280px */ |
+| balanced, corporate-modern | `container-fixed` | `--envelope-max: min(92vw, 80rem); --envelope-px: max(24px, 4vw);` /* ancla ~1280px */ |
+| neo-brutalism, y2k-revival, immersive-storytelling, soft-luxury, playful-illustrated, monochrome-industrial | **`container-bold`** | `--envelope-max: min(94vw, 115rem); --envelope-px: max(24px, 5vw);` /* ancla ~1840px — rango sano 1600-1920px */ |
 
 **Por qué `container-bold` en moods bold y NO full-bleed total**:
 > En monitores ultrawide (2K, 4K, 21:9), un envelope sin max-width hace que navbar, footer, hero asimétrico y otros componentes con relaciones intencionales entre items (brand-nav-CTA en navbar, columnas de footer, hero 40/60) se dispersen — los elementos se sienten "perdidos" porque las distancias entre ellos crecen con el viewport pero los items no escalan en proporción. La solución es preservar bg full-bleed (impacto visual) pero agrupar el contenido a un cap generoso (1600-1920px) que se sienta amplio en monitores normales sin colapsar en ultrawide.
@@ -163,7 +163,17 @@ Reglas:
 - **Section bg** (Nivel 1) SIEMPRE full-bleed.
 - **Atomic envelopes** (Nivel 2 — navbar, footer-grid, hero asimétrico, menu grid) usan la estrategia del mood.
 - **Tipografía recomendada en moods bold**: usar `clamp()` para que el texto crezca con el viewport (`font-size: clamp(2rem, 1rem + 3vw, 5rem)`). No es obligatorio pero evita que titles se sientan chicos en 4K.
-- NUNCA usar `mx-auto` + `max-w-1280px` rígido en moods bold — usar 1600-1920px para no caer en SaaS feel.
+- NUNCA usar `mx-auto` + un max-width px rígido y angosto (~1280px) en moods bold — declarar el envelope con fórmula fluida (`min(94vw, 115rem)`, ancla 1600-1920px) para no caer en SaaS feel.
+
+### Doctrina de espacio fluido (2026-07-01 — input del usuario, ADR Engram #3517 P4.5)
+
+> El manejo de espacio NO se resuelve con tamaños hardcodeados sino con **indicaciones de cómo repartirlo según la vista y la necesidad**. Operativamente:
+> 1. Dimensiones de layout SIEMPRE como fórmula relativa (`min()`, `clamp()`, `%`, `vw`/`ch`/`rem`), con el px solo como **ancla orientativa en comentario** — nunca como valor final pelado.
+> 2. El envelope de contenido **escala con el viewport** hasta el cap del mood (tabla arriba). Márgenes laterales muertos y grandes en pantallas anchas son un **bug de diseño**, no un default aceptable.
+> 3. Texto largo conserva su propio riel (`max-w-prose` ~65ch) independiente del envelope global.
+> 4. Responsive-first: cada decisión de espacio se toma **por vista** (mobile / desktop / ultrawide), no una vez para todas. En mobile mandan legibilidad y touch targets; en desktop/ultrawide manda el aprovechamiento proporcional del ancho.
+>
+> Esta sección es la **fuente canónica** de la doctrina de espacio. ui-designer (T7) y frontend-developer (checks de envelope) la espejan — si esto cambia, actualizar ambos en sincronía (SYNC-1/SYNC-4 del mapa de dependencias, ADR #3517).
 
 [data-theme="dark"] {
   color-scheme: dark;

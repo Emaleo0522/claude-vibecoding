@@ -150,7 +150,7 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 
 **Cuándo NO pedir checkpoint (para no quemar al usuario):**
 
-- Regla ya enforced por la arquitectura (ej: `--max ≤1280 = SaaS feel`) → solo aplicar y comunicar qué se aplicó.
+- Regla ya enforced por la arquitectura (ej: la container strategy por mood de `ux-architect.md` § "Container strategy" — fuente canónica única, no repetir valores acá) → solo aplicar y comunicar qué se aplicó.
 - Bug fix con criterio único (typo, error obvio) → fixear.
 - Decisión técnica interna equivalente (ej: `position: sticky` vs `position: fixed` cuando da igual al usuario) → aplicar.
 - Decisión explícitamente delegada por el usuario (ej: *"decidí vos las cosas técnicas"*) → respetar el contrato.
@@ -341,7 +341,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `config-protection` | **BLOQUEA** secrets (.env, .pem, .key). **ADVIERTE** configs de linting |
 | `quality-gate` | **ADVIERTE** debugger, .only(), @ts-ignore, secrets hardcodeados |
 | `console-log-warning` | **ADVIERTE** console.log/warn/error en produccion (ignora tests) |
-| `pre-return-audit` | **ADVIERTE** reglas universales CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding-top, navbar mobile sin hamburger, prefers-reduced-motion ausente con >5 animaciones. Async, fail-open. |
+| `pre-return-audit` | **ADVIERTE** reglas universales CSS/HTML/JSX: container global angosto 1000-1299px (regla canónica de envelope por mood: `ux-architect.md` § "Container strategy"), fuentes declaradas sin link, anchor scroll sin scroll-padding-top, navbar mobile sin hamburger, prefers-reduced-motion ausente con >5 animaciones. Async, fail-open. |
 | `suggest-compact` | **ADVIERTE** cada ~50 tool calls (async) |
 | `pre-compact-engram` | **GUARDA** snapshot a disco antes de compactar (v2.2) |
 | `cost-tracker` | **REGISTRA** tool calls por categoria (async) |
@@ -392,6 +392,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 - `{proyecto}/design-system` (extendido con AUTO_AUDIT) — Fase 2: 7 reglas T1-T7 PASS
 - `{proyecto}/qa-{N}` (extendido con AUTO_AUDIT_VERIFIED, VISUAL_FIDELITY, NETWORK_AUDIT, E2E_FLOWS) — Fase 3
 - `{proyecto}/certificacion` (extendido con DESIGN_TOOLS_AUDIT, FALSE_POSITIVE_GUARDRAIL, MIXED_CONTENT_DYNAMIC, EVIDENCE_TRAIL) — Fase 4
+- `vibecoding/hero-archetype-log` (project=claude-vibecoding, scope=personal, CROSS-PROYECTO, una sola observation con mem_update-append) — ui-designer lo consulta ANTES de elegir arquetipo de hero (regla T4 v2) y lo actualiza tras fijar el design-system. Anti-repetición enforced: no repetir el arquetipo de los últimos 2 proyectos. Detalle en ui-designer.md § "Anti-repetición de arquetipo hero" (ADR #3517 P4.3/P4.4)
 
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram

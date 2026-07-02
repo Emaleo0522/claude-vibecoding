@@ -1,5 +1,23 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Composition Variety System (P4) — catálogo de arquetipos hero + espacios fluidos — 2026-07-01 ✅
+
+### Resumen
+
+Fix a la monocultura de composición detectada con evidencia real: 5 webs generadas por el pipeline compartían el MISMO esqueleto de hero (eyebrow + H1 izq + 2 CTAs + media der) pese a moods/paletas correctamente variados, más márgenes laterales muertos en desktop. Root causes verificadas en código; deriva del Architecture Review de nexu-io/open-design (ADR Engram #3516/#3517, delta #3519).
+
+1. **`hooks/pre-return-audit.sh` R1 — bug de regex fixeado**: el rango `1[01][0-9][0-9]px` solo cubría 1000-1199px — `1200px`/`1280px` (los valores más comunes del anti-patrón) escapaban al detector pese a que el mensaje decía "1180-1280". Ampliado a `1[012]` (1000-1299px). Por esto los intentos previos de arreglar el responsive "no funcionaban": el detector nunca disparaba para el caso real.
+
+2. **`agents/ui-designer.md` — REGLA T4 v2 con catálogo de 9 arquetipos de hero** (A1 split-classic … A9 diagonal-flow): además del centered genérico (v1), bloquea A1 split-classic en moods expresivos (mode collapse documentado: al bloquear solo el hero centrado, el modelo convergió al arquetipo adyacente — las reglas negativas no producen variedad, solo desplazan la moda) y bloquea repetir el arquetipo de los últimos 2 proyectos. Campo AUTO_AUDIT `T4_hero_structure_varied` conservado sin rename (valor extendido a `PASS ({arquetipo})`) — backward-compatible con evidence-collector/reality-checker.
+
+3. **Anti-repetición vía Engram**: nuevo topic key `vibecoding/hero-archetype-log` (project=claude-vibecoding, scope=personal, una observation con mem_update-append). ui-designer consulta antes de elegir y appendea después. Degradación graceful si Engram no responde. Seed inicial: los 5 proyectos de la evidencia (todos A1).
+
+4. **`agents/ux-architect.md` — nueva sección canónica "Doctrina de espacio fluido"** (input del usuario): dimensiones de layout SIEMPRE como fórmula relativa (`min()`/`clamp()`/`%`/`vw`) con el px solo como ancla orientativa en comentario; el envelope escala con el viewport (márgenes muertos en pantallas anchas = bug de diseño, no default); texto en `max-w-prose`; responsive-first por vista. Tabla container strategy migrada a fórmulas: `container-fixed` → `min(92vw, 80rem)` /* ancla ~1280px */, `container-bold` → `min(94vw, 115rem)` /* ancla ~1840px */. Espejos sincronizados: ui-designer T7 y frontend-developer (checks de envelope + Check 3 acepta `min(`/`clamp(`).
+
+5. **`CLAUDE.md` — doctrina contradictoria eliminada** (anti-restatement, patrón del review open-design G1): las 2 menciones "`--max ≤1280 = SaaS feel`" (ejemplo de checkpoint + tabla de hooks) se leían como objetivo universal y contradecían a ux-architect ("1600-1920 en moods bold"). Ahora apuntan a `ux-architect.md` § "Container strategy" como fuente canónica única.
+
+**Verificación**: mapa de dependencias previo por subagente Explore (7 áreas, puntos SYNC-1..7) · regex testeado contra casos que antes escapaban · `bash -n` OK · grep 0 menciones ≤1280 residuales · campo T4 verificado sin consumidores exact-name aguas abajo · diff repo↔local = solo estos cambios.
+
 ## Observabilidad: healthcheck unificado + drift-check + MCP registry — 2026-06-19 ✅
 
 ### Resumen
