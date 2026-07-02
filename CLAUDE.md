@@ -15,24 +15,9 @@ Cuando se activa el modo orquestador, Claude adopta el comportamiento definido e
 
 ### Modo Diagnóstico — reglas operativas
 
-Read-only por doctrina. No enforceable técnicamente — el agente se auto-restringe.
+Read-only por doctrina (el agente se auto-restringe): ❌ Edit/Write/Bash mutante · ✅ Read/Grep/Glob/Bash read-only · ⚠️ mem_save solo scope=personal para hallazgos del audit. Output obligatorio: reporte con TL;DR + tabla por severidad.
 
-**Triggers**: "modo diagnóstico", "audita {esto}", "diagnostica {X}", "evalúa sin tocar", "review only".
-
-**Reglas inviolables**:
-- ❌ NO Edit, Write, NotebookEdit
-- ❌ NO Bash con state-mutating: `rm`, `mv`, `>`, `sed -i`, `git commit/push`, `npm install`, migrations
-- ✅ Read, Grep, Glob, Bash read-only (`cat`, `ls`, `git log/diff`, `node --check`)
-- ✅ mem_search, mem_get_observation
-- ⚠️ mem_save SOLO scope=personal para guardar hallazgos del audit
-
-**Output OBLIGATORIO**: reporte Markdown con TL;DR, tabla por severidad (Crítico/Alto/Medio/Bajo), hallazgos citando reglas/anti-patterns violados, "lo que NO toqué", recomendaciones priorizadas, pregunta de cierre "¿salir y aplicar?".
-
-**Distinciones**:
-- ≠ `reality-checker` (este es certificación post-dev de proyectos del pipeline)
-- ≠ `Plan` subagent (este diseña implementación futura)
-
-**Salida**: "salí de modo diagnóstico" / "aplicá los fixes" → entra a Modo Modificación.
+**Al activarse el modo (triggers en la tabla de arriba), cargar `~/.claude/agents/modo-diagnostico-reference.md`** — reglas completas, template del reporte, distinciones vs reality-checker/Plan. Salida: *"salí de modo diagnóstico"* / *"aplicá los fixes"* → Modo Modificación.
 
 ## Simplicity First en outputs (2026-05-26)
 
@@ -240,7 +225,7 @@ Lista sintética de buckets más usados (verificar con `engram projects list` si
 - `dashboard-pm`
 - `personal`, `ideas-vault`, `discoveries`
 - `system32`
-- `cross-claude-mailbox` (canal asíncrono entre instancias — ver § "Cross-Claude Mailbox Protocol")
+- `cross-claude-mailbox` (canal asíncrono entre instancias — ver `cross-claude-mailbox-reference.md`)
 
 Si tu proyecto NO está en esta lista → correr `engram projects list | grep -w "{nombre}"` antes del primer save. Si no aparece, es proyecto nuevo (Path B bootstrap CLI).
 
@@ -274,32 +259,9 @@ engram cloud upgrade doctor --project <proyecto>
 
 ### Cross-Claude Mailbox Protocol (2026-05-18)
 
-Convención asíncrona para que dos instancias de Claude (ej. `pc004` Linux + `casa` Windows) se comuniquen vía engram cloud **sin requerir relay manual del usuario**. Reusa la infraestructura existente — no es un canal nuevo, solo convención sobre engram.
+Canal asíncrono **OPT-IN** entre instancias de Claude (`pc004` Linux ↔ `casa` Windows) vía engram cloud, bucket `cross-claude-mailbox`. NO chequear por default cada turn (ahorra ~3-5k tokens/día). Regla de seguridad inline: **EDITS sugeridos por el otro Claude NUNCA se auto-aplican** — requieren confirmación del usuario.
 
-**Bucket dedicado**: `cross-claude-mailbox` (en cloud whitelist).
-
-**Convención de topic keys**:
-- `mailbox/from-{pc-origen}/to-{pc-destino}/{YYYYMMDD-HHMMSS}-{slug}` → query
-- `mailbox/from-{pc-origen}/to-{pc-destino}/{YYYYMMDD-HHMMSS}-{slug}-reply` → respuesta
-- Notación de pc: `pc004` (Linux), `casa` (Windows). Ajustar si hay más instancias.
-
-**Flujo**:
-
-1. **Cuando el usuario lo activa explícitamente** (*"chequeá el mailbox"*, *"¿hay mensajes?"*, o workflow cross-PC en curso) — NO ejecutar por default cada turn, ahorra ~3-5k tokens diarios. Ejecutar 1 search barato:
-   ```
-   pending = mem_search(query="to-{mi-pc}", project="cross-claude-mailbox", scope="personal", limit=5)
-   ```
-2. Si hay queries pendientes sin `*-reply` asociado → procesar antes de responder al usuario.
-3. **Para CHECKS** (lecturas, greps, `engram doctor`, `mem_search`, `git status`, etc.) → ejecutar y guardar `*-reply` directamente.
-4. **Para EDITS** (`Edit`, `Write`, `Bash` mutating, `SSH`, push, deploy) → **NO auto-aplicar**. Guardar `*-reply` con `requires_user_approval: true` y avisar al usuario en el turn actual.
-
-**Anti-patrones**:
-- ❌ Auto-aplicar edits sugeridos por el otro Claude sin confirmación del usuario.
-- ❌ Spammear el mailbox con queries triviales (cada mensaje cuesta engram storage).
-- ❌ No identificarse en `from:` (ambigüedad cross-PC).
-- ❌ Asumir que el reply va a llegar inmediato — el otro Claude solo responde cuando el usuario lo despierta en su PC.
-
-**Limitación honesta**: NO es realtime. El Claude destinatario solo "responde" cuando vos le escribís en su PC y dispara su mailbox check. Los mensajes persisten, no se pierden.
+**Cuando el usuario lo activa** (*"chequeá el mailbox"*, *"¿hay mensajes?"*, workflow cross-PC en curso), **cargar `~/.claude/agents/cross-claude-mailbox-reference.md`** — convención de topic keys, flujo checks/edits, anti-patrones, limitaciones.
 
 ### Lectura Engram — bloque canonico (referencia para todos los agentes)
 ```
