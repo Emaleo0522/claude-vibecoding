@@ -69,7 +69,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-The script installs the 25 agents + 15 technical references + 1 central index (`AGENTS.md`), the 16 hooks, the global `CLAUDE.md`, and configures git/GitHub/Vercel. It asks you for the data it needs (your name, email, GitHub username). **Restart Claude Code** when done and you're ready.
+The script installs the 25 agents + 24 technical references + 1 central index (`AGENTS.md`), the 13 reactive hooks + 6 manual utilities, the global `CLAUDE.md`, and configures git/GitHub/Vercel. It asks you for the data it needs (your name, email, GitHub username). **Restart Claude Code** when done and you're ready.
 
 ### Windows (Claude Desktop) — 20-30 guided minutes
 
@@ -305,7 +305,7 @@ For developers who want to go deeper:
 
 ```
 ~/.claude/
-├── agents/            # 25 agents + 21 references + AGENTS.md + agent-protocol.md + PIPELINE-AGENTS.md = 49 .md files
+├── agents/            # 25 agents + 24 references + AGENTS.md + agent-protocol.md + PIPELINE-AGENTS.md = 52 .md files
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
 ├── hooks/             # 13 reactive hooks + 6 manual utilities + 1 extra .sh script (blocks, warnings, sync, healthcheck, drift-check)
 ├── mcp.registry.json  # readable MCP inventory (read by mcp-registry.js and healthcheck.js)

@@ -6,7 +6,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 
 ## Lo que vas a instalar
 
-- **38 archivos de agentes** (25 agentes + 13 referencias tecnicas): los especialistas del sistema + documentacion tecnica que usan internamente
+- **52 archivos de agentes** (25 agentes + 24 referencias tecnicas + 3 indices/protocolo): los especialistas del sistema + documentacion tecnica que usan internamente
 - **13 hooks reactivos**: interceptan operaciones en tiempo real para seguridad y calidad
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria persistente), Context7 (docs), Playwright (QA visual)
@@ -97,7 +97,7 @@ cd claude-vibecoding
 
 ---
 
-## Paso 7: Copiar los 48 archivos de agentes (25 agentes + 21 referencias + AGENTS.md + agent-protocol.md)
+## Paso 7: Copiar los 52 archivos de agentes (25 agentes + 24 referencias + AGENTS.md + agent-protocol.md + PIPELINE-AGENTS.md)
 
 En Git Bash, **dentro de la carpeta `claude-vibecoding`**:
 ```bash
@@ -113,7 +113,7 @@ ls ~/.claude/agents/*.md | wc -l
 
 Los 25 agentes: orquestador, project-manager-senior, ux-architect, ui-designer, security-engineer, frontend-developer, backend-architect, rapid-prototyper, mobile-developer, game-designer, xr-immersive-developer, codepen-explorer, build-resolver, brand-agent, image-agent, logo-agent, video-agent, evidence-collector, reality-checker, seo-discovery, api-tester, performance-benchmarker, git, deployer, self-auditor.
 
-Las 21 referencias: agent-protocol (compartido), pipeline-reference, AGENTS.md (índice), intent-clarifier-reference, modo-diagnostico-reference, cross-claude-mailbox-reference, orquestador-modificacion-reference, orquestador-fase-2b-reference, orquestador-edge-cases-reference, simplicity-first-reference, better-auth-reference, better-gsap-reference, react-patterns-reference, redis-patterns-reference, pocketbase-reference, devops-vps-reference, linux-hardening-reference, nothing-design-reference, scroll-storytelling-reference, advanced-effects-reference, creative-coding-reference, reactive-audio-reference, external-skills-reference.
+Las 24 referencias (`*-reference.md`): pipeline-reference, intent-clarifier, modo-diagnostico, cross-claude-mailbox, orquestador-modificacion, orquestador-fase-2b, orquestador-edge-cases, orquestador-vdc, orquestador-fase45, engram-save, simplicity-first, better-auth, better-gsap, react-patterns, redis-patterns, pocketbase, devops-vps, linux-hardening, nothing-design, scroll-storytelling, advanced-effects, creative-coding, reactive-audio, external-skills. Aparte: agent-protocol (protocolo compartido), AGENTS.md (índice) y PIPELINE-AGENTS.md.
 
 ---
 
@@ -400,8 +400,8 @@ El sistema se encarga del resto:
 **Claude no reconoce los agentes**
 -> Reinicia Claude Desktop. Los agentes se cargan al iniciar.
 
-**No aparecen los 38 archivos de agentes**
--> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **38** (25 agentes + 13 referencias).
+**No aparecen los 52 archivos de agentes**
+-> Verifica con `ls ~/.claude/agents/*.md | wc -l`. Debe dar **52 o más** (25 agentes + 24 referencias + 3 indices/protocolo — actualizar este numero al agregar refs).
 
 **MCPs no aparecen en Claude Desktop**
 -> Verifica que `claude_desktop_config.json` tenga JSON valido y reinicia. Verificar rutas absolutas.
@@ -427,7 +427,7 @@ El sistema se encarga del resto:
 ~/.claude/
 |-- launch.json                                  <- configuracion de preview servers
 |-- design-data/                                 <- Design Intelligence Engine (search.js + 8 CSVs)
-|-- agents/                                      <- 25 agentes + 13 referencias = 38 archivos
+|-- agents/                                      <- 25 agentes + 24 referencias + 3 indices = 52 archivos
 |   |-- orquestador.md                           <- coordinador central
 |   |-- project-manager-senior.md                <- Fase 1: spec a tareas
 |   |-- ux-architect.md                          <- Fase 2: CSS tokens, layout

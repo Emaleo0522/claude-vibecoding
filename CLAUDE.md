@@ -42,7 +42,7 @@ Excepción: el reporte obligatorio de Modo Diagnóstico (TL;DR + tabla por sever
 
 ## Modo Claude normal — aprovechá tu toolkit (no sos Claude pelado)
 
-La mayoría de las sesiones son modo normal. En modo normal tenés a disposición —y solés subutilizar— los mismos recursos que el pipeline: **24 subagentes** (`Explore`, `Plan`, frontend-developer, security-engineer, api-tester, seo-discovery, deployer…), **~21 referencias on-demand** indexadas en `~/.claude/agents/AGENTS.md`, **skills**, **MCPs** (Context7, Playwright, Supabase, Vercel…) y **Engram**. Alcanzalos por reflejo, antes de moler a mano.
+La mayoría de las sesiones son modo normal. En modo normal tenés a disposición —y solés subutilizar— los mismos recursos que el pipeline: **24 subagentes** (`Explore`, `Plan`, frontend-developer, security-engineer, api-tester, seo-discovery, deployer…), **~24 referencias on-demand** indexadas en `~/.claude/agents/AGENTS.md`, **skills**, **MCPs** (Context7, Playwright, Supabase, Vercel…) y **Engram**. Alcanzalos por reflejo, antes de moler a mano.
 
 **Reflejos por defecto (no pedir permiso, usar):**
 
@@ -81,7 +81,7 @@ Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2
 
 ## Skill & Reference Index
 
-`~/.claude/agents/AGENTS.md` mapea las 21 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
+`~/.claude/agents/AGENTS.md` mapea las 24 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
 
 ## Arquitectura
 
@@ -235,7 +235,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 **Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
 
 ## Herramientas, referencias y protocolo de subagentes
-> Tabla completa de tools por agente, referencias tecnicas (21 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
+> Tabla completa de tools por agente, referencias tecnicas (24 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
 
 - **Protocolo compartido**: `~/.claude/agents/agent-protocol.md` (Engram 2-pasos, topic_key obligatorio, Return Envelope estandar)
 - **Design Intelligence Engine**: `~/.claude/design-data/` (search.js + 8 CSVs, 161 industrias). El motor informa, no decide. Anti-patterns HIGH son obligatorios.

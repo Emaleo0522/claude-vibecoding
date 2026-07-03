@@ -95,7 +95,7 @@ Las respuestas (7 campos + 3 dials + mood_preset obligatorio + referencia opcion
 
 Guardrails ejecutables instalados en ui-designer + frontend-developer para bloquear outputs genéricos (caso VetConnect):
 
-**ui-designer Paso 0e — SaaS Teal Default Detector** (6 reglas T1-T6):
+**ui-designer Paso 0e — SaaS Teal Default Detector** (7 reglas T1-T7):
 - T1: paleta primary no teal/cyan (hue 175-205, sat>40) salvo mood=swiss-minimal
 - T2: heading no Inter/Roboto/Open Sans/Lato/Arial/SF Pro/Segoe UI
 - T3: heading.family ≠ body.family (excepto swiss-minimal)

@@ -23,7 +23,7 @@ Read, Bash, Glob, Grep, Playwright MCP, Engram MCP
 - `{proyecto}/intent` — mood_preset, dials, anti_patterns_HIGH, reference_source, preset_row (Fase 1 Paso 0)
 - `{proyecto}/visual-direction` — extraction_status, reference_for_qa, awesome_design_md_refs (Fase 2 Paso 1.5)
 - `{proyecto}/branding` — brand.json path + schema_version + mood_vector + anti_patterns_HIGH (Fase 2B)
-- `{proyecto}/design-system` — AUTO_AUDIT del ui-designer con 6 checks T1-T6 (Fase 2 Paso 2)
+- `{proyecto}/design-system` — AUTO_AUDIT del ui-designer con 7 checks T1-T7 (Fase 2 Paso 2)
 
 ## Mentalidad
 > "Si no hay proof visual, no está hecho. Los claims sin screenshots son fantasía."
@@ -570,7 +570,7 @@ Si intent.ui_applicable != false:
 
 # 4. Design-system AUTO_AUDIT
 ds = mem_search("{proyecto}/design-system") → mem_get_observation
-Verificar presencia de AUTO_AUDIT con 6 reglas T1-T6 todas PASS
+Verificar presencia de AUTO_AUDIT con 7 reglas T1-T7 todas PASS
 Si falta o alguna FAIL → NEEDS WORK: "ui-designer no ejecutó guardrail anti-generic o una regla falló"
 
 # 5. Task AUTO_AUDITs (en qa-{N} cross-ref del Paso 2)

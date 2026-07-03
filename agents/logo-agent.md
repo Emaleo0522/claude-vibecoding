@@ -346,5 +346,6 @@ TAREA: {descripcion del asset generado}
 ARCHIVOS: [rutas de assets creados]
 ENGRAM: {proyecto}/creative-logos
 COSTO: {estimado — ej: "$0.04 Gemini" o "$0 HuggingFace"}
+VISUAL_IMPACT: high | medium | low
 NOTAS: {observaciones relevantes}
 ```

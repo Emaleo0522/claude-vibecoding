@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claude Code — Vibecoding Agent System v3
-# 25 agentes + 13 referencias = 38 archivos | Pipeline de 5 fases
+# 25 agentes + 24 referencias + 3 indices/protocolo = 52 archivos .md | Pipeline de 5 fases
 # Instalacion automatica para Linux / Claude Code
 # ============================================================
 
@@ -20,7 +20,7 @@ error() { echo -e "${RED}[X]${NC} $1"; exit 1; }
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  Claude Code — Vibecoding Agent System v3${NC}"
-echo -e "${CYAN}  25 agentes + 13 referencias = 38 archivos${NC}"
+echo -e "${CYAN}  25 agentes + 24 referencias = 52 archivos .md${NC}"
 echo -e "${CYAN}  Pipeline de 5 fases | 13 hooks reactivos${NC}"
 echo -e "${CYAN}  Instalacion automatica (Linux)${NC}"
 echo -e "${CYAN}============================================${NC}"
@@ -152,7 +152,7 @@ else
   info "Clave SSH existente: $SSH_KEY"
 fi
 
-# -- 8. Instalar 25 agentes + 21 referencias en ~/.claude/agents/ --
+# -- 8. Instalar 25 agentes + 24 referencias en ~/.claude/agents/ --
 CLAUDE_AGENTS="$HOME/.claude/agents"
 mkdir -p "$CLAUDE_AGENTS"
 
@@ -438,7 +438,7 @@ echo -e "${CYAN}============================================${NC}"
 echo ""
 info "Git:       $GIT_NAME <$GIT_EMAIL>"
 info "GitHub:    $GH_USER"
-info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT archivos: 25 agentes + 13 referencias)"
+info "Agentes:   $CLAUDE_AGENTS ($AGENT_COUNT archivos: 25 agentes + 24 referencias + 3 indices/protocolo)"
 info "Hooks:     ~/.claude/hooks/ ($HOOK_COUNT hooks reactivos)"
 info "MCPs:      Engram (memoria) + Context7 (21st.dev/docs)"
 info "Design:    ~/.claude/design-data/ (Design Intelligence Engine)"
@@ -453,7 +453,7 @@ echo ""
 echo "Para empezar, abri Claude Code y escribi:"
 echo "  modo orquestador — quiero crear [tu idea]"
 echo ""
-echo "Agentes disponibles (25 agentes + 13 referencias = 38 archivos):"
+echo "Agentes disponibles (25 agentes + 24 referencias = 52 archivos .md):"
 echo "  Fase 1: project-manager-senior"
 echo "  Fase 2: ux-architect, ui-designer, security-engineer"
 echo "  Fase 2B: brand-agent, image-agent, logo-agent, video-agent"

@@ -664,6 +664,7 @@ AUTO_AUDIT:
   shadow_coherent_check: PASS | FAIL | N/A
   envelope_strategy_check: PASS | FAIL | N/A
   anti_patterns_violated: [lista o vacío]
+VISUAL_IMPACT: high | medium | low
 NOTAS: {solo si hay bloqueadores o desviaciones}
 ```
 

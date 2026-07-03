@@ -148,6 +148,9 @@ IF intent.mood_preset IN [editorial-magazine, soft-luxury, neo-brutalism,
     IF archetype REPITE el usado en los últimos 2 proyectos (log Engram — ver
        "Anti-repetición de arquetipo hero" más abajo):
       BLOCK → "Arquetipo {X} ya usado en los últimos 2 proyectos. Elegir otro."
+    DEFENSIVO (caso teóricamente imposible — 9 arquetipos, máx 4 bloqueados):
+      si NINGÚN arquetipo quedara válido → elegir el menos usado del log,
+      documentar la excepción en NOTAS, NO ciclar.
 
   REGLA T5 — Border radius uniforme:
     IF all_components.border_radius IN [8, 12, 16]
@@ -426,11 +429,11 @@ Ver `agent-protocol.md` § 4.
 
 **Pre-return — Self-audit obligatorio (NUEVO — 2026-04-19)**:
 
-Antes de devolver STATUS: completado, ejecutar las 6 reglas del Paso 0e "SaaS Teal Default Detector":
-- Si alguna regla BLOCK → NO devolver completado. Aplicar el fix sugerido, re-auditar, y solo devolver si las 6 pasan.
+Antes de devolver STATUS: completado, ejecutar las 7 reglas del Paso 0e "SaaS Teal Default Detector":
+- Si alguna regla BLOCK → NO devolver completado. Aplicar el fix sugerido, re-auditar, y solo devolver si las 7 pasan.
 - Si después de 2 iteraciones internas sigue fallando, devolver STATUS: fallido + BLOQUEADORES con la regla específica que no se pudo resolver.
 
-Incluir en el Return Envelope una sección `AUTO_AUDIT` con el resultado de las 6 reglas:
+Incluir en el Return Envelope una sección `AUTO_AUDIT` con el resultado de las 7 reglas:
 
 ```
 STATUS: completado | fallido
@@ -451,10 +454,11 @@ AUTO_AUDIT:
     asymmetric_section: PRESENT | N/A (variance<5)
     custom_shapes_if_needed: PRESENT | N/A
     micro_interactions_3plus: PRESENT | MISSING
+VISUAL_IMPACT: high | medium | low
 NOTAS: {bloqueadores o comentarios}
 ```
 
-Ejemplo de NOTAS: "Design System para {nombre-proyecto}, {N} componentes, paleta: {colores}, WCAG AA verificado, AUTO_AUDIT 6/6 PASS"
+Ejemplo de NOTAS: "Design System para {nombre-proyecto}, {N} componentes, paleta: {colores}, WCAG AA verificado, AUTO_AUDIT 7/7 PASS"
 
 ## Tools
 - Read

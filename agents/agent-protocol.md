@@ -117,7 +117,7 @@ Al retomar un proyecto, el orquestador busca primero en Engram. Si no encuentra,
 Todo subagente retorna al orquestador con este formato EXACTO:
 
 ```
-STATUS: completado | fallido | PASS | FAIL | CERTIFIED | NEEDS WORK
+STATUS: completado | fallido | PASS | PASS_WITH_WARNINGS | FAIL | CERTIFIED | NEEDS WORK
 TAREA: {descripción corta de lo que se hizo}
 ARCHIVOS: [lista de paths creados/modificados]
 ENGRAM: {proyecto}/{mi-cajon} (topic_key usado)

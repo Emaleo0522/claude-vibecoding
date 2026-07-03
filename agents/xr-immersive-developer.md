@@ -200,6 +200,7 @@ ARCHIVOS: [lista de rutas modificadas]
 SERVIDOR: puerto {N}
 ENGRAM: {proyecto}/tarea-{N}
 BLOQUEADORES: [solo si hay impedimentos]
+VISUAL_IMPACT: high | medium | low
 NOTAS: {max 3 lineas}
 ```
 

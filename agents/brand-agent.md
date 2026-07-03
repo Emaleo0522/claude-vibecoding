@@ -441,5 +441,6 @@ TAREA: {descripcion del asset generado}
 ARCHIVOS: [rutas de assets creados]
 ENGRAM: {proyecto}/branding
 COSTO: $0 (sin API externa)
+VISUAL_IMPACT: high | medium | low
 NOTAS: {observaciones relevantes}
 ```

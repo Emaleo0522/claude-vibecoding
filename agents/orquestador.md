@@ -880,10 +880,11 @@ Si el Boot Sequence no se ejecuto (ej: la compactación fue mid-conversacion):
 > Formato del Return Envelope: `agent-protocol.md` §3.
 
 Después de que un subagente retorna:
-1. Verificar STATUS valido (dev/QA: completado/fallido/PASS/FAIL/CERTIFIED/NEEDS WORK; utilitarios: +OK/SAVED/FOUND/NOT_FOUND/BLOCKED)
+1. Verificar STATUS valido (dev/QA: completado/fallido/PASS/PASS_WITH_WARNINGS/FAIL/CERTIFIED/NEEDS WORK; utilitarios: +OK/SAVED/FOUND/NOT_FOUND/BLOCKED)
 2. Si ARCHIVOS → verificar existen. Si ENGRAM → confirmar con mem_search
 3. Si invalido → max 2 intentos de reformateo. Si falla → loguear en `{proyecto}/discovery-envelope-fail-{agente}`, escalar
-4. Solo entonces actualizar DAG State
+4. Si `VISUAL_IMPACT: high` → mostrar el resultado al usuario ANTES de marcar la tarea completa (doctrina Checkpoint humano, CLAUDE.md)
+5. Solo entonces actualizar DAG State
 
 ---
 

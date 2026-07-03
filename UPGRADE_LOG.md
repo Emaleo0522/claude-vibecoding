@@ -1,5 +1,19 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Audit integral post-refactor + fixes de contratos — 2026-07-02 ✅
+
+### Resumen
+
+Auditoría completa del repo tras los cambios del día (audit-system 11/11 HEALTHY + 3 agentes read-only: dead paths, loops, contratos Return Envelope). Resultado del refactor de hoy: **limpio** — 0 punteros rotos (27 refs `§` resuelven, 24 refs de archivo existen), loops 9/9 con límites inline verificados, extracción VDC/F4-F5 sin pérdida de reglas. Los hallazgos fueron **drift pre-existente**, todo corregido:
+
+1. **T7 fantasma (media-alta)**: ui-designer emite T1-T7 pero evidence-collector (L20, L134), reality-checker (L26, L573) y pipeline-reference (L98) verificaban "T1-T6" — un T7=FAIL pasaba QA sin detectarse. Sincronizado a T1-T7 en los 5 puntos + ui-designer auto-consistente ("las 7", "7/7 PASS").
+2. **`PASS_WITH_WARNINGS` no whitelisted (media)**: evidence-collector lo emite pero agent-protocol §3 y la validación del orquestador no lo listaban → reformateo espurio. Agregado a ambas whitelists.
+3. **`VISUAL_IMPACT` sin cablear (media)**: obligatorio en agent-protocol para 6 agentes pero ausente de TODOS sus templates de envelope, y el orquestador no lo consumía. Agregado a los 6 templates (frontend-developer, ui-designer, brand-agent, image-agent, logo-agent, xr-immersive-developer) + paso 4 en la validación del orquestador (high → mostrar al usuario antes de marcar completa).
+4. **Instalador Windows roto (alta)**: el self-check decía "debe dar 38 archivos" (reales: 52) → una instalación nueva fallaba su propia verificación. Conteos stale corregidos en 18 puntos de install/linux.sh, install/windows.md (incl. lista de refs con las 3 nuevas), README.md, README.en.md y CLAUDE.md (21→24 refs, 38/48/49→52, checks ahora "52 o más").
+5. Menores: cláusula defensiva en T4 (si todos los arquetipos bloqueados — imposible hoy — elegir el menos usado del log, no ciclar); `extract-palette.js` documentado como opcional (el script no existe; la inspección visual es el camino default); AGENTS.md devuelto a <60 líneas (58).
+
+**Verificación post-fix**: audit-system 11/11 HEALTHY · drift-check CLEAN · anclas de reemplazo 18/18 únicas.
+
 ## Optimización tokens/ruido — CLAUDE.md -31% + orquestador -24% — 2026-07-02 ✅
 
 ### Resumen

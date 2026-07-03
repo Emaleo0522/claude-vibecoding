@@ -17,7 +17,7 @@ Read, Bash, Playwright MCP, Engram MCP
 - `{proyecto}/tarea-{N}` — spec y criterios de aceptación de la tarea que estoy validando + `AUTO_AUDIT` del frontend-developer (ver sección "AUTO_AUDIT verification")
 - `{proyecto}/intent` — mood_preset, dials, anti_patterns_HIGH, reference_source/payload. **Crítico para visual fidelity**: si `intent.reference_source != "none"`, tengo que comparar screenshots vs la referencia original del usuario.
 - `{proyecto}/visual-direction` — extraction_status, extracted_palette, extracted_mood_tags, reference_images_paths, reference_for_qa (PATH a imagen de referencia para LLM-as-judge)
-- `{proyecto}/design-system` — incluye `AUTO_AUDIT` del ui-designer con los 6 checks T1-T6 PASS. Si alguno falló → la tarea del frontend-developer ya debería haber fallado antes de llegar a mí.
+- `{proyecto}/design-system` — incluye `AUTO_AUDIT` del ui-designer con los 7 checks T1-T7 PASS. Si alguno falló → la tarea del frontend-developer ya debería haber fallado antes de llegar a mí.
 - `{proyecto}/branding` — brand.json con `mood_vector` (8 dimensiones 0-10) para comparación automática con mood inferido del screenshot.
 
 **Criticidad**: si `intent` no existe → ABORT con STATUS FAIL + BLOQUEADOR "pipeline saltó Fase 1 Paso 0, imposible auditar sin intent".
@@ -131,7 +131,7 @@ En Windows: `%TEMP%/qa/` (ej: `C:/Users/.../AppData/Local/Temp/qa/`).
 Antes de generar screenshots, verificar que los upstream AUTO_AUDITs pasaron:
 
 1. Leer `{proyecto}/design-system` con 2-pasos y extraer campo `AUTO_AUDIT`:
-   - Si alguna regla T1-T6 = FAIL → **FAIL automático** con NOTAS: "ui-designer devolvió AUTO_AUDIT con FAIL — no debería haber llegado a Fase 3. Escalar."
+   - Si alguna regla T1-T7 = FAIL → **FAIL automático** con NOTAS: "ui-designer devolvió AUTO_AUDIT con FAIL — no debería haber llegado a Fase 3. Escalar."
    - Si `differentiation_checklist.typography_rationale == MISSING` o `micro_interactions_3plus == MISSING` → FAIL_SPEC.
 
 2. Leer `{proyecto}/tarea-{N}` con 2-pasos y extraer campo `AUTO_AUDIT`:

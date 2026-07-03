@@ -4,10 +4,7 @@
 
 ## Cómo se usa
 
-1. Identificá triggers del contexto actual (stack, deploy_target, fase, pedido del usuario)
-2. Cargá el archivo en `Path`
-3. Aplicá las reglas que define
-4. Saltala si aplica un `Skip when`
+Identificá triggers del contexto (stack, deploy_target, fase, pedido del usuario) → cargá el archivo en `Path` → aplicá sus reglas — salvo que aplique un `Skip when`.
 
 ## Índice
 
