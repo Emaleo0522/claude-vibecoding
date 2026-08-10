@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-06-19",
+  "updated": "2026-08-10",
   "note": "Fuente de verdad legible del inventario de MCPs. Mantenido a mano. Leído por hooks/mcp-registry.js y por healthcheck.js. status LIVE/CONFIG_ONLY refleja configuración base; la disponibilidad real por sesión depende de la conexión (claude.ai-hosted) y de tokens.",
   "statuses": {
     "LIVE": "verificado activo (core del sistema)",
@@ -11,7 +11,7 @@
   },
   "servers": [
     { "id": "engram", "capability": "memory", "status": "LIVE", "env": [], "notes": "Memoria persistente cross-sesión + cloud Oracle. Binario en ~/go/bin/engram." },
-    { "id": "context7", "capability": "documentation", "status": "LIVE", "env": [], "notes": "Docs de librerías + componentes 21st.dev. Preferir antes de responder de memoria." },
+    { "id": "context7", "capability": "documentation", "status": "LIVE", "env": [], "notes": "Docs de librerías + componentes 21st.dev (library ID /websites/21st_dev_community_components). Preferir antes de responder de memoria. VÍA ÚNICA: server local stdio 'npx -y @upstash/context7-mcp', en Windows vía claude_desktop_config.json y en Linux vía install/linux.sh. NO agregar el conector Context7 de claude.ai: duplica los tools y sus nombres UUID quedan fuera de la allowlist mcp__context7__* de settings.local.json, lo que dispara diálogos de permiso en corridas de agentes. Duplicado detectado y removido en casa el 2026-08-10." },
     { "id": "playwright", "capability": "browser", "status": "LIVE", "env": [], "notes": "QA visual: screenshots, network, console. Solo Chromium." },
     { "id": "codegraph", "capability": "code-retrieval", "status": "OPTIONAL", "env": [], "notes": "Retrieval estructurado del código. Solo activo si el proyecto tiene índice .codegraph/." },
     { "id": "supabase", "capability": "database", "status": "CONFIG_ONLY", "env": [], "notes": "DB/migrations/edge functions." },
