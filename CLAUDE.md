@@ -229,6 +229,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: `engram cloud upgrade doctor` + `repair --apply` auto. Filtro defensivo para `relation/upsert` (bug upstream). |
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
 | `frontend-audit` | **EJECUTABLE manual** (no hook automático): el `frontend-developer` lo invoca con --mood/--hero/--motion para AUTO_AUDIT pre-return (T1-T5). Complementa `pre-return-audit` con reglas que requieren contexto de mood. |
+| `jev-route-check` | **EJECUTABLE manual** (Fase 1 paso 5b del orquestador): segunda opinión de routing de agente + flag `security_review` por tarea con Jev (TypeSafe AI). Lee `.pipeline/tareas.md`, escribe `.pipeline/jev-route-check.json`. Fail-open sin `TYPESAFE_API_KEY`. |
 
 **Comportamiento**: Exit 2 = BLOCK | Exit 0 + stderr = WARN | Fail-open (nunca rompe el flujo)
 
@@ -290,6 +291,14 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ### Politica free-first (default 2026-05-18)
 
 Los agentes creativos priorizan paths FREE que **NO requieren tarjeta de crédito** (HF FLUX.1-schnell / Cloudflare Workers AI / Pollinations; video-agent sin token entrega CSS fallback como output VÁLIDO, no bloquea pipeline). Gemini/Replicate/Recraft son opt-in con billing. **Tabla completa por agente, setup Cloudflare, backends descartados y cómo revertir a paga: `pipeline-reference.md` § "Política free-first"** — única fuente (la copia que vivía acá estaba duplicada y desactualizada respecto a la ref).
+
+## Pre-gate Jev — decisiones tipadas baratas en el pipeline (2026-09-21)
+
+Jev (TypeSafe AI, `api.typesafe.ai/v1/systemone`) no genera texto: devuelve decisiones tipadas (sí/no, score, choice) con probabilidad calibrada, ~400 ms y $0.042/M tokens. Eval real sobre 117 tareas de 14 proyectos: 93% de acierto en routing de agente, y en cada discrepancia con conf ≥0.9 Jev seguía la doctrina de `orquestador.md` mejor que el PM (Engram `claude-vibecoding` #3402; scripts del eval en `tests/jev-eval/` del repo).
+
+- **Dónde corre**: `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}` — Fase 1 paso 5b, después de project-manager-senior. Reglas de aplicación (overrides conf ≥0.90, `SECURITY_REVIEW: true` en handoff con p ≥0.80) viven en `orquestador.md`.
+- **Requiere** `TYPESAFE_API_KEY` en el env del usuario — Linux: `export` en `~/.bashrc` (y reiniciar Claude Code para que herede el env); Windows: variable de entorno de usuario (`setx TYPESAFE_API_KEY ...`). Key desde console.typesafe.ai ($5 de crédito inicial ≈ 100k+ tareas). Sin key → `SKIP`, el pipeline sigue igual que antes. Log: `~/.claude/logs/jev-route-check.jsonl`.
+- **Solo para preguntas acotadas**: routing, flags, clasificación. NUNCA para generar texto/código, veredictos QA ni decisiones visuales — para eso están los agentes.
 
 ## Delegación Zen — modelos opencode Go para tareas mecánicas (2026-06-10)
 

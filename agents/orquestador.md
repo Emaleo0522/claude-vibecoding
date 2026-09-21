@@ -252,6 +252,7 @@ references_loaded: []               # lista de slugs de ~/.claude/agents/AGENTS.
 fase_actual: "fase_1_planificacion | fase_2_arquitectura | fase_2b_assets | fase_3_dev | fase_4_certificacion | fase_5_publicacion | completado | modificacion"
 fases_completadas:
   planificacion: null             # observation_id (numero) o null si no completada
+  routing_overrides: []           # [{tarea: N, pm: "agente-pm", jev: "agente-jev"}] — pre-gate Jev (Fase 1 paso 5b). Vacío si SKIP o sin discrepancias
   arquitectura:
     css: null                     # observation_id del css-foundation
     visual_direction: null        # observation_id del visual-direction (elecciones del usuario)
@@ -484,6 +485,13 @@ Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agent
    - Pasa: spec del usuario (texto directo) + **stack decidido** + **estructura** (monorepo/single) + **`{proyecto}/intent` topic_key** (para que PM lea project_type + industry + audience y dimensione tareas apropiadamente)
    - Pide que guarde en Engram: `{proyecto}/tareas`
    - Criterio: lista granular de tareas (30–60 min c/u) con criterios de aceptación exactos. El scope debe reflejar intent.project_type (una landing NO tiene 40 tareas — son 5-8; una webapp sí tiene 30-60).
+5b. **Pre-gate Jev (routing + seguridad)** — corre por Bash, sin leer las tareas al contexto:
+   `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}`
+   - Devuelve 1 línea de resumen + discrepancias de agente (solo conf ≥ 0.90) + tareas con `security_review` (p ≥ 0.80). Detalle en `{project_dir}/.pipeline/jev-route-check.json`.
+   - **Discrepancia con conf ≥ 0.90 → se aplica el routing de Jev** (eval 2026-09-21: en todos los casos así Jev seguía la doctrina de este archivo mejor que el PM — CSS foundation→ux-architect, QA→evidence-collector, cifrado→security-engineer). Registrar en DAG State `routing_overrides: [{tarea, pm, jev}]`. Si el PM justificó explícitamente el agente en la tarea, prevalece el PM.
+   - Tareas con `security_review` → en Fase 3 su handoff lleva `SECURITY_REVIEW: true` (ver template). No bloquea ni re-ordena nada.
+   - `SKIP` (sin `TYPESAFE_API_KEY`, sin red, error de API) → seguir sin pre-gate. Es fail-open: nunca detiene Fase 1.
+
 6. Actualiza DAG State en `{proyecto}/estado` (incluir stack, estructura, y referencia a `{proyecto}/intent`)
 7. Muestra al usuario: resumen de N tareas + stack elegido + resumen del intent capturado (preset + originalidad + referencia)
 
@@ -504,6 +512,7 @@ Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agent
    Design System: {nothing-full | nothing-partial (scope: [...]) | custom | none}
    Componentes: {21st.dev | codepen | custom}
    {N} tareas identificadas
+   Pre-gate Jev: {K} routing overrides · {S} tareas con security_review  (u "omitido" si SKIP)
 
    ¿Empezamos con la arquitectura y el desarrollo?
      s) Sí, continuar
@@ -638,6 +647,7 @@ Para **cada tarea** de la lista, en orden:
    - Diseño de mecánicas (juego)            → game-designer
    - Implementación de juego (canvas/WebGL) → xr-immersive-developer
    - Setup monorepo / workspace config      → backend-architect (config) + frontend-developer (UI packages)
+   **Override Jev**: si DAG State tiene `routing_overrides` para la tarea N, usar ese agente (ya validado en Fase 1 paso 5b) en vez de la tabla de arriba.
    **Override mobile**: si DAG State `tipo: mobile`, las tareas con Tipo `frontend` se redirigen a mobile-developer (no frontend-developer). Las tareas Tipo `mobile` siempre van a mobile-developer.
 
 3. Delega al agente con handoff minimo:
@@ -654,6 +664,7 @@ Para **cada tarea** de la lista, en orden:
    COMPONENT_SOURCE: {21st.dev | codepen | custom} (si 21st.dev → frontend-developer consulta Context7 MCP para componentes animados/visuales)
    VISUAL_DIRECTION: {resumen 1 línea de las elecciones clave — ej: "inmersivo + aurora bg + nav blur + animación inmersiva + dark"}
    CONTEXT7_HINTS: {lista de queries Context7 sugeridas según stack — ver tabla abajo. Vacío [] si stack es ultra-estable o tarea trivial}
+   SECURITY_REVIEW: true  (solo si la tarea está en `security_review` de jev-route-check.json → el agente aplica {proyecto}/security-spec como criterio obligatorio y evidence-collector lo verifica en el PASS)
    ```
 
    **Construcción de `CONTEXT7_HINTS`** (el orquestador deriva de DAG State stack + tarea):
