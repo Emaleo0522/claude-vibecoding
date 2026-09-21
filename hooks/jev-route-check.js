@@ -9,6 +9,8 @@
  * Lee el dual-write en disco (nunca Engram — no infla contexto). Por cada tarea pregunta:
  *   agente         → choice entre los agentes dev del pipeline (segunda opinión al Tipo/Agente del PM)
  *   toca_seguridad → noul: auth/permisos/secrets/validación/headers/RLS
+ *   complejidad    → score 0-2 (simple/media/compleja) → model_hint sonnet|opus. SOLO RECOMENDACIÓN (prueba
+ *                    2026-09-21 → 2026-10-21): el orquestador decide si la toma y registra la decisión en DAG State.
  * Escribe {project_dir}/.pipeline/jev-route-check.json y devuelve por stdout un resumen corto.
  *
  * Umbrales: discrepancia se reporta solo con conf >= 0.90; flag de seguridad con p >= 0.80.
@@ -22,6 +24,7 @@ const API = 'https://api.typesafe.ai/v1/systemone';
 const LOG = path.join(os.homedir(), '.claude', 'logs', 'jev-route-check.jsonl');
 const CONF_MIN = 0.9;
 const SEC_MIN = 0.8;
+const OPUS_MIN = 1.3; // score de complejidad (0-2) a partir del cual se sugiere opus. Calibrado 2026-09-21: landing 0.1-1.0, app 1.0-1.5 → 1.3 marca ~15% de una app, 0 de una landing
 const PRICE_IN = 0.042; // USD / M input tokens (early access 2026-09)
 
 // Agentes dev del pipeline que pueden recibir una tarea en Fase 3 (+ los de Fase 2/2B que a veces aparecen en tareas)
@@ -86,12 +89,14 @@ async function ask(key, project, t) {
     questions: {
       agente: { type: 'choice', instructions: 'En un pipeline de desarrollo con subagentes especializados, ¿qué agente debe ejecutar esta tarea?', criteria: AGENTES },
       toca_seguridad: { type: 'noul', instructions: '¿La tarea implementa o modifica algo de seguridad (autenticación, autorización, secrets, headers, validación de input, RLS, cifrado, rate limiting)?', criteria: { true: 'Sí, toca auth/permisos/secrets/validación/headers/cifrado', false: 'No toca seguridad' } },
+      complejidad: { type: 'score', instructions: 'Complejidad de implementación para un agente de código: cuánto razonamiento cross-archivo, diseño de estado/algoritmos o riesgo de equivocarse implica', criteria: ['Simple: cambio acotado, patrón conocido, 1-2 archivos (copy, estilos, componente estándar, config)', 'Media: varios archivos o un flujo completo con lógica propia, pero con patrón claro', 'Compleja: diseño no trivial, concurrencia/estado global/física/shaders/algoritmos, integración de sistemas o muchas decisiones interdependientes'] },
     },
   };
   const res = await fetch(API, { method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()).slice(0, 160));
   const j = await res.json();
-  return { jev_agente: j.answers.agente.choice, conf: j.answers.agente.confidence, seguridad_p: j.answers.toca_seguridad.noul, tokens: j.usage.input_tokens };
+  const c = j.answers.complejidad;
+  return { jev_agente: j.answers.agente.choice, conf: j.answers.agente.confidence, seguridad_p: j.answers.toca_seguridad.noul, complejidad: c.score, complejidad_conf: c.confidence, model_hint: c.score >= OPUS_MIN ? 'opus' : 'sonnet', tokens: j.usage.input_tokens };
 }
 
 function skip(msg) { console.log('jev-route-check: SKIP — ' + msg); process.exit(0); }
@@ -125,6 +130,7 @@ function skip(msg) { console.log('jev-route-check: SKIP — ' + msg); process.ex
   }
   const disc = ok.filter(r => r.discrepancia);
   const sec = ok.filter(r => r.security_review);
+  const opus = ok.filter(r => r.model_hint === 'opus');
   const tokens = ok.reduce((a, r) => a + r.tokens, 0);
   const cost = tokens * PRICE_IN / 1e6;
 
@@ -134,17 +140,19 @@ function skip(msg) { console.log('jev-route-check: SKIP — ' + msg); process.ex
     tareas: ok.length, errores: results.length - ok.length, tokens, cost_usd: +cost.toFixed(6), ms: Date.now() - t0,
     discrepancias: disc.map(r => ({ n: r.n, title: r.title, pm: r.pm_agente_efectivo, jev: r.jev_agente, conf: r.conf })),
     security_review: sec.map(r => ({ n: r.n, title: r.title, p: r.seguridad_p })),
+    model_hints: { opus: opus.map(r => ({ n: r.n, title: r.title, complejidad: r.complejidad, conf: r.complejidad_conf })), sonnet: ok.length - opus.length, note: 'recomendación en prueba hasta 2026-10-21 — el orquestador decide; registra {tarea, hint, aplicado} en DAG State model_hint_decisions' },
     tasks: ok.map(({ desc, ...r }) => r),
   };
   fs.writeFileSync(outFile, JSON.stringify(report, null, 1));
   try {
     fs.mkdirSync(path.dirname(LOG), { recursive: true });
-    fs.appendFileSync(LOG, JSON.stringify({ ts: report.generated_at, project: proj, tareas: ok.length, tokens, cost_usd: report.cost_usd, discrepancias: disc.length, security_review: sec.length, ms: report.ms }) + '\n');
+    fs.appendFileSync(LOG, JSON.stringify({ ts: report.generated_at, project: proj, tareas: ok.length, tokens, cost_usd: report.cost_usd, discrepancias: disc.length, security_review: sec.length, opus_hints: opus.length, ms: report.ms }) + '\n');
   } catch { /* log es best-effort */ }
 
   if (json) { console.log(JSON.stringify(report)); return; }
-  console.log(`jev-route-check: ${ok.length} tareas | ${disc.length} discrepancias (conf≥${CONF_MIN}) | ${sec.length} con security_review (p≥${SEC_MIN}) | ${report.ms} ms | $${report.cost_usd}`);
+  console.log(`jev-route-check: ${ok.length} tareas | ${disc.length} discrepancias (conf≥${CONF_MIN}) | ${sec.length} con security_review (p≥${SEC_MIN}) | ${opus.length} con model_hint=opus (score≥${OPUS_MIN}) | ${report.ms} ms | $${report.cost_usd}`);
   for (const d of report.discrepancias) console.log(`  ↔ Tarea ${d.n} "${d.title.slice(0, 60)}": PM=${d.pm} → Jev=${d.jev} [${d.conf}]`);
   for (const s of report.security_review) console.log(`  🔒 Tarea ${s.n} "${s.title.slice(0, 60)}" [p=${s.p}]`);
+  for (const m of report.model_hints.opus) console.log(`  🧠 Tarea ${m.n} "${m.title.slice(0, 60)}" complejidad=${m.complejidad} [conf ${m.conf}] → sugerencia opus`);
   console.log(`  → ${outFile}`);
 })().catch(e => skip('error inesperado: ' + e.message));

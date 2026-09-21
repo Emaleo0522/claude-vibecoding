@@ -253,6 +253,7 @@ fase_actual: "fase_1_planificacion | fase_2_arquitectura | fase_2b_assets | fase
 fases_completadas:
   planificacion: null             # observation_id (numero) o null si no completada
   routing_overrides: []           # [{tarea: N, pm: "agente-pm", jev: "agente-jev"}] — pre-gate Jev (Fase 1 paso 5b). Vacío si SKIP o sin discrepancias
+  model_hint_decisions: []        # [{tarea: N, hint: "opus|sonnet", aplicado: true|false, motivo: "..."}] — prueba model_hint hasta 2026-10-21; el orquestador decide, Jev solo sugiere
   arquitectura:
     css: null                     # observation_id del css-foundation
     visual_direction: null        # observation_id del visual-direction (elecciones del usuario)
@@ -490,6 +491,7 @@ Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agent
    - Devuelve 1 línea de resumen + discrepancias de agente (solo conf ≥ 0.90) + tareas con `security_review` (p ≥ 0.80). Detalle en `{project_dir}/.pipeline/jev-route-check.json`.
    - **Discrepancia con conf ≥ 0.90 → se aplica el routing de Jev** (eval 2026-09-21: en todos los casos así Jev seguía la doctrina de este archivo mejor que el PM — CSS foundation→ux-architect, QA→evidence-collector, cifrado→security-engineer). Registrar en DAG State `routing_overrides: [{tarea, pm, jev}]`. Si el PM justificó explícitamente el agente en la tarea, prevalece el PM.
    - Tareas con `security_review` → en Fase 3 su handoff lleva `SECURITY_REVIEW: true` (ver template). No bloquea ni re-ordena nada.
+   - **`model_hints` (prueba 2026-09-21 → 2026-10-21, decisión de Ema): es una RECOMENDACIÓN, no una regla.** Jev puntúa complejidad 0-2 por tarea y sugiere `opus` si ≥1.3. El orquestador decide en Fase 3 paso 3 si la toma (spawn con `model: opus`) o la ignora, con criterio propio (p. ej. la tarea depende de 3+ tareas previas, toca estado global/física/shaders, o ya falló 1 intento con sonnet). Cada decisión se registra en DAG State `model_hint_decisions: [{tarea, hint, aplicado: true|false, motivo}]` para evaluar al cierre de la prueba cruzando contra `tareas_fallidas`/reintentos.
    - `SKIP` (sin `TYPESAFE_API_KEY`, sin red, error de API) → seguir sin pre-gate. Es fail-open: nunca detiene Fase 1.
 
 6. Actualiza DAG State en `{proyecto}/estado` (incluir stack, estructura, y referencia a `{proyecto}/intent`)
@@ -512,7 +514,7 @@ Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agent
    Design System: {nothing-full | nothing-partial (scope: [...]) | custom | none}
    Componentes: {21st.dev | codepen | custom}
    {N} tareas identificadas
-   Pre-gate Jev: {K} routing overrides · {S} tareas con security_review  (u "omitido" si SKIP)
+   Pre-gate Jev: {K} routing overrides · {S} tareas con security_review · {M} sugerencias opus  (u "omitido" si SKIP)
 
    ¿Empezamos con la arquitectura y el desarrollo?
      s) Sí, continuar
@@ -648,6 +650,7 @@ Para **cada tarea** de la lista, en orden:
    - Implementación de juego (canvas/WebGL) → xr-immersive-developer
    - Setup monorepo / workspace config      → backend-architect (config) + frontend-developer (UI packages)
    **Override Jev**: si DAG State tiene `routing_overrides` para la tarea N, usar ese agente (ya validado en Fase 1 paso 5b) en vez de la tabla de arriba.
+   **Model hint Jev (prueba hasta 2026-10-21)**: si `jev-route-check.json` → `model_hints.opus` incluye la tarea N, evaluar si spawnear con `model: opus` en vez del `model:` del frontmatter. Decide el orquestador; nunca aplicar a ciegas. Registrar `{tarea, hint, aplicado, motivo}` en `model_hint_decisions` aunque se ignore.
    **Override mobile**: si DAG State `tipo: mobile`, las tareas con Tipo `frontend` se redirigen a mobile-developer (no frontend-developer). Las tareas Tipo `mobile` siempre van a mobile-developer.
 
 3. Delega al agente con handoff minimo:
