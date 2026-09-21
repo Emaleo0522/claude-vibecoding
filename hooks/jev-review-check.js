@@ -46,7 +46,11 @@ function runReview(repo) {
   if (major < 24 && !fs.existsSync(path.join(JEV_REVIEW_DIR, 'node_modules', 'tsx'))) skip(`Node ${process.versions.node} < 24 y falta tsx en ${JEV_REVIEW_DIR} (npm i --no-save tsx)`);
   const t0 = Date.now();
   const r = spawnSync(process.execPath, args, { cwd: JEV_REVIEW_DIR, encoding: 'utf8', maxBuffer: 64 << 20, timeout: 120000 });
-  if (r.status !== 0) skip('jev-review falló: ' + (r.stderr || r.stdout || '').trim().split('\n').slice(-2).join(' | '));
+  if (r.status !== 0) {
+    const err = (r.stderr || '').split('\n').find(l => /^Error:/.test(l)) || (r.stderr || r.stdout || '').trim().split('\n').filter(l => l && !/^\s+at /.test(l)).slice(-1)[0] || 'sin salida';
+    if (/No changed source .* files found/.test(err)) skip('sin archivos JS/TS en el diff (jev-review solo revisa código; docs/config no cuentan para la prueba)');
+    skip('jev-review falló: ' + err);
+  }
   let out;
   try { out = JSON.parse(r.stdout); } catch { skip('salida no parseable de jev-review'); }
   return { out, ms: Date.now() - t0 };
