@@ -75,7 +75,7 @@ En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usu
 | Tool calls totales sin spawn | 20+ en una sesión | Pausar, sugerir orquestador |
 | Ediciones no-mecánicas consecutivas | 2+ con complejidad creciente | Pausar, justificar o delegar |
 | Después de incidente (`cd` mal, git accident, recovery merge) | siempre | Fresh audit antes de seguir |
-| Antes de commit/push/PR no-trivial | siempre | Fresh review (salvo docs triviales) |
+| Antes de commit/push/PR no-trivial | siempre | **Prueba hasta 2026-10-21**: `node ~/.claude/hooks/jev-review-check.js --repo .` primero, después la fresh review de siempre, después `--verdict` (ver § "Prueba jev-review") |
 
 Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2026-05-18).
 
@@ -230,6 +230,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
 | `frontend-audit` | **EJECUTABLE manual** (no hook automático): el `frontend-developer` lo invoca con --mood/--hero/--motion para AUTO_AUDIT pre-return (T1-T5). Complementa `pre-return-audit` con reglas que requieren contexto de mood. |
 | `jev-route-check` | **EJECUTABLE manual** (Fase 1 paso 5b del orquestador): segunda opinión de routing de agente + flag `security_review` por tarea con Jev (TypeSafe AI). Lee `.pipeline/tareas.md`, escribe `.pipeline/jev-route-check.json`. Fail-open sin `TYPESAFE_API_KEY`. |
+| `jev-review-check` | **EJECUTABLE manual** (Delegation Stop Rule pre-commit, en prueba hasta 2026-10-21): corre jev-review (Jev) sobre el diff vs HEAD, imprime findings, loguea el run en `~/.claude/logs/jev-review-trial.jsonl`; `--verdict` registra si Claude coincidió; `--report` cierra la prueba. Fail-open sin key o sin clone. |
 
 **Comportamiento**: Exit 2 = BLOCK | Exit 0 + stderr = WARN | Fail-open (nunca rompe el flujo)
 
@@ -299,6 +300,18 @@ Jev (TypeSafe AI, `api.typesafe.ai/v1/systemone`) no genera texto: devuelve deci
 - **Dónde corre**: `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}` — Fase 1 paso 5b, después de project-manager-senior. Reglas de aplicación (overrides conf ≥0.90, `SECURITY_REVIEW: true` en handoff con p ≥0.80) viven en `orquestador.md`.
 - **Requiere** `TYPESAFE_API_KEY` en el env del usuario — Linux: `export` en `~/.bashrc` (y reiniciar Claude Code para que herede el env); Windows: variable de entorno de usuario (`setx TYPESAFE_API_KEY ...`). Key desde console.typesafe.ai ($5 de crédito inicial ≈ 100k+ tareas). Sin key → `SKIP`, el pipeline sigue igual que antes. Log: `~/.claude/logs/jev-route-check.jsonl`.
 - **Solo para preguntas acotadas**: routing, flags, clasificación. NUNCA para generar texto/código, veredictos QA ni decisiones visuales — para eso están los agentes.
+
+### Prueba jev-review — shadow mode (2026-09-21 → 2026-10-21)
+
+Decisión de Ema 2026-09-21: mezcla de integración + revisión manual **hecha por Claude** durante 1 mes; al final se evalúa con datos. jev-review (`~/dev/jev-review`, MIT) manda a TypeSafe **solo diffs vs HEAD** (no conversación — por eso `fast-jev-compaction` quedó descartado). Eval: Engram `claude-vibecoding` #3405.
+
+**Protocolo por cada commit no-trivial (Claude, sin pedir permiso):**
+1. `node ~/.claude/hooks/jev-review-check.js --repo <repo>` **antes** de la fresh review → imprime findings + `run_id`. `SKIP` = seguir como siempre.
+2. Fresh review de siempre (subagente o inline según tamaño). **No reducir el esfuerzo por lo que dijo Jev** — es shadow mode; Jev no decide nada todavía.
+3. `node ~/.claude/hooks/jev-review-check.js --verdict <run_id> <agree|partial|disagree|noise> --note "qué acertó/qué se perdió"`. `agree` = coincidió con la review; `partial` = algo sí, algo no; `disagree` = se perdió un problema real; `noise` = findings sin sustancia.
+4. Si Jev señaló algo que la review no vio y era real → mencionarlo al usuario y anotarlo en el `--note`.
+
+**Cierre (2026-10-21 o cuando Ema lo pida):** `--report` → si agree+partial ≥ 80% y noise bajo → pasa a gate real (0 findings = review liviana; `request_changes` = fresh review apuntada a esos archivos). Si no, se desinstala y queda solo el pre-gate de routing.
 
 ## Delegación Zen — modelos opencode Go para tareas mecánicas (2026-06-10)
 
