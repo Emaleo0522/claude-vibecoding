@@ -94,8 +94,22 @@ process.stdin.on('end', () => {
     }
 
     // 4. Emit context if there's anything useful
+    // Corregido 2026-09-01: el hook estaba colgado de Notification, donde stderr
+    // no se inyecta en el contexto — o sea nunca hizo su trabajo. Ahora corre en
+    // SessionStart (matcher "resume") y usa additionalContext, que es el canal
+    // que de verdad llega al modelo. stderr se mantiene como respaldo visible.
     if (messages.length > 0) {
-      process.stderr.write('Session context: ' + messages.join(' | '));
+      const text = 'Session context: ' + messages.join(' | ');
+      try {
+        process.stdout.write(JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'SessionStart',
+            additionalContext: text,
+          },
+        }));
+      } catch (e) {
+        process.stderr.write(text);
+      }
     }
 
     process.exit(0);

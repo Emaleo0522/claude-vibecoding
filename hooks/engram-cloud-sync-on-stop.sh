@@ -20,6 +20,10 @@
 
 set +e
 
+# v2+: sin update-check por invocacion. Cada Stop hace ~130 llamadas a engram y
+# cada una consultaba la API de GitHub -> rate limit 403 (2026-09-29).
+export ENGRAM_NO_UPDATE_CHECK=1
+
 LOG_FILE="$HOME/.claude/sessions/engram-cloud-sync.jsonl"
 STATE_FILE="$HOME/.claude/sessions/engram-cloud-sync.state"
 mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null
@@ -63,7 +67,8 @@ log info "starting cloud sync on session stop"
 # 4. Listar projects. Filtrar por activity reciente via timestamps de DB
 #    Fallback simple: enumerar TODOS los projects, dejar que engram sync
 #    skippee los que no tienen delta (idempotente)
-PROJECT_LINES=$(engram projects list 2>/dev/null | grep -E "^\s+\S+\s+[0-9]+\s+obs" | grep -v "0 obs")
+# awk $2>0 y no grep -v "0 obs": ese grep descartaba tambien 10/20/120 obs (fix 2026-09-29)
+PROJECT_LINES=$(engram projects list 2>/dev/null | grep -E "^\s+\S+\s+[0-9]+\s+obs" | awk '$2 > 0')
 
 if [ -z "$PROJECT_LINES" ]; then
   log warn "no projects with observations"
@@ -111,7 +116,9 @@ while IFS= read -r line; do
   fi
 
   # Sync to cloud (--project con SPACE, no =). engram sync --cloud --project X
-  SYNC_OUT=$(engram sync --cloud --project "$PROJECT" 2>&1)
+  # El aviso "Could not check for updates: ... 403 Forbidden" (binarios <2.0 sin
+  # ENGRAM_NO_UPDATE_CHECK) matcheaba el regex de error -> falsos failed (2026-09-29).
+  SYNC_OUT=$(engram sync --cloud --project "$PROJECT" 2>&1 | grep -v "Could not check for updates")
 
   # Detectar error real. Extendido 2026-05-18: incluye status 500, title required, content required, transport_failed
   if echo "$SYNC_OUT" | grep -qiE "^engram:|^error|^failed|panic:|fatal:|status 403|status 500|forbidden|transport_failed|title is required|content is required|upgrade_blocked|upgrade_repairable"; then

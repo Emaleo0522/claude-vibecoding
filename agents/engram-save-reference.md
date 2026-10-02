@@ -15,11 +15,9 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
 2. **Decidir el `project=` ANTES de buscar** (constraint cloud whitelist):
    - Si el tema es específico de un proyecto existente → `project="saldoar"`, `project="claude-vibecoding"`, etc. (debe ser uno YA enrolled en cloud — ver `engram projects list`)
    - Si es info **truly personal cross-PC** (preferencias, tareas multi-proyecto, decisiones globales) → `project="personal"` (bucket limpio, agregado al cloud whitelist el 2026-05-15)
-   - Si es **info de ideas/inbox** → `project="ideas-vault"`
-   - Si es **info de efectos/reels/codepen** → `project="reel-vault"` o `codepen-vault`
-   - Si es **info de tooling/scripts/utilities** → `project="tooling-vault"`
-   - Si es **descubrimiento cross-proyecto** → `project="discoveries"`
-   - **Para nombres nuevos no en la lista actual**: agregar a `ENGRAM_CLOUD_ALLOWED_PROJECTS` en el server Oracle vía SSH. Sin eso, el cloud retorna 403 forbidden. La lista actual incluye los proyectos existentes + 6 buckets clean nuevos (personal, cross-pc, ideas-vault, reel-vault, tooling-vault, discoveries). Ver `/opt/engram-cloud/.env` en server.
+   - Si es **info de efectos/codepen** → `project="codepen-vault"`
+   - **Ideas/inbox, tooling, descubrimientos cross-proyecto** → `project="personal"` con topic_key `ideas/…`, `tooling/…`, `discoveries/…`. **NO usar** `ideas-vault`, `reel-vault`, `tooling-vault` ni `discoveries`: no están enrolled en el cloud (verificado 2026-10-02, `sync_state` = `degraded: not enrolled`), un save ahí queda solo en la PC local.
+   - **Para nombres nuevos no en la lista actual**: además de la allowlist del server (`ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env`, vía SSH), el proyecto tiene que estar enrolled en el cliente (`engram cloud enroll <p>`). Sin allowlist el cloud responde 403; sin enroll el save no sale de la PC. Verificar con `sqlite3 ~/.engram/engram.db "select project from sync_enrolled_projects"`.
 3. **Buscar similares** antes de escribir:
    ```
    results = mem_search(tema, project="<el-decidido-en-paso-2>", scope="personal")
@@ -30,7 +28,7 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
      - `mem_save(topic_key="{family}/{nuevo-slug}", ...)` si es nuevo subtema de la misma familia
      - `mem_judge` si el nuevo contradice un existente
    - **Si NO hay match**: `mem_save` con `topic_key` nuevo y namespace lógico (ej `saldoar/proveedores/reunion-15hs`, `vibecoding/refero-integration`)
-5. **SIEMPRE `scope="personal"`** — los saves scope=project NO auto-syncan al cloud (validado 2026-05-15). El cloud sync funciona scope-agnostic pero el filtro por defecto del MCP usa scope.
+5. **`scope="personal"` por defecto** — NO por el sync: el sync al cloud es scope-agnostic (auditoría 2026-10-02: subieron 817/832 obs `project` y 783/785 `personal`; la regla vieja "scope=project no sube" era FALSA). Se usa `personal` porque `mem_context(scope="personal")` y los filtros por scope solo muestran esas obs; una obs `project` existe en el cloud pero no aparece en ese contexto.
 6. **`project=` EXPLÍCITO en mem_save Y mem_search** — el MCP auto-detecta project del cwd del server (varía por PC según donde abriste Claude Desktop). Sin project explícito, cada PC routea a un bucket distinto y los saves no se cruzan aunque el cloud los tenga. **Esto es crítico para cross-PC retomable**.
 7. **Confirmar al usuario** qué topic_key + project se usaron y por qué (linking vs nuevo).
 
@@ -38,7 +36,16 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
 
 **Cloud allowlist** (resuelto self-hosted 2026-05-15): el server Oracle Cloud (`161.153.203.83`) tiene `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env`. Para agregar un bucket nuevo: SSH al server, editar `.env`, `docker compose up -d cloud`. Backup automático por convención `.env.bak.YYYYMMDD-pre-{razon}`. Issue upstream para auto-allow opt-in: github.com/Gentleman-Programming/engram
 
-**Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC. Si necesitás un bucket personal global, usar `project="system32"` (de-facto convention) hasta que upstream permita nombres custom.
+**Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC. El bucket personal global es `project="personal"`. **NUNCA `system32`**: es un proyecto accidental (cwd `C:\Windows\System32` del MCP en Windows) con contenido mezclado; la sugerencia vieja de usarlo como convención quedó derogada el 2026-10-02.
+
+**Proyecto por defecto según carpeta (pc004, 2026-10-02):** el MCP arranca por `~/.local/bin/engram-mcp`, que pasa `--project personal` solo si Claude se abrió en `/home/pc004` (ahí hay 20 repos y Engram daba `ambiguous_project`). Dentro de un repo la detección sigue normal (git remote o `.engram/config.json` con la clave **`project_name`**, no `project`). Igual, `project=` explícito sigue siendo obligatorio.
+
+**Engram v3 (casa en 3.0.0 desde 2026-10-02; pc004 en 2.2.1).** Lo que sigue sale de leer el diff, no de probarlo:
+- `mem_update` y `mem_delete` exigen `expected_project` igual al dueño de la obs (si falta da 400, si no coincide da 409).
+- El `project` de una obs es inmutable: para "moverla" hay que re-guardarla en el destino y soft-borrar la original.
+- El plugin `engram@engram` 0.1.5 rechaza `mem_save` con `project=` distinto al de la sesión; mantenerlo deshabilitado o fijado antes de pasar el binario a v3.
+- Borrados: el delete soft NO crea tombstone (solo `--hard`). En 2.2.1 el borrado soft sobrevive al sync y a la reimportación (prueba del 2026-10-02, `~/engram-audit-2026-10-02/FASE0-RESULTADO.md`). Las resurrecciones masivas vienen de la época 1.x.
+- Nunca cambiar proyecto, scope ni deleted_at con SQL directo: no genera mutación y el cloud lo revierte.
 
 ## Protocolo de save robusto — anti silent-fail cloud (2026-05-18)
 
@@ -49,7 +56,7 @@ Validado empíricamente: `mem_save` puede retornar OK al cliente y aun así NUNC
 2. `content` mínimo 20 chars con info real. NO guardar placeholders ("WIP", "TBD", "(empty)").
 3. `topic_key` con namespace `{proyecto}/{slug}` o `{family}/{slug}`.
 4. `project=` explícito (whitelist del cloud) — NUNCA dejar auto-detect del cwd.
-5. `scope="personal"` para cross-PC (regla validada 2026-05-15).
+5. `scope="personal"` por defecto (para que aparezca en `mem_context` personal; el sync no depende del scope).
 
 **Capa 1b — Whitelist gate (solo si el project es desconocido)**:
 
@@ -58,8 +65,9 @@ Lista sintética de buckets más usados (verificar con `engram projects list` si
 - `saldoar`, `saldoar-outreach`
 - `vetconnect`, `kahntus`, `kahntus-portfolio`
 - `dashboard-pm`
-- `personal`, `ideas-vault`, `discoveries`
-- `system32`
+- `personal` (bucket personal global; ideas, tooling y discoveries van acá con su topic_key)
+- `codepen-vault`, `tactica-usdt-demo`, `reyesoft-vacaciones`, `buddy-kids`, `gomeria-app`
+- ~~`ideas-vault`, `discoveries`~~ no enrolled · ~~`system32`~~ accidental, no usar
 - `cross-claude-mailbox` (canal asíncrono entre instancias — ver `cross-claude-mailbox-reference.md`)
 
 Si tu proyecto NO está en esta lista → correr `engram projects list | grep -w "{nombre}"` antes del primer save. Si no aparece, es proyecto nuevo (Path B bootstrap CLI).

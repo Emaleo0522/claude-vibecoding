@@ -175,7 +175,7 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 ### Protocolos de guardado — invariantes core (detalle en ref on-demand)
 
 Reglas SIEMPRE vigentes al escribir memoria:
-1. **`project=` EXPLÍCITO en mem_save Y mem_search** (nunca auto-detect del cwd — cada PC routea distinto y los saves no se cruzan) + **`scope="personal"`** para cross-PC.
+1. **`project=` EXPLÍCITO en mem_save Y mem_search** (nunca auto-detect del cwd — cada PC routea distinto y los saves no se cruzan) + **`scope="personal"`** por defecto (lo muestra `mem_context` personal; el sync al cloud no depende del scope — auditoría 2026-10-02). Bucket personal = `personal`, nunca `system32`.
 2. **`title` nunca es opcional** y `topic_key` con namespace `{proyecto}/{slug}`. Buscar similares ANTES de escribir: match → `mem_update`, no duplicar.
 3. **Post-save verify obligatorio**: 1 `mem_search` del topic_key exacto; confirmar al usuario *"Guardado #ID title=X project=Y topic_key=Z"*. mem_save exitoso ≠ está en el cloud.
 4. **Antes de cerrar sesión con saves**: `engram cloud upgrade doctor --project X` (`ready`=OK; `repairable`=`repair --apply`).
@@ -210,7 +210,7 @@ El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boo
 
 > **Detalles completos** (Boot Sequence, carga progresiva del DAG State, continuidad entre sesiones, topic keys completa, pre-compact snapshot): ver `orquestador.md`
 
-## Hook System (13 hooks, último 2026-05-15: engram-cloud-sync-on-stop)
+## Hook System (11 hooks automáticos + `frontend-audit` manual — engram-sync legacy removido 2026-07-22, cloud lo cubre)
 
 Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
 
@@ -225,8 +225,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `pre-compact-engram` | **GUARDA** snapshot a disco antes de compactar (v2.2) |
 | `cost-tracker` | **REGISTRA** tool calls por categoria (async) |
 | `session-summary` | **LOGUEA** actividad en JSONL (async) |
-| `engram-sync` | **SINCRONIZA** Engram con GitHub al parar sesion (async, 60s) |
-| `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: `engram cloud upgrade doctor` + `repair --apply` auto. Filtro defensivo para `relation/upsert` (bug upstream). |
+| `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: `engram cloud upgrade doctor` + `repair --apply` auto. Filtro defensivo para `relation/upsert` (bug upstream). Reemplazó al legacy `engram-sync.js` (Git), removido 2026-07-22 por doble-sync redundante. |
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
 | `frontend-audit` | **EJECUTABLE manual** (no hook automático): el `frontend-developer` lo invoca con --mood/--hero/--motion para AUTO_AUDIT pre-return (T1-T5). Complementa `pre-return-audit` con reglas que requieren contexto de mood. |
 | `jev-route-check` | **EJECUTABLE manual** (Fase 1 paso 5b del orquestador): segunda opinión de routing de agente + flag `security_review` por tarea con Jev (TypeSafe AI). Lee `.pipeline/tareas.md`, escribe `.pipeline/jev-route-check.json`. Fail-open sin `TYPESAFE_API_KEY`. |
@@ -234,7 +233,7 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 
 **Comportamiento**: Exit 2 = BLOCK | Exit 0 + stderr = WARN | Fail-open (nunca rompe el flujo)
 
-**Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries)
+**Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries) | `drift-check.js` (compara sistema vivo vs repo claude-vibecoding) | `healthcheck.js` (health check único del sistema) | `mcp-registry.js` (inventario de MCPs configurados)
 
 ## Herramientas, referencias y protocolo de subagentes
 > Tabla completa de tools por agente, referencias tecnicas (24 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
@@ -264,7 +263,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ## Stack, Design Systems y Componentes
 > Tabla completa del stack adaptable, Nothing Design System, y 21st.dev: ver `pipeline-reference.md`
 
-- **Stack**: el orquestador decide en Fase 1. Defaults: Next.js (apps), Vite+React (landing), Hono (backend), Drizzle (ORM), Zustand (state)
+- **Stack**: el orquestador decide en Fase 1. Defaults: Next.js **15 o 16** (apps, nunca 14), Vite+React (landing), Hono (backend), Drizzle (ORM), Zustand (state)
 - **Nothing Design**: opcional, solo si el usuario lo pide. Referencia en `nothing-design-reference.md`
 - **21st.dev**: componentes community via Context7 MCP. Inspiracion + base, no copy-paste. Adaptar siempre al brand
 
@@ -276,7 +275,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 
 ### Reglas críticas (validadas en producción)
 - **Migración NO es automática**: siempre agregar `"migrate": "npx @better-auth/cli migrate"` al `package.json` y ejecutarlo antes del primer `npm run dev`
-- **Next.js 16+**: usar `proxy.ts` con `export async function proxy()` — el archivo `middleware.ts` está deprecado
+- **Next.js 16+**: usar `proxy.ts` con `export async function proxy()` — el archivo `middleware.ts` está deprecado (verificado vigente 2026-08-11; migración automática con `npx @next/codemod@canary middleware-to-proxy .`)
 
 ### Better Auth + Supabase + Vercel + Next.js 16
 - **Referencia completa con código y checklist**: `~/.claude/agents/better-auth-reference.md` § "Better Auth + Supabase + Vercel"
@@ -325,6 +324,11 @@ Plan Go de opencode ($10/mes, cuotas $12/5h · $60/mes) da acceso API a modelos 
 |---|---|---|
 | `structured` | deepseek-v4-flash | Clasificación en lote, JSON/datos de prueba, resúmenes de docs, etiquetado masivo |
 | `copy` | qwen3.7-plus | Borradores de contenido en castellano (descripciones producto, copy secciones) |
+| `glm` | glm-5.2 | Análisis/razonamiento pesado, drafts largos, lectura de docs extensos — la vía para descargar trabajo de Claude cuando el margen semanal está bajo (alta 2026-08-07) |
+
+**Keys de empresa (2026-08-07)**: `OPENCODE_API_KEY` (primaria) + `OPENCODE_API_KEY_FALLBACK` (segunda), ambas en `~/.bashrc`. `zen-delegate.js` rota sola a la segunda ante 401/402/403/429 o "insufficient/quota" y registra `key_slot` en el log. La key personal vieja quedó como `OPENCODE_API_KEY_PERSONAL`. Flag `--model <id>` permite cualquier modelo del catálogo sin tocar el script.
+
+**Sesión completa fuera de Claude**: `opencode` CLI está configurado con provider custom `opencode-go` (baseURL `https://opencode.ai/zen/go/v1`, la key del plan Go NO sirve en el `/zen/v1` por defecto — da "Insufficient balance"). Default `opencode-go/glm-5.2`, small model `opencode-go/qwen3.7-plus`. Uso: `oc` (interactivo) u `ocr "prompt"` (one-shot). Para trabajo de refactor/exploración mecánica larga, correr ahí en vez de acá.
 
 **Reglas de calidad (inviolables)**:
 - Output delegado NUNCA va a producción directo: Claude valida SIEMPRE (muestreo ≥10% en lotes, revisión completa en piezas únicas).
@@ -362,66 +366,9 @@ Plan Go de opencode ($10/mes, cuotas $12/5h · $60/mes) da acceso API a modelos 
 ### Referencias externas
 - **PocketBase**: `pocketbase-reference.md` | **DevOps VPS**: `devops-vps-reference.md`
 
-## Overrides Windows — Diferencias con Linux/Claude Code
+## Overrides Windows — solo en Windows/Claude Desktop
 
-> **SOLO APLICA en Windows/Claude Desktop.** En Linux/Claude Code CLI, ignorar esta seccion completa.
-
-### Servidores de desarrollo (agentes: frontend-developer, backend-architect, rapid-prototyper, xr-immersive-developer)
-
-**NUNCA** arrancar servidores con `npm run dev` via Bash directamente.
-**SIEMPRE** usar `preview_start` del Claude Preview MCP.
-
-Pasos obligatorios:
-1. Crear o verificar `.claude/launch.json` en el directorio de trabajo con la configuracion del proyecto
-2. Llamar `preview_start` con el nombre definido en `launch.json`
-3. Usar `preview_logs` para verificar que arranco sin errores
-4. Pasar la URL (`http://localhost:{puerto}`) al agente de QA
-
-Formato de `.claude/launch.json` en Windows:
-```json
-{
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "nombre-proyecto",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "cd nombre-proyecto && npm run dev"],
-      "port": 3000
-    }
-  ]
-}
-```
-
-> **Motivo**: En Claude Desktop/Windows, `npm` no esta disponible directamente en el PATH del entorno de herramientas. `cmd /c` resuelve el PATH correctamente.
-
-### Comandos de una sola vez (instalar deps, migrar DB, build)
-Estos si se ejecutan via Bash normal:
-```bash
-cd nombre-proyecto && npm install
-cd nombre-proyecto && npm run migrate
-cd nombre-proyecto && npm run build
-```
-
-### Puertos en Windows
-- Matar procesos: `netstat -ano | findstr :PORT` + `taskkill /PID <pid> /F`
-- Linux equivalente: `lsof -ti:PORT | xargs kill -9`
-
-### Next.js — Versiones
-- Usar **Next.js 15 o 16** (no 14)
-- Next.js 16+: `proxy.ts` en raiz del proyecto (no `middleware.ts`)
-
-### Preview verification — proporcionalidad
-
-El hook `stop` dispara `verification_workflow` cuando se edita código con un preview server activo. Aplicar con criterio según el tipo de cambio:
-
-| Tipo de cambio | Verificación requerida |
-|----------------|----------------------|
-| Layout, UI, estilos, lógica nueva | Workflow completo: snapshot → navigate → screenshot |
-| Texto/copy en estado visible (hero, nav, botones) | `preview_eval` único para confirmar el texto nuevo existe |
-| Typo en empty state / texto condicional | `preview_eval` único: `document.body.innerText.includes("texto_correcto")` — si retorna `true`, PASS sin navegación ni snapshot |
-| Cambio en archivo no-UI (config, tipos, API routes) | Saltar verificación completamente |
-
-**Regla clave**: un typo fix en un string estático NO requiere navegar, hacer snapshot ni tomar screenshot. Un solo `preview_eval` de búsqueda de texto es suficiente y correcto.
+> En Linux/Claude Code CLI (esta PC), **ignorar**. Si la sesión corre en Windows/Claude Desktop, **cargar `~/.claude/agents/windows-overrides-reference.md`** — arranque de servidores via `preview_start` del Claude Preview MCP (nunca `npm run dev` por Bash), formato de `.claude/launch.json`, puertos, y proporcionalidad de la verificación con preview. Extraído el 2026-08-11: cobraba ~40 líneas de arranque en una máquina donde nunca aplica.
 
 ## Herramientas de diseno
 - **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explicitamente

@@ -51,10 +51,16 @@
         "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Guarantees cross-PC retomable. See CLAUDE.md § Protocolo guarda en engram."
       }
     ],
-    "Notification": [
+    "SessionStart": [
       {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-start-context.js" }],
-        "description": "Loads previous session context on startup"
+        "matcher": "resume",
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-start-context.js", "timeout": 10000 }],
+        "description": "Loads previous session context on resume (additionalContext). Moved from Notification 2026-09-01: stderr there never reached the model."
+      },
+      {
+        "matcher": "startup|resume|clear|fork",
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/engram-session-fallback.js", "timeout": 10 }],
+        "description": "Registers the Claude Code session in the local Engram server when the plugin could not (no jq / ambiguous cwd), so mem_save does not fail with unknown_session. Fail-open."
       }
     ],
     "PreCompact": [
