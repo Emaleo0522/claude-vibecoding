@@ -1,6 +1,6 @@
 ---
 name: windows-overrides-reference
-description: Overrides operativos para Windows / Claude Desktop — arranque de servidores de desarrollo via Claude Preview MCP (nunca `npm run dev` por Bash), formato de `.claude/launch.json`, gestion de puertos, y proporcionalidad de la verificacion con preview. Cargado SOLO cuando la sesion corre en Windows/Claude Desktop. En Linux/Claude Code CLI ignorar por completo. Extraido de CLAUDE.md global el 2026-08-11 (audit de drift) para no cobrar tokens de arranque en la PC Linux, donde nunca aplica.
+description: Overrides operativos para Windows / Claude Desktop — arranque de servidores de desarrollo via el Browser pane de Claude Desktop (`preview_start`) (nunca `npm run dev` por Bash), formato de `.claude/launch.json`, gestion de puertos, y proporcionalidad de la verificacion con preview. Cargado SOLO cuando la sesion corre en Windows/Claude Desktop. En Linux/Claude Code CLI ignorar por completo. Extraido de CLAUDE.md global el 2026-08-11 (audit de drift) para no cobrar tokens de arranque en la PC Linux, donde nunca aplica.
 ---
 
 # Overrides Windows — Diferencias con Linux/Claude Code
@@ -10,7 +10,7 @@ description: Overrides operativos para Windows / Claude Desktop — arranque de 
 ## Servidores de desarrollo (agentes: frontend-developer, backend-architect, rapid-prototyper, xr-immersive-developer)
 
 **NUNCA** arrancar servidores con `npm run dev` via Bash directamente.
-**SIEMPRE** usar `preview_start` del Claude Preview MCP.
+**SIEMPRE** usar `preview_start` del Browser pane de Claude Desktop (`mcp__Claude_Browser__preview_start`).
 
 Pasos obligatorios:
 1. Crear o verificar `.claude/launch.json` en el directorio de trabajo con la configuracion del proyecto
@@ -54,11 +54,11 @@ El hook `stop` dispara `verification_workflow` cuando se edita código con un pr
 | Tipo de cambio | Verificación requerida |
 |----------------|----------------------|
 | Layout, UI, estilos, lógica nueva | Workflow completo: snapshot → navigate → screenshot |
-| Texto/copy en estado visible (hero, nav, botones) | `preview_eval` único para confirmar el texto nuevo existe |
-| Typo en empty state / texto condicional | `preview_eval` único: `document.body.innerText.includes("texto_correcto")` — si retorna `true`, PASS sin navegación ni snapshot |
+| Texto/copy en estado visible (hero, nav, botones) | `javascript_tool` único (Browser pane) para confirmar el texto nuevo existe |
+| Typo en empty state / texto condicional | `javascript_tool` único (Browser pane): `document.body.innerText.includes("texto_correcto")` — si retorna `true`, PASS sin navegación ni snapshot |
 | Cambio en archivo no-UI (config, tipos, API routes) | Saltar verificación completamente |
 
-**Regla clave**: un typo fix en un string estático NO requiere navegar, hacer snapshot ni tomar screenshot. Un solo `preview_eval` de búsqueda de texto es suficiente y correcto.
+**Regla clave**: un typo fix en un string estático NO requiere navegar, hacer snapshot ni tomar screenshot. Un solo `javascript_tool` de búsqueda de texto es suficiente y correcto.
 
 ---
 

@@ -5,6 +5,8 @@
  * Exit 2 = BLOCK, Exit 0 = ALLOW
  *
  * Vibecoding v2.1 - Expandido con patrones destructivos
+ * 2026-09-27 - Cubre tambien la tool PowerShell (matcher "Bash|PowerShell" en settings.json)
+ *              + patrones propios de PowerShell. Casos de prueba: 22 (positivos y sanos).
  */
 
 let input = '';
@@ -20,8 +22,9 @@ process.stdin.on('end', () => {
     const toolName = data.tool_name || '';
     const toolInput = data.tool_input || {};
 
-    // Solo nos interesa Bash
-    if (toolName !== 'Bash') process.exit(0);
+    // Shells: Bash y PowerShell (en Windows PowerShell es la terminal principal;
+    // antes solo se miraba Bash y los mismos comandos pasaban por PowerShell — fix 2026-09-27)
+    if (toolName !== 'Bash' && toolName !== 'PowerShell') process.exit(0);
 
     const command = toolInput.command || '';
 
@@ -112,6 +115,26 @@ process.stdin.on('end', () => {
     if (/\b(curl|wget)\s+.*\|\s*(sh|bash|zsh|node|python)/.test(command)) {
       process.stderr.write(
         'BLOCKED: Piping remote content directly to shell detected. ' +
+        'Download and inspect the script first. Ask the user for explicit permission.'
+      );
+      process.exit(2);
+    }
+
+    // PowerShell: borrado recursivo sobre raiz de disco, home, carpeta actual/padre o comodin
+    // (Remove-Item y sus alias). Un borrado recursivo de una subcarpeta puntual se permite.
+    if (/\b(Remove-Item|rm|ri|del|erase|rd|rmdir)\b(?=[^;|&\n]*\s-r[a-z]*\b)[^;|&\n]*?\s["']?(~|\$HOME|\$env:USERPROFILE|\$env:HOMEPATH|[A-Za-z]:\\?|\*|\.\.?)["']?(?=\s|$)/i.test(command)) {
+      process.stderr.write(
+        'BLOCKED: Recursive delete on a drive root, home, current/parent folder or wildcard. ' +
+        'Ask the user for explicit permission before deleting.'
+      );
+      process.exit(2);
+    }
+
+    // PowerShell: contenido remoto ejecutado sin inspeccion (irm|iex, iex (irm ...))
+    if (/\b(irm|iwr|Invoke-RestMethod|Invoke-WebRequest|curl|wget)\b[^\n]*\|\s*(iex|Invoke-Expression)\b/i.test(command) ||
+        /\b(iex|Invoke-Expression)\s*\(+\s*(irm|iwr|Invoke-RestMethod|Invoke-WebRequest|New-Object\s+Net\.WebClient)/i.test(command)) {
+      process.stderr.write(
+        'BLOCKED: Remote content piped to Invoke-Expression detected. ' +
         'Download and inspect the script first. Ask the user for explicit permission.'
       );
       process.exit(2);

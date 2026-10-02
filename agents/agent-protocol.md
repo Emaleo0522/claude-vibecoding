@@ -64,7 +64,7 @@ mem_save(
 Paso 1: mem_search("{proyecto}/{mi-cajon}") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido COMPLETO actual
 Paso 3: Merge tu contenido nuevo con el existente (no sobrescribir ciegamente)
-Paso 4: mem_update(observation_id, contenido_mergeado)
+Paso 4: mem_update(observation_id, contenido_mergeado, expected_project="{proyecto}")  # expected_project obligatorio desde Engram v3
 ```
 
 **REGLA**: `topic_key` es OBLIGATORIO en todo `mem_save`. Sin él, los reintentos crean duplicados.
@@ -140,7 +140,7 @@ NOTAS: {texto libre, máx 3 líneas}
 | Valor | Cuándo usarlo | Acción del orquestador |
 |-------|--------------|----------------------|
 | `layout` | Cambios de UI, estilos, componentes, lógica nueva | Workflow completo: snapshot → navigate → screenshot |
-| `typo` | Corrección de texto/copy en string estático, empty state, texto condicional | Un solo `preview_eval`: `document.body.innerText.includes("texto_nuevo")` → si `true`, PASS |
+| `typo` | Corrección de texto/copy en string estático, empty state, texto condicional | Un solo `javascript_tool` (Browser pane): `document.body.innerText.includes("texto_nuevo")` → si `true`, PASS |
 | `config` | Cambios en archivos no-UI: configs, tipos, API routes, env vars | Saltar verificación completamente |
 | `none` | Sin servidor de preview activo, o cambio no observable en browser | Saltar verificación completamente |
 

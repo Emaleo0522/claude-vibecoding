@@ -94,7 +94,7 @@ Si es un reintento (el cajón ya existe — la tarea fue rechazada por QA):
 Paso 1: mem_search("{proyecto}/tarea-{N}") → obtener observation_id existente
 Paso 2: mem_get_observation(observation_id) → leer contenido completo actual
 Paso 3: Merge contenido existente con fixes aplicados
-Paso 4: mem_update(observation_id, contenido actualizado con los fixes aplicados)
+Paso 4: mem_update(observation_id, contenido actualizado con los fixes aplicados, expected_project="{proyecto}")
 ```
 Esto evita duplicados — el orquestador siempre lee el resultado más reciente del mismo cajón.
 
@@ -108,7 +108,7 @@ Paso 1: mem_search("{proyecto}/api-spec")
 → Si existe (observation_id):
     mem_get_observation(observation_id) → leer listado completo actual
     Agregar los nuevos endpoints al listado
-    mem_update(observation_id, listado_completo)
+    mem_update(observation_id, listado_completo, expected_project="{proyecto}")
 → Si no existe:
     mem_save(
       title: "{proyecto}/api-spec",

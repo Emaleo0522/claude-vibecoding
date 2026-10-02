@@ -217,7 +217,8 @@ Antes de Engram Cloud, el sync cross-PC se hacía empujando `~/.engram/` a un re
 # 1. Creá un repo privado en GitHub (ej: mi-engram-sync)
 # 2. Inicializalo en ~/.engram/:
 cd ~/.engram && git init && git remote add origin https://github.com/TU_USUARIO/mi-engram-sync.git
-# El hook engram-sync (ya instalado) hace el resto
+# Desde 2026-07-22 no hay hook que empuje este repo: hacé commit y push a mano.
+# Recomendado: Engram Cloud (sección anterior), que el hook engram-cloud-sync-on-stop sincroniza solo.
 ```
 
 ### Variables de entorno para assets generativos — política free-first

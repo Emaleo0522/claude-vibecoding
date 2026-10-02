@@ -42,7 +42,7 @@ Excepción: el reporte obligatorio de Modo Diagnóstico (TL;DR + tabla por sever
 
 ## Modo Claude normal — aprovechá tu toolkit (no sos Claude pelado)
 
-La mayoría de las sesiones son modo normal. En modo normal tenés a disposición —y solés subutilizar— los mismos recursos que el pipeline: **24 subagentes** (`Explore`, `Plan`, frontend-developer, security-engineer, api-tester, seo-discovery, deployer…), **~24 referencias on-demand** indexadas en `~/.claude/agents/AGENTS.md`, **skills**, **MCPs** (Context7, Playwright, Supabase, Vercel…) y **Engram**. Alcanzalos por reflejo, antes de moler a mano.
+La mayoría de las sesiones son modo normal. En modo normal tenés a disposición —y solés subutilizar— los mismos recursos que el pipeline: **24 subagentes** (`Explore`, `Plan`, frontend-developer, security-engineer, api-tester, seo-discovery, deployer…), **~27 referencias on-demand** indexadas en `~/.claude/agents/AGENTS.md`, **skills**, **MCPs** (Context7, Playwright, Supabase, Vercel…) y **Engram**. Alcanzalos por reflejo, antes de moler a mano.
 
 **Reflejos por defecto (no pedir permiso, usar):**
 
@@ -53,7 +53,7 @@ La mayoría de las sesiones son modo normal. En modo normal tenés a disposició
 | Antes de trabajo pesado en un dominio (auth, VPS, React 19, GSAP, scroll, Redis…) | Mirá `AGENTS.md` y cargá la ref ANTES de empezar |
 | Pregunta sobre librería/framework/API/CLI | Context7 MCP antes de responder de memoria |
 | Diseño de implementación con trade-offs reales | Spawn `Plan` |
-| Descubrimiento no-obvio que sirve cross-sesión | `mem_save` (scope=personal) — no lo pierdas |
+| Descubrimiento no-obvio que sirve cross-sesión | `mem_save` con `project=` explícito y scope=personal, sin esperar pedido (decisión de Ema 2026-10-02) |
 
 **Regla de oro normal-mode:** preferí **retrieval estructurado / delegación** antes que exploración manual ruidosa. Una llamada a `Explore` o a una ref que te da la conclusión vale más que 6 greps que queman contexto. Es la misma meta que la gestión de tokens: menos ruido, igual o más calidad.
 
@@ -81,7 +81,7 @@ Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2
 
 ## Skill & Reference Index
 
-`~/.claude/agents/AGENTS.md` mapea las 24 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
+`~/.claude/agents/AGENTS.md` mapea las 27 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
 
 ## Arquitectura
 
@@ -101,7 +101,7 @@ Fase 5  Publicación        → git (confirmación) → deployer (confirmación)
 Modo Modificación → análisis → planificación ligera → mini Fase 3+QA (para proyectos ya completados)
 ```
 
-### Intent Clarifier (Fase 1, Paso 0 — NUEVO)
+### Intent Clarifier (Fase 1, Paso 0)
 Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles en `orquestador.md` § FASE 1 Paso 0.
 
 ### Visual Direction Checkpoint (Fase 2, Paso 1.5)
@@ -144,7 +144,7 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 
 | Tipo | Cuándo | Patrón |
 |---|---|---|
-| **Show & continue** | Cambio implementado, agente confía pero quiere validación pasiva | *"Cambié X por Y porque Z. Pego screenshot. Si no decís nada, sigo con W."* |
+| **Show & continue** | Cambio implementado, agente confía pero quiere validación pasiva. **No aplica** a decisiones de diseño, de plan ni de arquitectura: ahí siempre Show & confirm o Show & choose | *"Cambié X por Y porque Z. Pego screenshot. Si no decís nada, sigo con W."* |
 | **Show & confirm** | Decisión interpretable post-implementación | *"Implementé X. Te muestro el resultado. ¿Sigo o ajusto?"* — espera respuesta |
 | **Show & choose** | Pre-implementación, multi-opción legítima | *"Para Y hay 3 caminos: A/B/C. Mi recomendación es B porque [razón]. ¿Cuál vamos?"* |
 
@@ -168,7 +168,7 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 ### Engram (memoria persistente)
 - **Lectura siempre en 2 pasos**: `mem_search` → `mem_get_observation` (nunca usar preview truncada)
 - **Escritura siempre con topic_key**: evita duplicados en reintentos
-- **Actualizar, no duplicar**: usar `mem_update(observation_id, nuevo)` si el cajón ya existe
+- **Actualizar, no duplicar**: usar `mem_update(observation_id, nuevo, expected_project=<proyecto dueño>)` si el cajón ya existe (`expected_project` es obligatorio desde Engram v3; el project de una obs es inmutable)
 - **Dual-write critico**: `{proyecto}/estado` y `{proyecto}/tareas` se guardan SIEMPRE en Engram + disco (`{project_dir}/.pipeline/`)
 - **Proactive saves**: subagentes guardan descubrimientos no obvios con topic key `{proyecto}/discovery-{desc}`
 
@@ -236,10 +236,10 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 **Utilidades manuales**: `node ~/.claude/hooks/audit-system.js` (health check) | `cost-report.js` (uso de tools) | `learning-index.js` (discoveries) | `drift-check.js` (compara sistema vivo vs repo claude-vibecoding) | `healthcheck.js` (health check único del sistema) | `mcp-registry.js` (inventario de MCPs configurados)
 
 ## Herramientas, referencias y protocolo de subagentes
-> Tabla completa de tools por agente, referencias tecnicas (24 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
+> Tabla completa de tools por agente, referencias tecnicas (27 archivos), MCPs externos, protocolo compartido y coordinacion cross-agent: ver `pipeline-reference.md`
 
 - **Protocolo compartido**: `~/.claude/agents/agent-protocol.md` (Engram 2-pasos, topic_key obligatorio, Return Envelope estandar)
-- **Design Intelligence Engine**: `~/.claude/design-data/` (search.js + 8 CSVs, 161 industrias). El motor informa, no decide. Anti-patterns HIGH son obligatorios.
+- **Design Intelligence Engine**: `~/.claude/design-data/` (search.js + 9 CSVs, 161 industrias). El motor informa, no decide. Anti-patterns HIGH son obligatorios.
 
 ## Anti-generic + QA hardening (fix 2026-04-19)
 
@@ -248,7 +248,7 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 ## Reglas clave
 - Solo el **orquestador** guarda DAG State en Engram
 - Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
-- **Excepción modo Claude normal**: si el usuario pide explícitamente guardar algo ("guarda esto", "guardalo en engram", "remember this"), Claude normal SÍ puede llamar `mem_save` directamente. La regla "solo orquestador guarda" aplica a flujos automáticos. Invariantes en § "Protocolos de guardado"; flujo completo en `engram-save-reference.md`.
+- **Excepción modo Claude normal**: Claude normal SÍ llama `mem_save` directamente, tanto cuando el usuario lo pide ("guarda esto", "guardalo en engram", "remember this") como por iniciativa propia para descubrimientos no obvios que sirven cross-sesión (decisión de Ema 2026-10-02). La regla "solo orquestador guarda" aplica al DAG State y a los flujos automáticos del pipeline. Invariantes en § "Protocolos de guardado"; flujo completo en `engram-save-reference.md`.
 - Solo **evidence-collector** y **reality-checker** hacen QA visual
 - Solo **git** hace commits/push — nunca un agente dev
 - Solo **deployer** despliega (Vercel para web, EAS Build para mobile)
@@ -340,6 +340,39 @@ Plan Go de opencode ($10/mes, cuotas $12/5h · $60/mes) da acceso API a modelos 
 
 **Cuándo delegar (heurística)**: la tarea es mecánica + el prompt cabe en pocas líneas + validar por muestreo es más barato que generarlo yo. Si voy a tener que leer TODO el output en detalle, no hay ahorro — hacerlo directo.
 
+## Trabajo 3D / Blender (2026-08-19)
+
+**Regla de oro, verificada en producción:** esta combinación es un buen operador
+de Blender y un mal modelador. Se **construye** lo que tiene lógica geométrica
+(hard surface, props, armas, armaduras, arquitectura, escenas, low poly,
+materiales, iluminación, medición, automatización). Se **delega a un generador**
+todo lo que tenga anatomía o escultura (personajes, caras, criaturas, manos).
+Dos días de modelado procedural orgánico fallaron; el mismo objeto generado desde
+una imagen salió en minutos. No es falta de pericia, es el dominio.
+
+**Método obligatorio, en este orden:** contrato de calidad con criterios medibles
+ANTES de tocar geometría → blockout y proporciones → gates de silueta y medidas →
+**render clay en gris** → verificación estructural en materiales planos →
+materiales, luz y render con exposición calibrada. Ningún gate se saltea para
+"verlo lindo antes". Para planes 3D no triviales, refutación con subagente de
+contexto limpio (model opus) antes de construir.
+
+**Al empezar cualquier trabajo 3D, cargar `~/.claude/agents/blender-3d-reference.md`**
+(método completo, técnicas verificadas, catálogo de errores propios, qué MCP usar
+para qué, índice del pipeline en `blender-lab/`). Si además hay anatomía, rigging
+o animación, cargar también `3d-generativo-reference.md`.
+
+**Los dos MCP de Blender son complementarios, no compiten:** el oficial mide,
+inspecciona y trae **la documentación de la API embebida** (evita inventar
+nombres de funciones, que fue el error más frecuente); el de la comunidad
+(`ahujasid/blender-mcp`) trae assets de Poly Haven y Sketchfab y generadores 3D.
+Ambos ejecutan código sin sandbox: guardar el trabajo antes de usarlos.
+
+**CHEQUEO OBLIGATORIO:** antes del primer uso de una tool `mcp__blender-assets__*`
+en cada sesión, llamar `get_addon_status`. Ese add-on **no arranca solo**: si el
+chequeo falla, decirle a Ema que en Blender apriete `N`, pestaña **BlenderMCP**,
+botón **Connect to Claude**. El oficial sí arranca solo.
+
 ## Best Practices Cross-Cutting (validadas en producción)
 
 > Las best practices de SEO, performance web, accesibilidad, WebGL safety y Mixed Content ya están integradas en los agentes que las aplican (frontend-developer.md, seo-discovery.md, evidence-collector.md, xr-immersive-developer.md). Esta sección solo contiene patterns que NO están en ningún agente.
@@ -368,7 +401,7 @@ Plan Go de opencode ($10/mes, cuotas $12/5h · $60/mes) da acceso API a modelos 
 
 ## Overrides Windows — solo en Windows/Claude Desktop
 
-> En Linux/Claude Code CLI (esta PC), **ignorar**. Si la sesión corre en Windows/Claude Desktop, **cargar `~/.claude/agents/windows-overrides-reference.md`** — arranque de servidores via `preview_start` del Claude Preview MCP (nunca `npm run dev` por Bash), formato de `.claude/launch.json`, puertos, y proporcionalidad de la verificación con preview. Extraído el 2026-08-11: cobraba ~40 líneas de arranque en una máquina donde nunca aplica.
+> En Linux/Claude Code CLI, **ignorar**. Si la sesión corre en Windows/Claude Desktop, **cargar `~/.claude/agents/windows-overrides-reference.md`** — arranque de servidores via `preview_start` del Browser pane de Claude Desktop (nunca `npm run dev` por Bash), formato de `.claude/launch.json`, puertos, y proporcionalidad de la verificación con preview. Extraído el 2026-08-11: cobraba ~40 líneas de arranque en una máquina donde nunca aplica.
 
 ## Herramientas de diseno
 - **Figma/FigJam**: Solo usar cuando el usuario comparte una URL de Figma o lo pide explicitamente

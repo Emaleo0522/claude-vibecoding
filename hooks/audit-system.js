@@ -251,10 +251,9 @@ function testSettingsStructure() {
 function testHookPerformance() {
   // Excluir scripts cuya latencia NO importa para el flujo per-tool-call:
   // utilidades manuales on-demand (audit-system, healthcheck, drift-check, mcp-registry)
-  // y hooks async/largos por diseño (engram-sync corre en Stop, 60s).
   // healthcheck.js además orquesta a audit-system.js: medirlo acá dispararía una cadena de spawn.
   const MANUAL_UTILS = new Set([
-    'audit-system.js', 'engram-sync.js',
+    'audit-system.js',
     'healthcheck.js', 'drift-check.js', 'mcp-registry.js',
   ]);
   const hookFiles = fs.readdirSync(HOOKS_DIR)

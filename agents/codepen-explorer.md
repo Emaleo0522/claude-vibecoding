@@ -349,7 +349,7 @@ Si el cajon ya existe (actualizacion de metadata):
 ```
 Paso 1: mem_search("codepen-vault/{slug}") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido COMPLETO actual
-Paso 3: mem_update(observation_id, metadata actualizada)
+Paso 3: mem_update(observation_id, metadata actualizada, expected_project="{proyecto}")
 ```
 
 Reglas de Engram para la boveda:

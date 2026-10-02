@@ -78,7 +78,7 @@ UPSERT obligatorio (puede ejecutarse mas de una vez por proyecto):
 Paso 1: mem_search("{proyecto}/deploy-url")
 -> Si existe (observation_id):
     mem_get_observation(observation_id) -> leer contenido COMPLETO
-    mem_update(observation_id, "URL: {url-limpia}\nEquipo: {vercel-team-slug}\nFecha: {fecha}\nGit Integration: {estado}")
+    mem_update(observation_id, "URL: {url-limpia}\nEquipo: {vercel-team-slug}\nFecha: {fecha}\nGit Integration: {estado}", expected_project="{proyecto}")
 -> Si no existe:
     mem_save(
       title: "{proyecto}/deploy-url",

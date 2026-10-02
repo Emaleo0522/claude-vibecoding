@@ -17,6 +17,7 @@ Identificá triggers del contexto (stack, deploy_target, fase, pedido del usuari
 | `linux-hardening` | `deploy_target ∈ {vps, oracle-cloud, digitalocean, hetzner, aws-ec2, self-hosted}` | `linux-hardening-reference.md` | Vercel/Netlify/EAS Build |
 | `pocketbase` | Backend = PocketBase | `pocketbase-reference.md` | Stack usa Supabase/Hono/Drizzle |
 | `devops-vps` | Deploy/operate de VPS sin Vercel | `devops-vps-reference.md` | Vercel/Netlify |
+| `windows-overrides` | La sesión corre en Windows/Claude Desktop (dev servers, launch.json, puertos, verificación con preview) | `windows-overrides-reference.md` | Linux/Claude Code CLI |
 | `nothing-design` | Usuario pidió Nothing aesthetic explícito | `nothing-design-reference.md` | Default — skip silencioso |
 | `react-patterns` | Stack React 19 / Next.js 15-16 / Tailwind 4 / Zustand / TanStack Query | `react-patterns-reference.md` | Stack no-React |
 | `redis-patterns` | Backend usa Redis (caching, pub/sub, HyperLogLog) | `redis-patterns-reference.md` | Sin Redis |
@@ -34,6 +35,8 @@ Identificá triggers del contexto (stack, deploy_target, fase, pedido del usuari
 | `simplicity-first` | Agente o Claude normal duda si su output natural va corto o largo. Reglas core ya en CLAUDE.md global § "Simplicity First en outputs"; cargar el ref solo cuando se necesitan ejemplos buenos/malos extendidos | `simplicity-first-reference.md` | Output trivial donde la respuesta es obvia (1 línea) — la regla core del CLAUDE.md ya alcanza |
 | `engram-save` | Usuario pide guardar memoria ("guardá", "guardalo", "remember this") o hay que diagnosticar sync cloud. Invariantes core ya en CLAUDE.md § "Protocolos de guardado" | `engram-save-reference.md` | Save simple donde las invariantes inline alcanzan (project= explícito + scope=personal + verify) |
 | `orquestador-vdc` | Orquestador llega a Fase 2 Paso 1.5 (Visual Direction Checkpoint) en proyecto con UI | `orquestador-vdc-reference.md` | API pura / CLI / backend-only (`intent.ui_applicable=false`) |
+| `blender-3d` | Cualquier trabajo en Blender o 3D: modelar, renderizar, materiales, iluminación, escenas, low poly. Cargar ANTES de empezar | `blender-3d-reference.md` | Nunca, si hay Blender de por medio |
+| `3d-generativo` | El objeto tiene anatomía, escultura u orgánico (personaje, criatura, cara), o hay que riggear/animar una malla | `3d-generativo-reference.md` | Hard surface, escenas, props geométricos, low poly (ahí alcanza `blender-3d`) |
 | `orquestador-fase45` | Orquestador: todas las tareas de Fase 3 en PASS → entra a Fase 4 | `orquestador-fase45-reference.md` | Pipeline aún en Fases 1-3 |
 
 ## Convenciones

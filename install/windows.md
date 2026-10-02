@@ -477,7 +477,6 @@ El sistema se encarga del resto:
 |   |-- pre-compact-engram.js                    <- snapshot antes de compactar
 |   |-- session-summary.js                       <- log de sesion
 |   |-- session-start-context.js                 <- carga contexto al inicio
-|   |-- engram-sync.js                           <- sync memorias a GitHub
 |   |-- audit-system.js                          <- auditor del sistema (manual)
 |   |-- learning-index.js                        <- indice de descubrimientos (manual)
 %APPDATA%\Claude\

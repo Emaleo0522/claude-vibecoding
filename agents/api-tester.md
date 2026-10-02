@@ -127,7 +127,7 @@ Si el cajón ya existe (re-ejecución tras NEEDS WORK de reality-checker):
 ```
 Paso 1: mem_search("{proyecto}/api-qa") → obtener observation_id existente
 Paso 2: mem_get_observation(observation_id) → leer contenido actual
-Paso 3: mem_update(observation_id, contenido actualizado con nueva corrida)
+Paso 3: mem_update(observation_id, contenido actualizado con nueva corrida, expected_project="{proyecto}")
 ```
 
 ## Lo que NO hago

@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/block-no-verify.js" }],
         "description": "Blocks git commit/push --no-verify and --no-gpg-sign"
       },
@@ -41,10 +41,6 @@
       {
         "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-summary.js", "async": true }],
         "description": "Logs session activity for recovery and tracking"
-      },
-      {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/engram-sync.js --hook", "async": true, "timeout": 60000 }],
-        "description": "Auto-syncs Engram memories to GitHub on session stop (legacy chunk-based sync)"
       },
       {
         "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/engram-cloud-sync-on-stop.sh", "async": true, "timeout": 300000 }],
