@@ -1,0 +1,29 @@
+{
+  "name": "engram-status",
+  "version": "0.1.0",
+  "description": "Estado del sync de Engram en la línea de estado, con una franja de aviso solo cuando algo falla",
+  "author": {
+    "name": "Ema"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "project": {
+      "title": "Proyecto de Engram",
+      "type": "string",
+      "default": "personal",
+      "description": "Proyecto de Engram para el diagnóstico de /engram-status"
+    },
+    "engramPath": {
+      "title": "Ruta de engram",
+      "type": "string",
+      "default": "engram",
+      "description": "Ejecutable de engram (nombre en PATH o ruta absoluta)"
+    },
+    "logPath": {
+      "title": "Log de sync",
+      "type": "string",
+      "default": "",
+      "description": "Log del hook engram-cloud-sync-on-stop; vacío = <home>/.claude/sessions/engram-cloud-sync.jsonl"
+    }
+  }
+}
