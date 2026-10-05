@@ -5,13 +5,14 @@ Mods de Claude Code: plugins de *function hooks* que corren dentro de la sesión
 | Mod | Qué hace |
 |---|---|
 | [`engram-status`](engram-status/) | Estado del sync de Engram en la línea de estado; franja de color con "ver detalle" solo cuando algo falla; `/engram-status`. Spec y evidencia en [`SPEC.md`](engram-status/SPEC.md). |
+| [`mascota`](mascota/) | Una mascota kaomoji por repo en la línea de estado: crece con tus commits y tests en verde, se resfría con tests en rojo y se enferma con builds rotos; nunca muere ni molesta. `/mascota` abre el panel, `/mascota nombre <x>` la renombra. Spec y evidencia en [`SPEC.md`](mascota/SPEC.md). |
 
 ## Instalar
 
 1. Copiar la carpeta del mod a `~/.claude/mods/<mod>/` (sin `.claude-plugin/types/`, que lo genera el motor).
 2. Agregar la ruta en el bloque `env` de `~/.claude/settings.json` (se acepta `~`; con varios mods, separar con `;` en Windows y `:` en Linux):
    ```json
-   "env": { "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/engram-status" }
+   "env": { "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/engram-status;~/.claude/mods/mascota" }
    ```
 3. Reiniciar Claude Code / la app.
 

@@ -1,0 +1,7 @@
+{
+  "name": "mascota",
+  "version": "0.1.0",
+  "description": "Una mascota kaomoji por repo en la línea de estado: crece con tus commits y tests en verde, se enferma con builds rotos",
+  "author": { "name": "Ema" },
+  "types": "./types/index.d.ts"
+}
