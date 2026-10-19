@@ -4,7 +4,7 @@
  * Solo modelos APROBADOS por eval 2026-06-10 (ver zen-eval/results.json).
  *
  * Uso:
- *   node zen-delegate.js --task structured --prompt "..."         # deepseek-v4-flash
+ *   node zen-delegate.js --task structured --prompt "..."         # deepseek-v4.1-flash
  *   node zen-delegate.js --task copy --prompt-file ./prompt.txt   # qwen3.7-plus
  *   node zen-delegate.js --report                                 # resumen de uso
  *
@@ -18,13 +18,14 @@ const path = require('path');
 const os = require('os');
 
 const MODELS = {
-  structured: 'deepseek-v4-flash',
+  structured: 'deepseek-v4.1-flash', // v4-flash salió del catálogo (2026-10-19)
   copy: 'qwen3.7-plus',
-  glm: 'glm-5.2', // razonamiento/analisis pesado — plan Go empresa (2026-08-07)
+  glm: 'glm-5.3-flash', // razonamiento/analisis pesado — plan Go empresa (2026-08-07; 5.2→5.3-flash 2026-10-19)
 };
 // Precios aprox USD/M tokens (docs opencode 2026-06) para tracking de cuota Go
 const PRICE = {
   'deepseek-v4-flash': {in: 0.14, out: 0.28},
+  'deepseek-v4.1-flash': {in: 0.14, out: 0.28}, // precio asumido igual a v4
   'qwen3.7-plus': {in: 0.4, out: 2.4},
   'glm-5.2': {in: 0.6, out: 2.2},
 };

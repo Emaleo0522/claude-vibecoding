@@ -322,13 +322,13 @@ Plan Go de opencode ($10/mes, cuotas $12/5h · $60/mes) da acceso API a modelos 
 
 | `--task` | Modelo | Usar para |
 |---|---|---|
-| `structured` | deepseek-v4-flash | Clasificación en lote, JSON/datos de prueba, resúmenes de docs, etiquetado masivo |
+| `structured` | deepseek-v4.1-flash | Clasificación en lote, JSON/datos de prueba, resúmenes de docs, etiquetado masivo |
 | `copy` | qwen3.7-plus | Borradores de contenido en castellano (descripciones producto, copy secciones) |
-| `glm` | glm-5.2 | Análisis/razonamiento pesado, drafts largos, lectura de docs extensos — la vía para descargar trabajo de Claude cuando el margen semanal está bajo (alta 2026-08-07) |
+| `glm` | glm-5.3-flash | Análisis/razonamiento pesado, drafts largos, lectura de docs extensos — la vía para descargar trabajo de Claude cuando el margen semanal está bajo (alta 2026-08-07) |
 
 **Keys de empresa (2026-08-07)**: `OPENCODE_API_KEY` (primaria) + `OPENCODE_API_KEY_FALLBACK` (segunda), ambas en `~/.bashrc`. `zen-delegate.js` rota sola a la segunda ante 401/402/403/429 o "insufficient/quota" y registra `key_slot` en el log. La key personal vieja quedó como `OPENCODE_API_KEY_PERSONAL`. Flag `--model <id>` permite cualquier modelo del catálogo sin tocar el script.
 
-**Sesión completa fuera de Claude**: `opencode` CLI está configurado con provider custom `opencode-go` (baseURL `https://opencode.ai/zen/go/v1`, la key del plan Go NO sirve en el `/zen/v1` por defecto — da "Insufficient balance"). Default `opencode-go/glm-5.2`, small model `opencode-go/qwen3.7-plus`. Uso: `oc` (interactivo) u `ocr "prompt"` (one-shot). Para trabajo de refactor/exploración mecánica larga, correr ahí en vez de acá.
+**Sesión completa fuera de Claude**: `opencode` CLI está configurado con provider custom `opencode-go` (baseURL `https://opencode.ai/zen/go/v1`, la key del plan Go NO sirve en el `/zen/v1` por defecto — da "Insufficient balance"). Default `opencode-go/glm-5.3-flash`, small model `opencode-go/qwen3.7-plus`. Uso: `oc` (interactivo) u `ocr "prompt"` (one-shot). Para trabajo de refactor/exploración mecánica larga, correr ahí en vez de acá.
 
 **Reglas de calidad (inviolables)**:
 - Output delegado NUNCA va a producción directo: Claude valida SIEMPRE (muestreo ≥10% en lotes, revisión completa en piezas únicas).
