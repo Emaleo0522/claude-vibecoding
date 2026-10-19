@@ -40,6 +40,8 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
 
 **Proyecto por defecto según carpeta (pc004, 2026-10-02):** el MCP arranca por `~/.local/bin/engram-mcp`, que pasa `--project personal` solo si Claude se abrió en `/home/pc004` (ahí hay 20 repos y Engram daba `ambiguous_project`). Dentro de un repo la detección sigue normal (git remote o `.engram/config.json` con la clave **`project_name`**, no `project`). Igual, `project=` explícito sigue siendo obligatorio.
 
+**Sesión `shared` para cruzar proyectos (corregido 2026-10-05, v2.2.1):** el hook `~/.claude/hooks/engram-session-fallback.js` registra la sesión de Claude Code al arrancar. Si la registra con `ownership_mode: 'project_owned'`, todo `mem_save` con un `project=` distinto al de la sesión falla con `session_project_mismatch` (pasó el 05/10 al guardar en `saldoar` desde `/home/pc004`). Ahora la registra **sin ownership_mode** → el server la guarda como `shared` y acepta cualquier `project=` explícito (verificado por stdio con sesión simulada). La fijación `--project personal` del wrapper NO era la causa: sirve para que los saves sin project caigan en personal. Si vuelve a aparecer el error en una sesión vieja: `cd /tmp && engram save ... --project X` (la CLI desde `/home/pc004` da ambiguous).
+
 **Engram v3 (casa en 3.0.0 desde 2026-10-02; pc004 en 2.2.1).** Lo que sigue sale de leer el diff, no de probarlo:
 - `mem_update` y `mem_delete` exigen `expected_project` igual al dueño de la obs (si falta da 400, si no coincide da 409).
 - El `project` de una obs es inmutable: para "moverla" hay que re-guardarla en el destino y soft-borrar la original.

@@ -12,8 +12,9 @@
  *
  * Este hook registra la sesión si todavía no existe: con el proyecto que
  * resuelve el server para el cwd, o con un proyecto neutro si es ambiguo.
- * Cada save sigue pasando project= explícito (regla de CLAUDE.md); el cruce
- * de proyectos está verificado en v2.2.1.
+ * Cada save sigue pasando project= explícito (regla de CLAUDE.md). La sesión
+ * se registra 'shared' (sin ownership_mode) para que ese cruce funcione: con
+ * 'project_owned' fallaba (session_project_mismatch, corregido 2026-10-05).
  *
  * Fail-open: nunca bloquea el arranque de la sesión.
  */
@@ -54,10 +55,13 @@ async function main() {
     ? resolved.body.project
     : FALLBACK_PROJECT;
 
+  // Sin ownership_mode el server la registra como 'shared': acepta mem_save con
+  // project= explícito de cualquier proyecto. Con 'project_owned' rechazaba todo
+  // project distinto con session_project_mismatch (verificado 2026-10-05, v2.2.1).
   const created = await request('/sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: sessionId, project, directory: cwd, ownership_mode: 'project_owned' }),
+    body: JSON.stringify({ id: sessionId, project, directory: cwd }),
   });
 
   if (created.status >= 200 && created.status < 300) {

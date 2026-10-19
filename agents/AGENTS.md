@@ -37,6 +37,7 @@ Identificá triggers del contexto (stack, deploy_target, fase, pedido del usuari
 | `orquestador-vdc` | Orquestador llega a Fase 2 Paso 1.5 (Visual Direction Checkpoint) en proyecto con UI | `orquestador-vdc-reference.md` | API pura / CLI / backend-only (`intent.ui_applicable=false`) |
 | `blender-3d` | Cualquier trabajo en Blender o 3D: modelar, renderizar, materiales, iluminación, escenas, low poly. Cargar ANTES de empezar | `blender-3d-reference.md` | Nunca, si hay Blender de por medio |
 | `3d-generativo` | El objeto tiene anatomía, escultura u orgánico (personaje, criatura, cara), o hay que riggear/animar una malla | `3d-generativo-reference.md` | Hard surface, escenas, props geométricos, low poly (ahí alcanza `blender-3d`) |
+| `diagram-design` | Hay que producir un diagrama que **va a ver otra persona**: doc de proveedor LP, playbook, propuesta/deck a cliente, README público. Tipos: arquitectura, flujo, secuencia, swimlane, timeline, gantt, embudo, cuadrante, capas, barras | `diagram-design-reference.md` | Diagrama para pensar, descartable, o que cambia seguido → Mermaid en `.md` · lo que dice una tabla de 3 columnas |
 | `orquestador-fase45` | Orquestador: todas las tareas de Fase 3 en PASS → entra a Fase 4 | `orquestador-fase45-reference.md` | Pipeline aún en Fases 1-3 |
 
 ## Convenciones
