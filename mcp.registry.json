@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-09-21",
+  "updated": "2026-11-03",
   "note": "Fuente de verdad legible del inventario de MCPs. Mantenido a mano. Leído por hooks/mcp-registry.js y por healthcheck.js. status LIVE/CONFIG_ONLY refleja configuración base; la disponibilidad real por sesión depende de la conexión (claude.ai-hosted) y de tokens.",
   "statuses": {
     "LIVE": "verificado activo (core del sistema)",
@@ -10,22 +10,32 @@
     "MISSING": "declarado pero no instalado"
   },
   "servers": [
-    { "id": "engram", "capability": "memory", "status": "LIVE", "env": [], "notes": "Memoria persistente cross-sesión + cloud Oracle. Binario en ~/go/bin/engram." },
+    { "id": "engram", "capability": "memory", "status": "LIVE", "env": [], "notes": "Memoria persistente cross-sesión + cloud Oracle. Binario: casa ~/bin/engram.exe (MCP desde claude_desktop_config.json, se actualiza solo con la tarea EngramAutoUpdate); pc004 ~/go/bin/engram. El plugin engram@engram se quitó en casa el 2026-11-03 (en pc004 sigue)." },
     { "id": "context7", "capability": "documentation", "status": "LIVE", "env": [], "notes": "Docs de librerías + componentes 21st.dev (library ID /websites/21st_dev_community_components). Preferir antes de responder de memoria. VÍA ÚNICA: server local stdio 'npx -y @upstash/context7-mcp', en Windows vía claude_desktop_config.json y en Linux vía install/linux.sh. NO agregar el conector Context7 de claude.ai: duplica los tools y sus nombres UUID quedan fuera de la allowlist mcp__context7__* de settings.local.json, lo que dispara diálogos de permiso en corridas de agentes. Duplicado detectado y removido en casa el 2026-08-10." },
-    { "id": "jev", "capability": "typed-judgments", "status": "LIVE", "env": ["TYPESAFE_API_KEY"], "notes": "Jev (TypeSafe AI) como MCP: jev_screen (inyección/relevancia de contenido web antes de actuar), jev_verify (claim vs evidencia), jev_classify/find/rerank/decide/compare/extract, jev_review/gate (diff). Server stdio 'npx -y @jkudish/jev-mcp' registrado con `claude mcp add --scope user jev -- npx -y @jkudish/jev-mcp` (hereda TYPESAFE_API_KEY del env). Solo recibe lo que Claude le pasa explícitamente — nunca conversación. Instalado pc004 2026-09-21; casa pendiente." },
+    { "id": "jev", "capability": "typed-judgments", "status": "OPTIONAL", "env": ["TYPESAFE_API_KEY"], "notes": "Jev (TypeSafe AI) como MCP: jev_screen (inyección/relevancia de contenido web antes de actuar), jev_verify (claim vs evidencia), jev_classify/find/rerank/decide/compare/extract, jev_review/gate (diff). Server stdio 'npx -y @jkudish/jev-mcp' registrado con `claude mcp add --scope user jev -- npx -y @jkudish/jev-mcp` (hereda TYPESAFE_API_KEY del env). Solo recibe lo que Claude le pasa explícitamente, nunca conversación. Instalado en pc004 el 2026-09-21 (allí sigue activo) y en casa después; en casa PAUSADO desde 2026-11-03 (idea de bot de trading de Ema; ~720 MB de procesos con 1 uso). Volver: `claude mcp add --scope user jev -- cmd /c npx -y @jkudish/jev-mcp` (Windows) con TYPESAFE_API_KEY en el entorno de usuario. El status OPTIONAL refleja casa." },
     { "id": "playwright", "capability": "browser", "status": "LIVE", "env": [], "notes": "QA visual: screenshots, network, console. Solo Chromium." },
     { "id": "codegraph", "capability": "code-retrieval", "status": "OPTIONAL", "env": [], "notes": "Retrieval estructurado del código. Solo activo si el proyecto tiene índice .codegraph/." },
     { "id": "supabase", "capability": "database", "status": "CONFIG_ONLY", "env": [], "notes": "DB/migrations/edge functions." },
-    { "id": "vercel", "capability": "deploy", "status": "PENDING_TOKEN", "env": ["VERCEL_TOKEN"], "notes": "Deploy web. CLI autenticado para deployer-agent." },
+    { "id": "vercel", "capability": "deploy", "status": "LIVE", "env": [], "notes": "Deploy web: el deployer usa el CLI autenticado. El conector de claude.ai sirve para consultar deploys y logs (no pide VERCEL_TOKEN)." },
     { "id": "netlify", "capability": "deploy", "status": "CONFIG_ONLY", "env": [], "notes": "Deploy alternativo." },
-    { "id": "figma", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Design-to-code / code-to-design. Solo al compartir URL Figma o pedirlo." },
+    { "id": "figma", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Conector oficial de claude.ai. Ema decidió apagarlo en casa el 2026-11-03 (0 usos): si no está cargado, pedirle que lo prenda para la sesión cuando Ema comparta una URL de Figma; lo usan orquestador-vdc-reference (reference_source=figma) y pipeline-reference." },
     { "id": "canva", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Diseño y export de assets." },
-    { "id": "excalidraw", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Diagramas." },
     { "id": "huggingface", "capability": "image-gen", "status": "CONFIG_ONLY", "env": ["HF_TOKEN"], "notes": "FLUX.1-schnell free-first para image-agent/logo-agent." },
     { "id": "notion", "capability": "project-management", "status": "CONFIG_ONLY", "env": [], "notes": "Superficie de gestión de proyectos." },
     { "id": "gmail", "capability": "email", "status": "CONFIG_ONLY", "env": [], "notes": "Lectura/etiquetado/borradores de correo." },
     { "id": "google-calendar", "capability": "calendar", "status": "CONFIG_ONLY", "env": [], "notes": "Eventos/agenda." },
     { "id": "google-drive", "capability": "storage", "status": "CONFIG_ONLY", "env": [], "notes": "Archivos en Drive." },
-    { "id": "three-js-viewer", "capability": "3d-preview", "status": "OPTIONAL", "env": [], "notes": "Preview de escenas Three.js para xr-immersive-developer." }
+    { "id": "three-js-viewer", "capability": "3d-preview", "status": "OPTIONAL", "env": [], "notes": "Preview de escenas Three.js para xr-immersive-developer." },
+    { "id": "coolify", "capability": "deploy-empresa", "status": "OPTIONAL", "env": ["COOLIFY_TOKEN"], "notes": "Coolify de la empresa (Docker de Reyesoft). PAUSADO EN CASA desde 2026-11-03: la conexión daba 403 y nunca se usó. Receta privada en ~/.claude/_archivo/mcp-pausados/coolify.md (no en el repo). Al volver: token nuevo de solo lectura. Nada personal en Coolify." },
+    { "id": "reel-vault", "capability": "reel-extraction", "status": "LIVE", "env": ["GEMINI_API_KEY"], "notes": "MCP propio (~/.claude/mcp-servers/reel-vault, Python). yt-dlp + Gemini (GEMINI_MODEL en pipeline.py; gemini-3.5-flash-lite desde 2026-11-03 porque 2.5-flash se apaga el 2026-12-01). Solo casa." },
+    { "id": "blender", "capability": "3d", "status": "CONFIG_ONLY", "env": [], "notes": "MCP oficial de Blender (uv run en ~/.claude/mcp-servers/blender-mcp, puerto 9877): mide, inspecciona, capturas y docs de la API. Requiere Blender abierto con el add-on. Pendiente actualizar 1.0.0 -> 1.0.3 (auditoría 2026-11, bloque 4)." },
+    { "id": "blender-assets", "capability": "3d-assets", "status": "CONFIG_ONLY", "env": [], "notes": "MCP de la comunidad (claude_desktop_config.json corre `uvx blender-mcp`; el proyecto ahora se llama mcp-for-blender, ex ahujasid/blender-mcp): Poly Haven, Sketchfab, Poly Pizza y generate_3d. ADD-ON DESFASADO: el server habla protocolo 15 y el add-on instalado es v1.5 (protocolo 4), duplicado y con telemetría. Pendiente: `uvx mcp-for-blender install-addon` con Blender libre." },
+    { "id": "x-digest-tool", "capability": "x-posts", "status": "LIVE", "env": [], "notes": "Mod propio (CLAUDE_CODE_PLUGIN_DIRS): tool leer_post_x, resumen de un post de x.com con la sesión de chrome-profile. Repo privado Emaleo0522/x-digest." },
+    { "id": "claude-in-chrome", "capability": "browser", "status": "CONFIG_ONLY", "env": [], "notes": "Extensión de Chrome de la app: el Chrome real de Ema con sus logins. Usar solo si Ema lo pide; por defecto el navegador interno." },
+    { "id": "computer-use", "capability": "desktop-control", "status": "OPTIONAL", "env": [], "notes": "Control del escritorio desde la app (0 usos a 2026-11-03). Cada app pide aprobación." },
+    { "id": "claude-docs", "capability": "documents", "status": "CONFIG_ONLY", "env": [], "notes": "Conector de claude.ai: docs editables y compartibles (skill docs)." },
+    { "id": "google-docs", "capability": "documents", "status": "OPTIONAL", "env": [], "notes": "Conector de claude.ai (0 usos a 2026-11-03); duplica a Claude Docs." },
+    { "id": "pencil", "capability": "design", "status": "CONFIG_ONLY", "env": [], "notes": "Editor de archivos .pen (era de un proyecto personal deprecado). 0 usos. A SACAR de claude_desktop_config.json con ~/bin/mcp-desktop-quitar.ps1 (con la app cerrada); después borrar esta entrada." },
+    { "id": "pixel-bridge", "capability": "notifications", "status": "CONFIG_ONLY", "env": [], "notes": "Hooks desconectados en la auditoría 2026-11 (bloque 3). El MCP sale con ~/bin/mcp-desktop-quitar.ps1 (con la app cerrada); después borrar esta entrada. Carpeta ~/.claude/pixel-bridge y copia en el repo se conservan." }
   ]
 }
