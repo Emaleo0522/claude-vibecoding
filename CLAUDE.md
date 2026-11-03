@@ -19,6 +19,7 @@ Vale en los 4 modos.
 - **Toda respuesta arranca con TL;DR de 1-3 oraciones que resuelva la pregunta directa.** Si la respuesta se acaba ahí, termina ahí.
 - **Subir a estructura** (tablas, `##`, secciones) solo si Ema pidió análisis, comparación, plan, auditoría o detalle; si hay 3+ ítems con campos paralelos; o si la decisión toca varios archivos o pide su autorización.
 - **Bajar siempre a prosa simple** si pidió "resumen", "corto", "rápido" o "en palabras sencillas", si es opinión o pregunta cerrada, o si confirma estado después de una acción.
+- **Sin guion largo (—)** en ningún texto redactado (respuestas, copy, documentos, mensajes, y lo que escriban los subagentes): usar comas o reformular. A Ema le suena a texto de IA (pedido del 2026-07-06).
 - **Anti-patterns**: `##` en respuestas de menos de 10 líneas · tabla de 2 filas o columnas no paralelas · análisis antes de la conclusión. El reporte de Modo Diagnóstico sigue su template. Ejemplos: `simplicity-first-reference.md`.
 
 ## Modo Claude normal: usá el toolkit
@@ -108,7 +109,7 @@ MCP `jev` (12 tools de juicio tipado, `TYPESAFE_API_KEY`). Reflejo: **`jev_scree
 
 ## Trabajo 3D / Blender
 **Al empezar cualquier trabajo 3D, cargar `~/.claude/agents/blender-3d-reference.md`** (método con gates en orden, **render clay en gris** antes que materiales, refutación opus, qué MCP para qué); con anatomía, rigging o animación, también `3d-generativo-reference.md`. Se **construye** lo geométrico; se **delega a un generador** lo que tiene anatomía o escultura. Los MCP corren código sin sandbox: guardar antes.
-**CHEQUEO OBLIGATORIO:** antes del primer uso de `mcp__blender-assets__*` en la sesión, `get_addon_status`. Ese add-on **no arranca solo**: si falla, Ema aprieta `N` en Blender, pestaña **BlenderMCP**, **Connect to Claude**. El oficial arranca solo.
+**CHEQUEO OBLIGATORIO:** antes del primer uso de `mcp__blender-assets__*` en la sesión, `get_addon_status`. Ese add-on **no arranca solo**: si falla, Ema aprieta `N` en Blender, pestaña **BlenderMCP**, **Connect to Claude**. El oficial: probar una de sus tools; si no responde, arrancarlo en Blender desde Edit → Preferences → Add-ons → MCP → **Start MCP Bridge Server** (sin confirmar si su autostart está activo: verificarlo en el próximo uso y fijarlo acá).
 
 ## Punteros por dominio
 - **Assets visuales**: **brand-agent SIEMPRE primero** (sin `brand.json` no funciona ningún creativo), **NO auto-generar assets sin confirmación**, free-first: `pipeline-reference.md` § "Agentes creativos".
