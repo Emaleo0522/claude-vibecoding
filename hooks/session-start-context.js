@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
- * Hook: session-start-context (Notification)
- * Se ejecuta al inicio de sesion. Lee el snapshot pre-compact mas reciente
- * y emite un resumen via stderr para que Claude tenga contexto inmediato.
+ * Hook: session-start-context (SessionStart, matcher "resume")
+ * Se ejecuta al retomar una sesion. Lee el snapshot pre-compact mas reciente
+ * y emite un resumen como additionalContext (JSON por stdout) para que Claude
+ * tenga contexto inmediato. Antes estaba en Notification y salia por stderr,
+ * que nunca llegaba al modelo (movido 2026-09-01).
  *
  * Tambien lee el cost-log para dar metricas de la sesion anterior.
  *
