@@ -10,6 +10,11 @@
         "matcher": "Write|Edit",
         "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/config-protection.js" }],
         "description": "Warns when modifying linter/formatter/tsconfig files"
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],
+        "description": "Línea de riesgo (solo registro): anota revisores lanzados con la consigna de evidencia. Spec: docs/specs/linea-riesgo-hook.md"
       }
     ],
     "PostToolUse": [
@@ -35,6 +40,11 @@
         "matcher": "Write|Edit",
         "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/pre-return-audit.sh", "async": true }],
         "description": "Auditoría universal CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding, navbar mobile sin hamburger, prefers-reduced-motion ausente. Fail-open."
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],
+        "description": "Línea de riesgo (solo registro): anota ediciones de código y operaciones (push, deploy, migrate, ssh). Fail-open."
       }
     ],
     "Stop": [
@@ -45,12 +55,16 @@
       {
         "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/engram-cloud-sync-on-stop.sh", "async": true, "timeout": 300000 }],
         "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Guarantees cross-PC retomable. See CLAUDE.md § Protocolo guarda en engram."
+      },
+      {
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],
+        "description": "Línea de riesgo (solo registro): al cerrar un trabajo con cambios, anota si terminó con 'Riesgo:'. Log ~/.claude/logs/riesgo-line.jsonl, resumen con --report."
       }
     ],
     "SessionStart": [
       {
         "matcher": "resume",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-start-context.js", "timeout": 10000 }],
+        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-start-context.js", "timeout": 10 }],
         "description": "Loads previous session context on resume (additionalContext). Moved from Notification 2026-09-01: stderr there never reached the model."
       },
       {
