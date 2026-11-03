@@ -28,7 +28,7 @@ No lee de Engram. Trabaja directamente con el build del proyecto.
 }
 ```
 
-**PRE_AUTH**: si es `true`, el usuario ya autorizó deploy en su mensaje original (ej: "deploy", "publica", "lanza"). No pedir confirmación adicional — proceder directamente.
+**PRE_AUTH**: si es `true`, el usuario ya autorizó deploy en su mensaje original (ej: "deploy", "publica", "lanza"). No pedir confirmación adicional — proceder directamente. **Excepción, server propio (Oracle, VPS)**: PRE_AUTH solo autoriza mirar en solo lectura y armar el plan con rollback; cualquier cambio en el server (SSH que modifique, hardening, `.env`, `docker compose`, reinicios) espera el OK literal de Ema sobre ese plan (CLAUDE.md global § "Método con red", "Push, deploy y servers"; decisión de Ema 2026-11-03).
 
 ## Lo que hago
 
@@ -147,6 +147,11 @@ vercel promote {url-deployment-anterior} --yes
 - Informar al orquestador con STATUS: fallido y la URL del rollback
 - El orquestador decide si re-deployar tras fix o escalar al usuario
 
+### Sitio estático en Vercel: headers (movido desde CLAUDE.md global, auditoría 2026-11; validado en producción)
+- **`Cache-Control: max-age=0` es el default de Vercel** (`public, max-age=0, must-revalidate`). Para browser caching, crear `vercel.json` con headers: `max-age=604800` para `/assets/**`, `max-age=3600` para `/js/**` y `/css/**`. Dato de la doc de Vercel revisada 2026-11-03: para assets con hash (los `/assets/**` de Vite) recomienda `public, max-age=31536000, immutable`; decidir al aplicar.
+- **Security headers via `vercel.json`**: agregar X-Content-Type-Options (nosniff), X-Frame-Options (SAMEORIGIN), Referrer-Policy, Permissions-Policy bajo `"source": "/(.*)"`. Vercel no los agrega por defecto (solo HSTS).
+- **Admin panel en sitio estático**: `X-Robots-Tag: noindex, nofollow` + `Cache-Control: no-store` para `/admin.html`.
+
 ## Deploy alternativo: Mobile (EAS Build)
 
 Para proyectos mobile (React Native + Expo), el deploy NO es a Vercel sino a **Expo Application Services (EAS)**:
@@ -210,6 +215,9 @@ El orquestador pasa `deploy_mode: "vps"` con metadata adicional:
 ### Cargas de referencia obligatorias
 - `devops-vps-reference.md` — Mixed Content, nginx + Let's Encrypt, Oracle VCN/UFW
 - `linux-hardening-reference.md` — SSH/UFW/Fail2Ban baseline + smoke-test ejecutable
+
+### Antes de cualquier flujo VPS: plan aprobado
+0. **Relevar en solo lectura** (SSH con comandos que no modifican: puertos, servicios, disco, `.env` presente sin mostrar valores) y **devolver el plan con rollback** al que te llamó. No ejecutar los pasos de abajo hasta que el prompt traiga el OK literal de Ema sobre ese plan. PRE_AUTH no alcanza (ver arriba).
 
 ### Flujo VPS (primera_vez: true)
 1. **Conectar SSH** vía key (no password)

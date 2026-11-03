@@ -60,7 +60,7 @@ Desde Engram v1.15.9+ la validación rechaza `mem_save` con `project=` para proy
 
 ## Graceful Degradation
 
-### Dual-Write (ver CLAUDE.md §Engram y Boot Sequence §0b)
+### Dual-Write (ver pipeline-reference.md § "Reglas clave del pipeline" y Boot Sequence §0b)
 Cajones con dual-write obligatorio: `estado`, `tareas` (SIEMPRE) + `css-foundation`, `design-system`, `security-spec` (post-Fase 2). Estructura en `{project_dir}/.pipeline/`. Crear con `mkdir -p` al primer write. Agregar `.pipeline/` a `.gitignore`.
 
 ### Si Engram es inalcanzable (fallback completo)

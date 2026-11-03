@@ -44,7 +44,7 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
   - Imports: `better-auth/react`, `better-auth/vue`, `better-auth/svelte`, `better-auth/client`
   - Hooks: `authClient.useSession()`, `authClient.signIn.social()`, `authClient.signOut()`
   - **Next.js 16+**: usar `proxy.ts` (NO `middleware.ts` — deprecado). Export: `export async function proxy() { ... }`
-  - **SIEMPRE verificar** que backend haya corrido `npx @better-auth/cli migrate` antes de testear auth
+  - **SIEMPRE verificar** que backend haya corrido la migración de Better Auth (`better-auth-reference.md` § "Generar esquema de DB": `npx auth@latest`, según el adaptador) antes de testear auth
 - **API type-safe**: tRPC client (si backend usa tRPC — importar `AppRouter` type directamente)
 - **Build**: Vite, Next.js
 - **Testing**: Vitest, Playwright, Testing Library
@@ -442,6 +442,12 @@ Cuando el orquestador pasa un efecto extraido de CodePen para integrar:
 
 Despues de implementar exitosamente un efecto de la boveda o de CodePen:
 - Si el orquestador pide guardar en boveda → escribir `adapted.json` en `~/.claude/codepen-vault/{slug}/`
+
+### Patrones CSS validados (movido desde CLAUDE.md global, auditoría 2026-11; validados en producción)
+- **`::after` para background images**: pseudo-elemento con `position: absolute; inset: 0; z-index: 0; pointer-events: none`. Hijos con `position: relative; z-index: 1`.
+- **`max()` para secciones full-width centradas**: `padding: Xpx max(24px, calc((100vw - 1200px) / 2))`, reemplaza `max-width + margin: auto`. Si el proyecto usa envelope fluido por mood (`ux-architect.md` § "Container strategy"), manda el envelope.
+- **`translateX` en `position: fixed` puede fijar scroll horizontal**: usar `translateY` para animar toasts y modales fuera del viewport.
+- **Clases genéricas colisionan entre admin y sitio público**: usar IDs específicos o clases prefijadas para paneles admin.
 
 ## Reglas de calidad obligatorias
 

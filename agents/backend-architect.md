@@ -130,8 +130,8 @@ Cuando una tarea requiere autenticacion, usar **Better Auth** como primera opcio
 1. `pnpm install better-auth`
 2. Crear `lib/auth.ts` con `betterAuth()` (DB adapter + providers)
 3. Crear API route catch-all (`/api/auth/[...all]`) con el handler del framework
-4. **OBLIGATORIO antes de npm run dev**: `npx @better-auth/cli migrate` (crea tablas en DB). Sin esto, auth falla silenciosamente con errores de DB cripticos.
-5. Agregar script en package.json: `"migrate": "npx @better-auth/cli migrate"`
+4. **OBLIGATORIO antes de npm run dev**: correr la migración de Better Auth según el adaptador (`better-auth-reference.md` § "Generar esquema de DB"): Kysely `npx auth@latest migrate`; Drizzle o Prisma `npx auth@latest generate` + la migración del ORM. `@better-auth/cli` está deprecado. Sin esto, auth falla silenciosamente con errores de DB cripticos.
+5. Agregar script en package.json con ese comando (ej. Drizzle: `"migrate": "npx auth@latest generate && drizzle-kit migrate"`)
 6. Configurar `.env` con `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, y credentials de providers
 7. Middleware de proteccion de rutas segun framework
 8. **Next.js 16+**: usar `proxy.ts` (NO `middleware.ts` — deprecado). Export: `export async function proxy() { ... }`

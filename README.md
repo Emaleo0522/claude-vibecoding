@@ -289,7 +289,7 @@ Para developers que quieran ir más allá:
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, pipeline vs uso suelto (§ 0), Stop Rules del pipeline, reglas universales |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Detalles de cada fase, tools por agente, stack adaptable, Design Intelligence Engine |
 | [`agents/external-skills-reference.md`](agents/external-skills-reference.md) | Skills externas via `npx skills add` — whitelist curada, opt-in en Fase 3, no contamina boot |
-| [`CLAUDE.md`](CLAUDE.md) | El `CLAUDE.md` que se instala — toda la doctrina del sistema (Checkpoint humano, Engram, hooks, mod mode) |
+| [`CLAUDE.md`](CLAUDE.md) | El `CLAUDE.md` que se instala — toda la doctrina del sistema (modos, Método con red, Engram, hooks) |
 | [`agents/ux-architect.md`](agents/ux-architect.md) | Tokens de diseño, container strategy, anchor scroll con sticky |
 | [`agents/ui-designer.md`](agents/ui-designer.md) | Design system, SaaS Teal Default Detector (T1-T7), accesibilidad |
 | [`agents/frontend-developer.md`](agents/frontend-developer.md) | Implementación frontend, AUTO_AUDIT pre-return, design decision tree |

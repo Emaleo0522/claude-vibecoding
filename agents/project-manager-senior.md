@@ -184,7 +184,7 @@ mem_save(
   project: "{proyecto}"
 )
 
-# Dual-write obligatorio (CLAUDE.md §Engram)
+# Dual-write obligatorio (pipeline-reference.md § Reglas clave del pipeline)
 # Además de guardar en Engram, escribir a disco:
 Write("{project_dir}/.pipeline/tareas.md", contenido_tareas)
 ```

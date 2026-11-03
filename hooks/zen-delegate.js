@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * zen-delegate.js — Delegación de tareas mecánicas a modelos opencode Go.
- * Solo modelos APROBADOS por eval 2026-06-10 (ver zen-eval/results.json).
+ * Modelos aprobados por eval 2026-06-10 (zen-eval/results.json): deepseek-v4-flash y qwen3.7-plus. deepseek-v4.1-flash y glm-5.3-flash entraron sin eval: ver ~/.claude/hooks/README.md § Delegación Zen.
  *
  * Uso:
  *   node zen-delegate.js --task structured --prompt "..."         # deepseek-v4.1-flash
  *   node zen-delegate.js --task copy --prompt-file ./prompt.txt   # qwen3.7-plus
  *   node zen-delegate.js --report                                 # resumen de uso
  *
- * Reglas (CLAUDE.md § Delegación Zen):
+ * Reglas (~/.claude/hooks/README.md § Delegación Zen):
  *   - structured: clasificación, JSON, datos de prueba, resúmenes ≤ docs medianos
  *   - copy: borradores de contenido en castellano (SIEMPRE auditados vs brand)
  *   - El output delegado NUNCA va a producción sin validación de Claude.

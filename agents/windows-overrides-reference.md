@@ -62,4 +62,4 @@ El hook `stop` dispara `verification_workflow` cuando se edita código con un pr
 
 ---
 
-<!-- Nota de mantenimiento (2026-08-11): las reglas de versiones de Next.js que vivian en esta seccion NO son especificas de Windows y quedaron en el CLAUDE.md global (seccion Stack + seccion Better Auth): usar Next.js 15/16 (no 14), y en Next.js 16+ `proxy.ts` en vez de `middleware.ts` (verificado vigente contra el codigo fuente de Next el 2026-08-11; existe codemod `npx @next/codemod@canary middleware-to-proxy .`). No duplicarlas aca. -->
+<!-- Nota de mantenimiento (2026-08-11): las reglas de versiones de Next.js que vivian en esta seccion NO son especificas de Windows y quedaron en el CLAUDE.md global (seccion "Stack y auth"): usar Next.js 15/16 (no 14), y en Next.js 16+ `proxy.ts` en vez de `middleware.ts` (verificado vigente contra el codigo fuente de Next el 2026-08-11; existe codemod `npx @next/codemod@canary middleware-to-proxy .`). No duplicarlas aca. -->

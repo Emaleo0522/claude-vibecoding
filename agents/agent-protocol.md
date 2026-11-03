@@ -163,12 +163,28 @@ NOTAS: {texto libre, máx 3 líneas}
 
 | Valor | Cuándo usarlo | Acción del orquestador |
 |-------|--------------|----------------------|
-| `high` | Hero/landing redesign, identidad visual nueva, animaciones principales, layout estructural mayor, decisión visual interpretable (multi-opción válida) | **OBLIGATORIO**: mostrar screenshot/preview al usuario con recomendación antes de marcar tarea completa. Ver § "Checkpoint humano" en `~/.claude/CLAUDE.md` |
+| `high` | Hero/landing redesign, identidad visual nueva, animaciones principales, layout estructural mayor, decisión visual interpretable (multi-opción válida) | **OBLIGATORIO**: mostrar screenshot/preview al usuario con recomendación antes de marcar tarea completa. Ver "Checkpoint humano en el pipeline" abajo (la regla general: CLAUDE.md global § "Método con red", Decidir solo o preguntar) |
 | `medium` | Sección secundaria nueva, componentes visibles, ajustes de tipografía/color en zonas no críticas | Opcional: mostrar al usuario si fue la segunda iteración del mismo elemento |
 | `low` | Microajustes (spacing, focus rings, dark mode tweaks, sombras secundarias) | No checkpoint. Solo mencionar en NOTAS si vale la pena |
 | `none` | Sin impacto visual (config, types, lógica interna, refactor de selectores sin cambio visible) | Saltar checkpoint |
 
 **Regla clave**: si tuviste **2+ iteraciones sobre el mismo elemento** en la misma sesión, escalar a `high` aunque inicialmente parezca `medium` — es señal de local minimum y necesita ojo humano.
+
+### Checkpoint humano en el pipeline (movido desde CLAUDE.md global, auditoría 2026-11)
+
+La regla de cuándo decidir solo y cuándo preguntar vive en CLAUDE.md global § "Método con red" (Decidir solo o preguntar). Acá queda lo que usan los agentes del pipeline:
+
+- `VISUAL_IMPACT: high` → el orquestador es responsable de mostrar el resultado a Ema antes de marcar la tarea completa (tabla de arriba).
+- Decisión visual interpretable aunque pase `AUTO_AUDIT`: ej. Three.js vs Lottie vs SVG para el hero; paleta secundaria con 3 opciones válidas. Multi-opción legítima: ej. stack default cuando el intent no lo especifica.
+- No pedir checkpoint por reglas que ya impone la arquitectura (ej. container strategy por mood, fuente canónica única `ux-architect.md` § "Container strategy"; no repetir valores acá): aplicar y comunicar qué se aplicó.
+
+Patrones de frase:
+
+| Nivel | Cuándo | Patrón |
+|---|---|---|
+| Show & continue | Cambio implementado, el agente confía y quiere validación pasiva. **No aplica** a decisiones de diseño, de plan ni de arquitectura: ahí siempre Show & confirm o Show & choose | *"Cambié X por Y porque Z. Pego screenshot. Si no decís nada, sigo con W."* |
+| Show & confirm | Decisión interpretable post-implementación | *"Implementé X. Te muestro el resultado. ¿Sigo o ajusto?"* (espera respuesta) |
+| Show & choose | Pre-implementación, multi-opción legítima | *"Para Y hay 3 caminos: A/B/C. Mi recomendación es B porque [razón]. ¿Cuál vamos?"* |
 
 **Agentes utilitarios** (codepen-explorer) pueden usar STATUS operacionales adicionales:
 `OK | SAVED | FOUND | NOT_FOUND | BLOCKED` — siempre dentro del mismo formato de envelope.

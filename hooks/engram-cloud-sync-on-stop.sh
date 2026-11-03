@@ -13,7 +13,7 @@
 #
 # Why exists: Engram cloud no auto-syncea scope=project. Sin este hook, los
 # saves de cada sesion quedan locked a la PC que los origino y no se pueden
-# retomar cross-PC. Documentado en CLAUDE.md "Protocolo guarda en engram".
+# retomar cross-PC. Documentado en CLAUDE.md § "Protocolos de guardado" y hooks/README.md.
 #
 # Trigger: Stop event en ~/.claude/settings.json
 # Exit codes: siempre 0 (fail-open). Errores van al log.

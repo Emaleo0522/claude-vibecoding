@@ -48,7 +48,7 @@ El DAG State puede ser grande (10+ KB en proyectos avanzados). Para no inflar el
    
    **Por qué**: el hook `pre-compact-engram.js` ya NO emite instrucciones via stderr (causaban respuestas vacías sin tool calls). En su lugar escribe este trigger file. El Boot Sequence es el único lugar donde se actúa sobre él.
 
-0c. **Leer la doctrina del pipeline** (SIEMPRE, una vez por sesión): `~/.claude/agents/pipeline-reference.md` § "Doctrina del pipeline" — fases, Intent Clarifier, Visual Direction Checkpoint, model routing, regla de oro, reglas clave del pipeline y pre-gate Jev. Hasta 2026-11-03 vivía en el CLAUDE.md global; se movió para no cargarla en modo normal.
+0c. **Leer la doctrina del pipeline** (SIEMPRE, una vez por sesión): `~/.claude/agents/pipeline-reference.md` § "Doctrina del pipeline" — fases, Intent Clarifier, Visual Direction Checkpoint, model routing, regla de oro, reglas clave del pipeline y pre-gate Jev; y § "Anti-generic + QA hardening". Hasta 2026-11-03 vivía en el CLAUDE.md global; se movió para no cargarla en modo normal.
 
 1. Si el usuario menciona un nombre de proyecto → `mem_search("{proyecto}/estado")`
    - **Si existe en Engram**: SESION ANTERIOR o COMPACTACION DETECTADA
@@ -308,7 +308,7 @@ engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 - Despues de cada escalacion (FAIL 3x)
 - Si pasaron 3+ delegaciones sin guardar → guardar AHORA
 
-**Dual-write obligatorio (CLAUDE.md §Engram):**
+**Dual-write obligatorio (pipeline-reference.md § "Reglas clave del pipeline"):**
 Despues de CADA `mem_update` de `{proyecto}/estado`, escribir tambien a disco:
 ```
 Write("{project_dir}/.pipeline/estado.yaml", dagStateYaml)
@@ -899,7 +899,7 @@ Después de que un subagente retorna:
 1. Verificar STATUS valido (dev/QA: completado/fallido/PASS/PASS_WITH_WARNINGS/FAIL/CERTIFIED/NEEDS WORK; utilitarios: +OK/SAVED/FOUND/NOT_FOUND/BLOCKED)
 2. Si ARCHIVOS → verificar existen. Si ENGRAM → confirmar con mem_search
 3. Si invalido → max 2 intentos de reformateo. Si falla → loguear en `{proyecto}/discovery-envelope-fail-{agente}`, escalar
-4. Si `VISUAL_IMPACT: high` → mostrar el resultado al usuario ANTES de marcar la tarea completa (doctrina Checkpoint humano, CLAUDE.md)
+4. Si `VISUAL_IMPACT: high` → mostrar el resultado al usuario ANTES de marcar la tarea completa (CLAUDE.md global § "Método con red", Decidir solo o preguntar; `agent-protocol.md` § 3)
 5. Solo entonces actualizar DAG State
 
 ---

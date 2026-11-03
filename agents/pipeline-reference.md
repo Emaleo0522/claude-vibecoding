@@ -56,6 +56,8 @@ El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, 
 - Solo **deployer** despliega (Vercel para web, EAS Build para mobile)
 - Si el orquestador devuelve una pregunta de confirmación sobre una acción que el usuario ya autorizó en su mensaje, main Claude debe continuar el agente con `SendMessage` respondiendo la respuesta implícita — no dejar el agente suspendido.
 - Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
+- **Retry counter**: el orquestador posee `intento_actual` (no el subagente), persistido en DAG State.
+- **Dual-write crítico**: `{proyecto}/estado` y `{proyecto}/tareas` se guardan SIEMPRE en Engram + disco (`{project_dir}/.pipeline/`). Detalle: `orquestador.md` § "DAG State" y `orquestador-edge-cases-reference.md` § "Dual-Write". Si Engram falla, fallback a disco y el orquestador busca primero en Engram y después en `.pipeline/` (`agent-protocol.md` § 2).
 - **El orquestador NO activa git hasta que evidence-collector retorna PASS** — nunca saltear QA antes de push, aunque el tiempo apremia. Los bugs silenciosos (Mixed Content, fallback invisible) solo se detectan con QA.
 - **codepen-explorer solo busca y extrae** — nunca adapta ni construye. Guarda código temporal en `{project_dir}/.codepen-temp/{slug}/`. frontend-developer lee de ahí y adapta al proyecto/brand.
 - **Bóveda CodePen** (`~/.claude/codepen-vault/`) — solo guarda efectos aprobados por el usuario. Engram tiene metadata buscable (`codepen-vault/{slug}`), disco tiene el código.
@@ -68,6 +70,8 @@ Jev (TypeSafe AI, `api.typesafe.ai/v1/systemone`) no genera texto: devuelve deci
 - **Dónde corre**: `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}` — Fase 1 paso 5b, después de project-manager-senior. Reglas de aplicación (overrides conf ≥0.90, `SECURITY_REVIEW: true` en handoff con p ≥0.80) viven en `orquestador.md`.
 - **Requiere** `TYPESAFE_API_KEY` en el env del usuario — Linux: `export` en `~/.bashrc` (y reiniciar Claude Code para que herede el env); Windows: variable de entorno de usuario (`setx TYPESAFE_API_KEY ...`). Key desde console.typesafe.ai ($5 de crédito inicial ≈ 100k+ tareas). Sin key → `SKIP`, el pipeline sigue igual que antes. Log: `~/.claude/logs/jev-route-check.jsonl`.
 - **model_hint (prueba 2026-09-21 → 2026-10-21, vencida sin datos: el pipeline no corrió en ese período):** el pre-gate también puntúa complejidad y sugiere `opus` para tareas ≥1.3/2. **Solo recomendación**: el orquestador decide si la toma y registra `{tarea, hint, aplicado, motivo}` en DAG State. Al cierre se cruza contra reintentos/fallos para ver si las "complejas" de Jev eran las que fallaban con sonnet.
+- **MCP `jev` en modo normal**: el reflejo `jev_screen` vive en CLAUDE.md global § Jev. Evidencia de la prueba 2026-09-21: inyección 0.99 vs 0.03, ~0.5 s.
+- **Prueba jev-review: cerrada 2026-11-02, no pasó.** 21 corridas: agree 3 (una era el smoke test), partial 2, disagree 3, noise 13. Da 24% contra el 80% exigido. Los 3 disagree fueron bugs reales que la fresh review con opus encontró y Jev no; 12 de los noise se debieron a que miraba un archivo sin versionar en vez del diff. Script en `hooks/_archivo/jev-review-check.js`, log en `~/.claude/logs/jev-review-trial.jsonl`. El pre-gate de routing y el MCP siguen; la key se conserva para la idea de bot de trading de Ema.
 
 ## Intent Clarifier (Fase 1, Paso 0 — NUEVO 2026-04-19)
 

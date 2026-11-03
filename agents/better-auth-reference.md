@@ -86,12 +86,16 @@ export const auth = betterAuth({
 ```
 
 ### Generar esquema de DB
+El CLI es el paquete `auth` (`npx auth@latest`); `@better-auth/cli` está deprecado en npm (última 1.4.21). Verificado con Context7 sobre Better Auth v1.7.15 el 2026-11-03; probarlo una vez en un proyecto real antes de darlo por validado en producción.
 ```bash
-# Genera tablas necesarias (user, session, account, verification)
-npx @better-auth/cli generate
-# O push directo a la DB:
-npx @better-auth/cli migrate
+# Adaptador Kysely propio (built-in): crea o actualiza las tablas directo en la DB
+npx auth@latest migrate
+# Drizzle o Prisma: genera el schema para el ORM; la migración la corre el ORM
+npx auth@latest generate                    # sin conexión: --adapter drizzle --dialect <provider> | --adapter prisma
+npx drizzle-kit generate && npx drizzle-kit migrate   # Drizzle
+npx prisma migrate dev                                # Prisma
 ```
+`migrate` solo funciona con el adaptador Kysely; con cualquier otro adaptador va `generate` + la herramienta del ORM. La migración NO es automática: dejarla como script en `package.json` y correrla antes del primer `npm run dev`. Para subir de versión: `npx auth upgrade`.
 
 ---
 
@@ -131,6 +135,8 @@ export const config = {
 ```
 
 > ⚠️ **Next.js 16+**: `middleware.ts` está deprecado para Better Auth. Usar `proxy.ts` con `export async function proxy()` en su lugar. Consultar la documentación de Better Auth para la implementación actualizada.
+
+> Next.js 16: `proxy` corre siempre en runtime Node (no se configura); quien necesite edge sigue con `middleware.ts`. Como corre en Node, se puede validar la sesión completa contra la DB dentro del proxy; `getSessionCookie` solo es un chequeo optimista, no seguro por sí solo. Migración automática: `npx @next/codemod@canary middleware-to-proxy .`.
 
 ### Nuxt
 ```typescript

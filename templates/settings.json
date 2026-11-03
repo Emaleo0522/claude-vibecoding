@@ -54,7 +54,7 @@
       },
       {
         "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/engram-cloud-sync-on-stop.sh", "async": true }],
-        "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Sin campo timeout: Claude Code no lo aplica a hooks async; los topes (60 s por llamada, 900 s total, candado) están dentro del script. See CLAUDE.md § Protocolo guarda en engram."
+        "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Sin campo timeout: Claude Code no lo aplica a hooks async; los topes (60 s por llamada, 900 s total, candado) están dentro del script. See CLAUDE.md § Protocolos de guardado."
       },
       {
         "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],

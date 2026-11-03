@@ -1,6 +1,6 @@
 ---
 name: engram-save-reference
-description: Protocolo completo "guarda en engram" cross-PC (7 pasos, whitelist de buckets) + protocolo de save robusto anti silent-fail cloud (3 capas) + contrato lifecycle needs_review. Cargado on-demand cuando el usuario pide guardar memoria ("guardá", "guardalo", "remember this"), al diagnosticar problemas de sync cloud, o al cerrar sesión con saves. Las invariantes core (project= explícito, scope=personal, verify post-save, prohibición SSH) viven en CLAUDE.md global — esta ref tiene el flujo completo. Extraído de CLAUDE.md global el 2026-07-02 para reducir boot tokens (plan Engram #3521).
+description: Protocolo completo "guarda en engram" cross-PC (7 pasos, whitelist de buckets) + protocolo de save robusto anti silent-fail cloud (3 capas) + contrato lifecycle needs_review. Cargado on-demand cuando el usuario pide guardar memoria ("guardá", "guardalo", "remember this"), al diagnosticar problemas de sync cloud, o al cerrar sesión con saves. Las invariantes core (project= explícito, scope=personal, verify post-save) viven en CLAUDE.md global § "Protocolos de guardado" y la prohibición SSH en § "Método con red" — esta ref tiene el flujo completo. Extraído de CLAUDE.md global el 2026-07-02 para reducir boot tokens (plan Engram #3521).
 ---
 
 # Engram Save Reference — protocolos completos de escritura

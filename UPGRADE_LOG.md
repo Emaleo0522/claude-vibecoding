@@ -1,5 +1,11 @@
 # Upgrade Log — Context Management + Best Practices
 
+## CLAUDE.md global a menos de 200 líneas (auditoría bloque 1), 2026-11-03 ✅
+
+- CLAUDE.md global de 373 líneas / 38,1 KB a 122 líneas / ~17 KB. Checkpoint humano fusionado en el Método con red ("Decidir solo o preguntar"); push/deploy/SSH en "Push, deploy y servers". Origen del Método nombra SDD.
+- Salen a su lugar: tabla de hooks y Delegación Zen a `hooks/README.md`; ejemplos de checkpoint y tabla Show & * a `agent-protocol.md` § 3; retry counter y dual-write a `pipeline-reference.md` § Reglas clave del pipeline; prueba jev-review a `pipeline-reference.md` § Pre-gate Jev; Vercel estático a `deployer.md`; patrones CSS a `frontend-developer.md`; CLI de Better Auth corregido (`npx auth`) en `better-auth-reference.md`.
+- Corregidas 14 afirmaciones falsas (fichas-internas.md). Overlay `Desktop/claude/CLAUDE.md` archivado.
+
 ## Método con red (ODD adaptado) + topes anti-espera — 2026-11-03 ✅
 
 Origen: comparación del método real contra ODD de Gentleman (gentle-shell), SDD, BDD y TDD, con un agente de contexto limpio que propuso y otro que revisó con consigna de evidencia. Salida elegida: adaptar, no reemplazar.
