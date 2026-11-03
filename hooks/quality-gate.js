@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 /**
- * Hook: quality-gate (PostToolUse)
- * Despues de editar/escribir archivos TS/JS, emite warnings sobre
- * patrones problematicos detectados en el contenido.
+ * Hook: quality-gate (PostToolUse, matcher Write|Edit|MultiEdit)
+ * Despues de editar/escribir archivos TS/JS, avisa sobre patrones problematicos en el
+ * contenido nuevo: debugger, .only(), @ts-ignore/@ts-nocheck, `any` repetido, TODO/FIXME,
+ * secretos y passwords hardcodeados, y console.log/warn/error/info/debug en codigo de
+ * produccion (ignora tests, scripts, hooks, config; absorbido de console-log-warning.js,
+ * archivado el 2026-11-03).
  *
- * PostToolUse hooks NO bloquean — solo advierten via stderr.
+ * Como avisa: JSON por stdout con hookSpecificOutput.additionalContext y exit 0
+ * (hooks-doc.md:2228, PostToolUse lo agrega junto al resultado de la tool). Antes escribia a
+ * stderr con exit 0 y no llegaba: "Claude never sees stderr from a hook that exits 0"
+ * (hooks-doc.md:816). No bloquea nunca. Fail-open.
  *
  * Vibecoding v2.1 - Expandido con deteccion de secrets hardcodeados
+ * Tests: tests/quality-gate.test.js
  */
 
 const path = require('path');
@@ -34,74 +41,92 @@ const ENV_REFERENCE_PATTERNS = [
   /ENV\[/,          // Ruby/Node style ENV lookups
 ];
 
-let input = '';
+// console.* es aceptable en estos archivos (se comparan con la ruta en barras normales:
+// el filtro viejo de console-log-warning fallaba con rutas de Windows).
+const CONSOLE_IGNORED = [
+  /\.test\./,
+  /\.spec\./,
+  /\.config\./,
+  /\/__tests__\//,
+  /\/tests?\//,
+  /scripts\//,
+  /hooks\//,
+  /\.claude\//,
+  /node_modules\//,
+  /logger\./,
+  /debug\./,
+];
+const CONSOLE_RE = /console\.(log|warn|error|debug|info)\s*\(/g;
 
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { input += chunk; });
-process.stdin.on('end', () => {
-  try {
-    input = input.trim();
-    if (!input) process.exit(0);
+const EDIT_TOOLS = new Set(['Write', 'Edit', 'MultiEdit']);
 
-    const data = JSON.parse(input);
-    const toolName = data.tool_name || '';
-    const toolInput = data.tool_input || {};
+// Texto nuevo que trajo la tool: content (Write), new_string (Edit), edits[].new_string (MultiEdit).
+function newText(toolInput) {
+  const ti = toolInput || {};
+  if (Array.isArray(ti.edits)) return ti.edits.map(e => (e && e.new_string) || '').join('\n');
+  return ti.content || ti.new_string || '';
+}
 
-    // Solo Write y Edit
-    if (toolName !== 'Write' && toolName !== 'Edit') process.exit(0);
+function analyze(toolName, toolInput) {
+  if (!EDIT_TOOLS.has(toolName)) return [];
+  const filePath = String((toolInput || {}).file_path || '');
+  if (!JS_TS_EXTENSIONS.includes(path.extname(filePath).toLowerCase())) return [];
+  const content = newText(toolInput);
+  if (!content || content.length < 5) return [];
 
-    const filePath = toolInput.file_path || '';
-    const ext = path.extname(filePath).toLowerCase();
-
-    // Solo archivos JS/TS
-    if (!JS_TS_EXTENSIONS.includes(ext)) process.exit(0);
-
-    // Para Write, chequeamos el contenido directamente
-    // Para Edit, chequeamos el new_string
-    const content = toolInput.content || toolInput.new_string || '';
-    if (!content || content.length < 5) process.exit(0);
-
-    const warnings = [];
-
-    for (const pattern of PATTERNS) {
-      const matches = content.match(pattern.regex);
-      if (matches && matches.length > 0) {
-        // Filtrar: 'any' en comentarios o strings es OK, pero dificil de detectar sin AST
-        // Ser conservador: solo reportar si hay multiples matches
-        if (pattern.msg.includes('`any` type')) {
-          if (matches.length >= 3) {
-            warnings.push(`[${pattern.severity}] ${pattern.msg} (${matches.length}x)`);
-          }
-        } else if (pattern.excludeEnvPatterns) {
-          // Para secrets/passwords: verificar que cada match NO esté en línea con env var reference
-          const realMatches = matches.filter((match) => {
-            // Find the line containing this match
-            const idx = content.indexOf(match);
-            if (idx === -1) return true;
-            const lineStart = content.lastIndexOf('\n', idx) + 1;
-            const lineEnd = content.indexOf('\n', idx);
-            const line = content.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
-            // Si la línea referencia process.env.*/import.meta.env.*/etc → no es hardcoded
-            return !ENV_REFERENCE_PATTERNS.some((re) => re.test(line));
-          });
-          if (realMatches.length > 0) {
-            warnings.push(`[${pattern.severity}] ${pattern.msg} (${realMatches.length}x)`);
-          }
-        } else {
-          warnings.push(`[${pattern.severity}] ${pattern.msg} (${matches.length}x)`);
-        }
-      }
+  const warnings = [];
+  for (const pattern of PATTERNS) {
+    const matches = content.match(pattern.regex);
+    if (!matches || matches.length === 0) continue;
+    // 'any' en comentarios o strings es OK, pero dificil de detectar sin AST: solo con 3 o mas
+    if (pattern.msg.includes('`any` type')) {
+      if (matches.length >= 3) warnings.push(`[${pattern.severity}] ${pattern.msg} (${matches.length}x)`);
+    } else if (pattern.excludeEnvPatterns) {
+      // Para secrets/passwords: descartar los que estan en una linea que lee una env var
+      const realMatches = matches.filter((match) => {
+        const idx = content.indexOf(match);
+        if (idx === -1) return true;
+        const lineStart = content.lastIndexOf('\n', idx) + 1;
+        const lineEnd = content.indexOf('\n', idx);
+        const line = content.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+        return !ENV_REFERENCE_PATTERNS.some((re) => re.test(line));
+      });
+      if (realMatches.length > 0) warnings.push(`[${pattern.severity}] ${pattern.msg} (${realMatches.length}x)`);
+    } else {
+      warnings.push(`[${pattern.severity}] ${pattern.msg} (${matches.length}x)`);
     }
-
-    if (warnings.length > 0) {
-      const fileName = path.basename(filePath);
-      process.stderr.write(
-        `Quality Gate [${fileName}]: ${warnings.join(' | ')}`
-      );
-    }
-
-    process.exit(0);
-  } catch (err) {
-    process.exit(0);
   }
-});
+
+  const normPath = filePath.replace(/\\/g, '/');
+  if (!CONSOLE_IGNORED.some(re => re.test(normPath))) {
+    const cm = content.match(CONSOLE_RE);
+    if (cm && cm.length > 0) {
+      warnings.push(`[warn] ${cm.length} console statement(s) in production code — remove or use a proper logger`);
+    }
+  }
+  return warnings;
+}
+
+if (require.main === module) {
+  let input = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => { input += chunk; });
+  process.stdin.on('end', () => {
+    try {
+      input = input.trim();
+      if (!input) process.exit(0);
+      const data = JSON.parse(input);
+      const toolInput = data.tool_input || {};
+      const warnings = analyze(data.tool_name || '', toolInput);
+      if (warnings.length === 0) process.exit(0);
+      const fileName = path.basename(String(toolInput.file_path || ''));
+      const additionalContext = `quality-gate [${fileName}]: ${warnings.join(' | ')}`;
+      // Salir en el callback: asi el JSON termina de escribirse aunque stdout sea asincrono.
+      process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext } }), () => process.exit(0));
+    } catch (err) {
+      process.exit(0);
+    }
+  });
+}
+
+module.exports = { analyze, newText };

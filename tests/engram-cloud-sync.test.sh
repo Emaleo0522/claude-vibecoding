@@ -98,4 +98,42 @@ s=$(date +%s); STUB_MODE=status-cuelga ENGRAM_SYNC_CALL_TIMEOUT=2 bash "$SCRIPT"
 grep -q "cloud status timed out" "$LOG" && ok "lo dice en el log (no 'not configured')" || bad "$(tail -1 "$LOG")"
 unset STUB_MODE
 
+# Log previo de N lineas de ~400 bytes, numeradas old-000001...
+prefill() { awk -v n="$1" 'BEGIN{for(i=1;i<=n;i++) printf "{\"ts\":\"x\",\"level\":\"info\",\"msg\":\"old-%06d %380s\"}\n", i, ""}' > "$LOG"; }
+
+echo "10. log por encima del tope: rota y se queda con las ultimas lineas"
+setup 0 0
+prefill 100
+ENGRAM_SYNC_LOG_MAX_BYTES=2000 ENGRAM_SYNC_LOG_KEEP=20 bash "$SCRIPT" </dev/null
+N=$(wc -l < "$LOG")
+[ "$N" -le 30 ] && ok "quedaron $N lineas (20 + las de esta corrida)" || bad "quedaron $N lineas"
+grep -q "old-000001" "$LOG" && bad "no descarto las viejas" || ok "descarta las mas viejas"
+grep -q "old-000100" "$LOG" && grep -q "old-000081" "$LOG" && ok "conserva las ultimas 20 previas" || bad "perdio lineas recientes"
+grep -q "old-000080" "$LOG" && bad "se quedo con mas de 20 previas" || ok "corta justo en 20"
+grep -q "synced=3 failed=0" "$LOG" && ok "la corrida sigue logueando despues de rotar" || bad "sin linea done"
+ls "$HOME/.claude/sessions/" | grep -q "tmp" && bad "quedo un temporal" || ok "no deja temporales"
+
+echo "11. log por debajo del tope: no se toca"
+setup 0 0
+prefill 10
+ENGRAM_SYNC_LOG_MAX_BYTES=100000 ENGRAM_SYNC_LOG_KEEP=5 bash "$SCRIPT" </dev/null
+grep -q "old-000001" "$LOG" && grep -q "old-000010" "$LOG" && ok "conserva todo" || bad "roto sin pasar el tope"
+
+echo "12. valores por defecto: mas de ~2 MB, se queda con 5000"
+setup 0 0
+prefill 6000
+[ "$(wc -c < "$LOG")" -gt 2097152 ] || bad "fixture chico: $(wc -c < "$LOG") bytes"
+bash "$SCRIPT" </dev/null
+N=$(wc -l < "$LOG")
+[ "$N" -ge 5000 ] && [ "$N" -le 5010 ] && ok "quedaron $N lineas" || bad "quedaron $N lineas"
+grep -q "old-001000\b" "$LOG" && bad "no descarto las viejas" || ok "descarta las 1000 mas viejas"
+grep -q "old-001001" "$LOG" && grep -q "old-006000" "$LOG" && ok "conserva desde la 1001" || bad "corte mal ubicado"
+
+echo "13. con el candado ocupado no rota (lo hace solo la corrida que tiene el candado)"
+setup 0 0
+prefill 100
+mkdir -p "$LOCK"; date +%s > "$LOCK/ts"
+ENGRAM_SYNC_LOG_MAX_BYTES=2000 ENGRAM_SYNC_LOG_KEEP=20 bash "$SCRIPT" </dev/null
+grep -q "old-000001" "$LOG" && ok "no toca el log" || bad "roto sin el candado"
+
 echo; echo "$PASS passed, $FAIL failed"; [ "$FAIL" = 0 ]

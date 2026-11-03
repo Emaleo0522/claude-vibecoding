@@ -7,7 +7,7 @@ Esta guia te lleva paso a paso desde cero hasta tener el sistema completo funcio
 ## Lo que vas a instalar
 
 - **52 archivos de agentes** (25 agentes + 24 referencias tecnicas + 3 indices/protocolo): los especialistas del sistema + documentacion tecnica que usan internamente
-- **13 hooks reactivos**: interceptan operaciones en tiempo real para seguridad y calidad
+- **Hooks reactivos** (tabla en `hooks/README.md`): interceptan operaciones en tiempo real para seguridad y calidad
 - **CLAUDE.md global**: le dice a Claude como coordinar el pipeline de 5 fases
 - **MCPs**: Engram (memoria persistente), Context7 (docs), Playwright (QA visual)
 - **Node.js + npm**: para levantar previews locales
@@ -138,14 +138,14 @@ El Design Intelligence Engine provee recomendaciones de diseño por industria (1
 # Crear la carpeta de hooks
 mkdir -p ~/.claude/hooks
 
-# Copiar los 13 hooks
-cp hooks/*.js ~/.claude/hooks/
+# Copiar los hooks y utilidades (los de hooks/_archivo/ no se copian)
+cp hooks/*.js hooks/*.sh ~/.claude/hooks/
 
-# Verificar — debe decir 13
-ls ~/.claude/hooks/*.js | wc -l
+# Verificar: deben aparecer block-no-verify.js, config-protection.js, quality-gate.js, pre-return-audit.js
+ls ~/.claude/hooks/
 ```
 
-Los hooks interceptan operaciones en tiempo real: bloquean comandos peligrosos (git --no-verify, rm -rf), advierten sobre debugger/.only()/@ts-ignore, trackean costos, y gestionan contexto automaticamente.
+Los hooks interceptan operaciones en tiempo real: bloquean comandos peligrosos (git --no-verify, rm -rf), le avisan a Claude sobre debugger/.only()/@ts-ignore/console.log, registran la linea Riesgo: y suben Engram al cloud al parar.
 
 ---
 
@@ -161,7 +161,7 @@ sed "s|__CLAUDE_HOME__|$CLAUDE_HOME|g" templates/settings.json > ~/.claude/setti
 cp templates/settings.local.json ~/.claude/settings.local.json
 ```
 
-> Esto configura los 10 hooks automaticos (los otros 3 son manuales) y los permisos para que los agentes puedan usar sus herramientas.
+> Esto configura los hooks automaticos (tabla en `hooks/README.md`) y los permisos para que los agentes puedan usar sus herramientas.
 
 > **Si ya tenias una instalacion anterior**: los archivos existentes se sobreescriben. Si los habias personalizado, hace un backup antes: `cp ~/.claude/settings.json ~/.claude/settings.json.bak`
 
@@ -467,16 +467,13 @@ El sistema se encarga del resto:
 |   |-- reactive-audio-reference.md              <- ref: Tone.js, Web Audio
 |   |-- pipeline-reference.md                    <- ref: pipeline details, tools, stack
 |-- hooks/
-|   |-- block-no-verify.js                       <- bloquea git --no-verify, rm -rf
-|   |-- config-protection.js                     <- protege .env, secrets
-|   |-- quality-gate.js                          <- advierte debugger, .only()
-|   |-- console-log-warning.js                   <- advierte console.log en produccion
-|   |-- suggest-compact.js                       <- sugiere /compact cada ~50 calls
-|   |-- cost-tracker.js                          <- registra uso de herramientas
-|   |-- cost-report.js                           <- reporte de costos (manual)
+|   |-- block-no-verify.js                       <- bloquea git --no-verify / commit -n / core.hooksPath, rm -rf
+|   |-- config-protection.js                     <- protege .env, secrets; avisa configs de lint
+|   |-- quality-gate.js                          <- avisa debugger, .only(), console.log (additionalContext)
+|   |-- pre-return-audit.js                      <- avisa reglas universales CSS/HTML/JSX (async)
+|   |-- risk-line.js                             <- registra la linea Riesgo: del Metodo con red
+|   |-- engram-cloud-sync-on-stop.sh             <- sube Engram al cloud al parar
 |   |-- pre-compact-engram.js                    <- snapshot antes de compactar
-|   |-- session-summary.js                       <- log de sesion
-|   |-- session-start-context.js                 <- carga contexto al inicio
 |   |-- audit-system.js                          <- auditor del sistema (manual)
 |   |-- learning-index.js                        <- indice de descubrimientos (manual)
 %APPDATA%\Claude\

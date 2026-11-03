@@ -3,80 +3,114 @@
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/block-no-verify.js" }],
-        "description": "Blocks git commit/push --no-verify and --no-gpg-sign"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/block-no-verify.js"
+          }
+        ],
+        "description": "BLOQUEA (exit 2): --no-verify y commit -n (commit/push/merge/pull/rebase/am), core.hooksPath (-c, git config o GIT_CONFIG_*), HUSKY=0 y similares, tambien dentro de bash -c / pwsh -Command / cmd /c / eval, --no-gpg-sign, push --force, rm -rf peligroso, reset --hard, clean -f, DROP, chmod 777, chown -R, curl|sh e irm|iex."
       },
       {
-        "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/config-protection.js" }],
-        "description": "Warns when modifying linter/formatter/tsconfig files"
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/config-protection.js"
+          }
+        ],
+        "description": "BLOQUEA (exit 2) secretos: familia .env por nombre (salvo .example/.sample/.template y codigo como app.env.ts), .dev.vars, .npmrc, service-account*.json, .netrc, .git-credentials, .pgpass, .pem, .key, credentials*, id_rsa... AVISA por additionalContext al tocar configs de lint/formato/tsconfig."
       },
       {
         "matcher": "Agent",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/risk-line.js",
+            "timeout": 5
+          }
+        ],
         "description": "Línea de riesgo (solo registro): anota revisores lanzados con la consigna de evidencia. Spec: docs/specs/linea-riesgo-hook.md"
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/quality-gate.js" }],
-        "description": "Warns about debugger, .only(), @ts-ignore in JS/TS files"
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/quality-gate.js"
+          }
+        ],
+        "description": "AVISA por additionalContext en JS/TS: debugger, .only(), @ts-ignore, secretos hardcodeados, console.log en código de producción (ignora tests). No bloquea."
       },
       {
-        "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/console-log-warning.js" }],
-        "description": "Warns about console.log/warn/error in production JS/TS files"
-      },
-      {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/suggest-compact.js", "async": true }],
-        "description": "Suggests /compact every ~50 tool calls to manage context window"
-      },
-      {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/cost-tracker.js", "async": true }],
-        "description": "Logs tool calls by category for cost/usage analysis"
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/pre-return-audit.sh", "async": true }],
-        "description": "Auditoría universal CSS/HTML/JSX: container ≤1280 (SaaS feel), fuentes declaradas sin link, anchor scroll sin scroll-padding, navbar mobile sin hamburger, prefers-reduced-motion ausente. Fail-open."
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/pre-return-audit.js",
+            "async": true
+          }
+        ],
+        "description": "AVISA por additionalContext (async: llega en el turno siguiente) reglas universales CSS/HTML/JSX: container 1000-1299px, fuentes sin cargar, sticky sin scroll-padding, nav sin hamburguesa, reduced-motion ausente. Fail-open."
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/risk-line.js",
+            "timeout": 5
+          }
+        ],
         "description": "Línea de riesgo (solo registro): anota ediciones de código y operaciones (push, deploy, migrate, ssh). Fail-open."
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-summary.js", "async": true }],
-        "description": "Logs session activity for recovery and tracking"
-      },
-      {
-        "hooks": [{ "type": "command", "command": "bash /home/pc004/.claude/hooks/engram-cloud-sync-on-stop.sh", "async": true }],
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/pc004/.claude/hooks/engram-cloud-sync-on-stop.sh",
+            "async": true
+          }
+        ],
         "description": "Pushes all projects with new observations to Engram cloud on session stop. Idempotent + fail-open. Sin campo timeout: Claude Code no lo aplica a hooks async; los topes (60 s por llamada, 900 s total, candado) están dentro del script. See CLAUDE.md § Protocolos de guardado."
       },
       {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/risk-line.js", "timeout": 5 }],
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/risk-line.js",
+            "timeout": 5
+          }
+        ],
         "description": "Línea de riesgo (solo registro): al cerrar un trabajo con cambios, anota si terminó con 'Riesgo:'. Log ~/.claude/logs/riesgo-line.jsonl, resumen con --report."
       }
     ],
     "SessionStart": [
       {
-        "matcher": "resume",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/session-start-context.js", "timeout": 10 }],
-        "description": "Loads previous session context on resume (additionalContext). Moved from Notification 2026-09-01: stderr there never reached the model."
-      },
-      {
         "matcher": "startup|resume|clear|fork",
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/engram-session-fallback.js", "timeout": 10 }],
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/engram-session-fallback.js",
+            "timeout": 10
+          }
+        ],
         "description": "Registers the Claude Code session in the local Engram server when the plugin could not (no jq / ambiguous cwd), so mem_save does not fail with unknown_session. Fail-open."
       }
     ],
     "PreCompact": [
       {
-        "hooks": [{ "type": "command", "command": "node /home/pc004/.claude/hooks/pre-compact-engram.js" }],
-        "description": "Saves session snapshot, resets counter, and instructs Claude to dual-write DAG State before compaction (v2.2)"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/pc004/.claude/hooks/pre-compact-engram.js"
+          }
+        ],
+        "description": "Guarda snapshots/pre-compact-latest.json y el trigger snapshots/compaction-pending.json que consume el Boot Sequence del orquestador (paso 0b). No bloquea ni le habla al modelo."
       }
     ]
   },

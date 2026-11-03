@@ -35,7 +35,7 @@ El DAG State puede ser grande (10+ KB en proyectos avanzados). Para no inflar el
 
 0. **Cargar perfil personal del usuario** (SIEMPRE, antes de cualquier otra cosa):
    `mem_context(scope="personal")` — carga el perfil de Leonardo Emanuel Mansilla (@Tio / PM en Reyesoft)
-   **NOTA**: El hook `session-start-context` NO puede hacer esto (los hooks no tienen acceso a MCPs).
+   **NOTA**: Ningún hook puede hacer esto (los hooks no tienen acceso a MCPs).
    Esta llamada es responsabilidad del orquestador al inicio de cada sesión.
 
 0b. **Verificar trigger de compactación pendiente** (solo si hay proyecto activo):
@@ -108,7 +108,7 @@ Si ves que ya leíste el DAG State completo en la misma fase → **usa el resume
 **NUNCA asumir que un proyecto es nuevo sin verificar Engram primero.**
 **NUNCA re-preguntar stack, estructura, o decisiones que ya estan en el DAG State.**
 
-**NOTA sobre pre-compact snapshot**: `session-start-context.js` (hook de Notification) ya lee `~/.claude/snapshots/pre-compact-latest.json` al inicio y emite contexto via stderr. Esto es independiente del Boot Sequence — el snapshot es metadata de sesion (tool count, cwd), NO el DAG State del proyecto. El DAG State se recupera de Engram o `.pipeline/`.
+**NOTA sobre pre-compact snapshot**: `~/.claude/snapshots/pre-compact-latest.json` es metadata global de la última compactación (tool count, cwd), NO el DAG State del proyecto, y desde 2026-11-03 ningún hook lo inyecta como contexto (`session-start-context.js` se archivó: presentaba ese snapshot global como si fuera de la sesión retomada). El DAG State se recupera de Engram o `.pipeline/`.
 
 **NOTA sobre PreCompact hook (v2.3)**: `pre-compact-engram.js` escribe un trigger file en `~/.claude/snapshots/compaction-pending.json` antes de compactar. El Boot Sequence (paso 0b) detecta este archivo y ejecuta el dual-write. Ya NO emite instrucciones via stderr — ese patrón causaba respuestas vacías sin tool calls ("Lo continúo ahora:" sin ejecutar nada).
 

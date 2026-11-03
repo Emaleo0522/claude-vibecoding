@@ -5,7 +5,7 @@
  *
  * Tests:
  * T1. Catalog sync (agents in disk vs expected)
- * T2. Hook integrity (files exist, don't crash on empty input)
+ * T2. Hook integrity (files exist, don't crash on empty input; `bash x.sh` solo existencia)
  * T3. Agent protocol compliance (frontmatter, tools, protocol ref)
  * T4. Settings.json structure validation
  * T5. Hook performance (execution time)
@@ -116,10 +116,10 @@ function testHookIntegrity() {
       }
       for (const hook of (entry.hooks || [])) {
         if (hook.command) {
-          // Extract path from "node /path/to/file.js"
-          const match = hook.command.match(/node\s+(.+\.js)/);
+          // Extract path from "node /path/to/file.js" o "bash /path/to/file.sh"
+          const match = hook.command.match(/node\s+(.+\.js)/) || hook.command.match(/bash\s+(.+\.sh)/);
           if (match) {
-            let hookPath = match[1];
+            let hookPath = match[1].replace(/^["']|["']$/g, '');
             // Normalize /x/... to X:/... for Windows (any drive letter)
             const driveMatch = hookPath.match(/^\/([a-zA-Z])\//);
             if (driveMatch) {
@@ -141,6 +141,10 @@ function testHookIntegrity() {
       allOk = false;
       continue;
     }
+
+    // Los .sh solo se chequean por existencia: correrlos haria trabajo real
+    // (engram-cloud-sync-on-stop.sh sincronizaria con el cloud).
+    if (hookPath.endsWith('.sh')) continue;
 
     // Test that hook exits 0 on empty input
     try {
@@ -332,48 +336,66 @@ function testHookFunctional() {
       expectExit: 0,
     },
     {
+      name: 'block-no-verify BLOCKS commit -n',
+      hook: path.join(HOOKS_DIR, 'block-no-verify.js'),
+      input: '{"tool_name":"Bash","tool_input":{"command":"git commit -nm test"}}',
+      expectExit: 2,
+    },
+    {
+      name: 'config-protection BLOCKS .env',
+      hook: path.join(HOOKS_DIR, 'config-protection.js'),
+      input: '{"tool_name":"Edit","tool_input":{"file_path":"/p/.env","old_string":"a","new_string":"b"}}',
+      expectExit: 2,
+    },
+    // Los avisos tienen que salir por stdout como additionalContext: el stderr con exit 0
+    // no le llega al modelo (hooks-doc.md:816). expectContext lo verifica (2026-11-03).
+    {
       name: 'config-protection WARNS on eslint',
       hook: path.join(HOOKS_DIR, 'config-protection.js'),
       input: '{"tool_name":"Edit","tool_input":{"file_path":"/p/.eslintrc.js","old_string":"a","new_string":"b"}}',
       expectExit: 0,
-      expectStderr: true,
+      expectContext: true,
     },
     {
       name: 'config-protection SILENT on normal file',
       hook: path.join(HOOKS_DIR, 'config-protection.js'),
       input: '{"tool_name":"Write","tool_input":{"file_path":"/p/src/app.ts","content":"x"}}',
       expectExit: 0,
-      expectStderr: false,
+      expectContext: false,
     },
     {
       name: 'quality-gate WARNS on debugger',
       hook: path.join(HOOKS_DIR, 'quality-gate.js'),
       input: '{"tool_name":"Write","tool_input":{"file_path":"/p/src/app.tsx","content":"debugger; const x=1;"}}',
       expectExit: 0,
-      expectStderr: true,
+      expectContext: true,
     },
     {
       name: 'quality-gate SILENT on clean code',
       hook: path.join(HOOKS_DIR, 'quality-gate.js'),
       input: '{"tool_name":"Write","tool_input":{"file_path":"/p/src/clean.ts","content":"const x: string = hello; export default x;"}}',
       expectExit: 0,
-      expectStderr: false,
+      expectContext: false,
     },
+    // console.log: antes console-log-warning.js (archivado 2026-11-03), ahora dentro de quality-gate
     {
-      name: 'console-log-warning WARNS on console.log',
-      hook: path.join(HOOKS_DIR, 'console-log-warning.js'),
+      name: 'quality-gate WARNS on console.log',
+      hook: path.join(HOOKS_DIR, 'quality-gate.js'),
       input: '{"tool_name":"Write","tool_input":{"file_path":"/p/src/api.ts","content":"console.log(debug);"}}',
       expectExit: 0,
-      expectStderr: true,
+      expectContext: true,
     },
     {
-      name: 'console-log-warning SILENT on test file',
-      hook: path.join(HOOKS_DIR, 'console-log-warning.js'),
+      name: 'quality-gate SILENT on console.log in test file',
+      hook: path.join(HOOKS_DIR, 'quality-gate.js'),
       input: '{"tool_name":"Write","tool_input":{"file_path":"/p/src/api.test.ts","content":"console.log(ok);"}}',
       expectExit: 0,
-      expectStderr: false,
+      expectContext: false,
     },
   ];
+  const hasContext = (out) => {
+    try { return !!JSON.parse(String(out || '').trim()).hookSpecificOutput.additionalContext; } catch (e) { return false; }
+  };
 
   let allPass = true;
   const issues = [];
@@ -400,10 +422,9 @@ function testHookFunctional() {
       if (t.expectExit !== 0) {
         issues.push(`${t.name}: expected exit ${t.expectExit}, got 0`);
         allPass = false;
-      } else if (t.expectStderr === true) {
-        // Exit 0 but expected stderr — stderr not captured here, check via alternative
-        // For exit-0 hooks, stderr presence means the warning was emitted
-        // We trust the test passes if exit code matches
+      } else if (t.expectContext !== undefined && hasContext(result) !== t.expectContext) {
+        issues.push(`${t.name}: ${t.expectContext ? 'no additionalContext on stdout' : 'unexpected additionalContext'}`);
+        allPass = false;
       }
     } catch (e) {
       const exitCode = e.status;
@@ -601,12 +622,15 @@ function testReferenceFiles() {
 }
 
 // ============================================================
-// T11: Cost/Session Files Writable
+// T11: Output Files Writable
 // ============================================================
+// Archivos que escriben los hooks que siguen cableados. cost-log.jsonl y session-log.jsonl
+// salieron el 2026-11-03: sus escritores (cost-tracker, session-summary) se archivaron.
 function testOutputFiles() {
   const filesToCheck = [
-    { name: 'cost-log', path: path.join(SNAPSHOTS_DIR, 'cost-log.jsonl') },
-    { name: 'session-log', path: path.join(SNAPSHOTS_DIR, 'session-log.jsonl') },
+    { name: 'riesgo-line', path: path.join(CLAUDE_DIR, 'logs', 'riesgo-line.jsonl') },
+    { name: 'engram-cloud-sync', path: path.join(CLAUDE_DIR, 'sessions', 'engram-cloud-sync.jsonl') },
+    { name: 'pre-compact-snapshot', path: path.join(SNAPSHOTS_DIR, 'pre-compact-latest.json') },
     { name: 'learning-index', path: path.join(SNAPSHOTS_DIR, 'learning-index.json') },
   ];
 

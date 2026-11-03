@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # engram-cloud-sync-on-stop.sh
 #
-# Hook Stop. Garantiza que TODOS los projects con observaciones recientes
-# se suban a Engram cloud antes de que termine la sesion.
+# Hook Stop. Sube a Engram cloud TODOS los projects que tienen observaciones,
+# al terminar cada turno.
 #
 # Diseno:
 #   - Async + fail-open (jamas bloquea el flujo del usuario)
 #   - Idempotente: enroll y sync se pueden re-ejecutar sin efecto destructivo
-#   - Filtro de eficiencia: solo procesa projects con activity reciente (TTL=6h)
+#   - Sin filtro por actividad: recorre todos los projects con al menos 1 observacion
+#     (enroll + doctor + sync por cada uno; engram sync no sube nada si no hay cambios).
+#     Lo que acota el costo son el throttle de 30 s, el candado y los topes de abajo.
+#   - Log ~/.claude/sessions/engram-cloud-sync.jsonl, rotado por encima de ~2 MB (paso 3c)
 #   - scope=personal NO requiere este hook (ya auto-syncea), pero sync --cloud
 #     lo cubre tambien por idempotencia
 #
@@ -115,11 +118,28 @@ release_lock() {
 }
 trap release_lock EXIT
 
+# 3c. Rotar el log (2026-11-03): llego a 5,2 MB y 29 mil lineas sin tope. Por encima de
+#     LOG_MAX_BYTES (~2 MB) se queda con las ultimas LOG_KEEP lineas. Atomico: se escribe un
+#     temporal y se mueve encima. Solo la corrida con el candado rota, asi dos rotaciones no
+#     se pisan; una linea que otro Stop agregue entre el tail y el mv se puede perder (son
+#     lineas de "throttled" o "another sync running", no de resultados).
+LOG_MAX_BYTES="${ENGRAM_SYNC_LOG_MAX_BYTES:-2097152}"
+LOG_KEEP="${ENGRAM_SYNC_LOG_KEEP:-5000}"
+LOG_SIZE=$(wc -c < "$LOG_FILE" 2> /dev/null | tr -dc '0-9')
+if [ -n "$LOG_SIZE" ] && [ "$LOG_SIZE" -gt "$LOG_MAX_BYTES" ]; then
+  LOG_TMP="$LOG_FILE.tmp.$$"
+  if tail -n "$LOG_KEEP" "$LOG_FILE" > "$LOG_TMP" 2> /dev/null && mv -f "$LOG_TMP" "$LOG_FILE" 2> /dev/null; then
+    log info "log rotated (${LOG_SIZE} bytes > ${LOG_MAX_BYTES}); kept last ${LOG_KEEP} lines"
+  else
+    rm -f "$LOG_TMP" 2> /dev/null
+  fi
+fi
+
 log info "starting cloud sync on session stop"
 
-# 4. Listar projects. Filtrar por activity reciente via timestamps de DB
-#    Fallback simple: enumerar TODOS los projects, dejar que engram sync
-#    skippee los que no tienen delta (idempotente)
+# 4. Listar projects. No hay filtro por actividad reciente: se recorren TODOS los
+#    projects con al menos 1 observacion y engram sync no sube nada en los que no
+#    tienen cambios (idempotente). Cada project cuesta igual sus 3 llamadas a engram.
 # awk $2>0 y no grep -v "0 obs": ese grep descartaba tambien 10/20/120 obs (fix 2026-09-29)
 SYNCED=0
 FAILED=0

@@ -3,17 +3,24 @@
  * Hook: pre-compact-engram (PreCompact)
  * Se ejecuta antes de compactar contexto.
  *
- * Dos responsabilidades:
- * 1. Guardar snapshot de sesion a disco (tool count, cwd, timestamp)
- * 2. BLOQUEAR la compactacion via stderr para que Claude haga dual-write
- *    del DAG State ANTES de perder el contexto detallado.
+ * Que hace (no bloquea la compactacion, siempre exit 0), solo si stdin es una entrada real
+ * de PreCompact (hook_event_name "PreCompact"); con cualquier otra cosa sale sin escribir.
+ * Tests: tests/pre-compact-engram.test.js
+ * 1. Guarda un snapshot a disco: snapshots/pre-compact-latest.json (tool count, cwd,
+ *    fase del pipeline si hay .pipeline/estado.yaml en el cwd).
+ * 2. Escribe el trigger snapshots/compaction-pending.json. Lo consume el Boot Sequence
+ *    del orquestador (paso 0b de agents/orquestador.md), que hace el dual-write del
+ *    DAG State y borra el archivo. Fuera del modo pipeline nadie lo lee.
+ * 3. Borra el contador de tool calls de os.tmpdir() (si existe).
  *
- * NOTA: PreCompact hooks NO pueden llamar a MCPs (Engram).
- * Solo pueden escribir a disco y emitir mensajes via stderr.
- * El mensaje de stderr llega a Claude como contexto — Claude es quien
- * ejecuta el mem_update + disk write antes de que la compactacion proceda.
+ * NOTA: PreCompact hooks NO pueden llamar a MCPs (Engram); solo escriben a disco.
+ * El mensaje que se escribe a stderr al final NO llega a Claude: "Claude never sees
+ * stderr from a hook that exits 0" (hooks-doc.md:816), y PreCompact no tiene canal
+ * hacia el modelo con exit 0 (solo exit 2 o decision:block, que bloquearian la
+ * compactacion; hooks-doc.md:1014). Queda solo para el log de debug.
  *
- * Vibecoding v2.2 — PreCompact blocking (inspirado por MemPalace)
+ * Vibecoding v2.2. La version que bloqueaba via stderr (inspirada por MemPalace) se
+ * reemplazo por el trigger file; la cabecera se corrigio el 2026-11-03.
  */
 
 const fs = require('fs');
@@ -31,6 +38,14 @@ process.stdin.setEncoding('utf8');
 process.stdin.on('data', (chunk) => { input += chunk; });
 process.stdin.on('end', () => {
   try {
+    // Solo una entrada real de PreCompact escribe algo (hooks-doc.md:3306: trae
+    // "hook_event_name": "PreCompact"). Con `{}` o stdin vacio (audit-system T2/T5, una corrida
+    // a mano) antes se escribia un compaction-pending.json falso que el orquestador tomaba como
+    // compactacion real en su paso 0b. (2026-11-03)
+    let data = null;
+    try { data = JSON.parse(input); } catch (e) { /* no es JSON */ }
+    if (!data || typeof data !== 'object' || data.hook_event_name !== 'PreCompact') process.exit(0);
+
     // Leer el contador de tool calls si existe
     let toolCallCount = 0;
     try {
@@ -113,7 +128,7 @@ process.stdin.on('end', () => {
       fs.unlinkSync(COUNTER_FILE);
     } catch (e) {}
 
-    // Mensaje informativo (NO instrucción) — solo contexto de diagnóstico
+    // Mensaje informativo para el log de debug: con exit 0 no le llega a Claude (hooks-doc.md:816)
     const pipelineInfo = pipelineActive
       ? ` Pipeline activo: ${pipelinePhase}, tarea ${pipelineTask}.`
       : '';
