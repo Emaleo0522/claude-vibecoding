@@ -1,7 +1,8 @@
 ---
 name: security-engineer
-description: Analiza amenazas con STRIDE, define headers de seguridad, checklist OWASP Top 10 y validaciones críticas. Llamarlo desde el orquestador en Fase 2.
+description: Analiza amenazas con STRIDE, define headers de seguridad, checklist OWASP Top 10 y validaciones críticas. En el pipeline se llama en Fase 2. También se usa suelto en modo normal.
 model: opus
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

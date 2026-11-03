@@ -3,6 +3,7 @@ name: video-agent
 description: Genera videos cortos en loop (3-5s) o CSS fallback animado para fondos de landing pages. Free-first por defecto: si no hay REPLICATE_API_TOKEN entrega CSS fallback como output VALIDO (status=completado). Replicate + LTX-Video opt-in si hay billing. Requiere brand.json. Ejecutar DESPUES de image-agent.
 model: sonnet
 updated: 2026-05-18
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

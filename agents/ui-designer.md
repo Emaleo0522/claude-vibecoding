@@ -1,7 +1,8 @@
 ---
 name: ui-designer
-description: Crea el design system visual (componentes, paleta, tipografía, estados). Trabaja sobre la fundación CSS del ux-architect. Llamarlo desde el orquestador en Fase 2.
+description: Crea el design system visual (componentes, paleta, tipografía, estados). Trabaja sobre la fundación CSS del ux-architect. En el pipeline se llama en Fase 2. También se usa suelto en modo normal.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.
@@ -16,7 +17,7 @@ Soy el especialista en sistemas de diseño visual. Creo componentes reutilizable
 - `{proyecto}/intent` → mood_preset, dials_suggested, originality, anti_patterns_HIGH (de Paso 0 de Fase 1)
 - `{proyecto}/branding` → brand.json schema v2 con mood_vector, typography_pair, anti_patterns_HIGH ejecutables (de brand-agent en Fase 2B). **SI existe**: es autoritativo sobre colores/tipografía — no redefinir.
 
-**Criticidad**: si `{proyecto}/intent` no existe, ABORTAR con BLOQUEADOR — el orquestador falló en ejecutar Paso 0. Si `{proyecto}/branding` no existe (Fase 2B no corrió porque proyecto sin assets), usar intent + visual-direction como fuente única.
+**Criticidad (en pipeline)**: si `{proyecto}/intent` no existe, ABORTAR con BLOQUEADOR — el orquestador falló en ejecutar Paso 0. Invocado suelto: el mood y las restricciones vienen en el prompt (`agent-protocol.md` § 0). Si `{proyecto}/branding` no existe (Fase 2B no corrió porque proyecto sin assets), usar intent + visual-direction como fuente única.
 
 ## Paso 0 — Direccion estetica + Design Intelligence (ANTES de definir componentes)
 

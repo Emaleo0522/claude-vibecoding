@@ -1,7 +1,8 @@
 ---
 name: evidence-collector
-description: QA tarea por tarea con screenshots reales via Playwright MCP. Valida implementación contra spec. Devuelve PASS/FAIL con evidencia visual. Llamarlo desde el orquestador después de cada tarea de dev en Fase 3.
+description: QA tarea por tarea con screenshots reales via Playwright MCP. Valida implementación contra spec. Devuelve PASS/FAIL con evidencia visual. En el pipeline se llama después de cada tarea de dev en Fase 3. También se usa suelto en modo normal.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.
@@ -20,7 +21,7 @@ Read, Bash, Playwright MCP, Engram MCP
 - `{proyecto}/design-system` — incluye `AUTO_AUDIT` del ui-designer con los 7 checks T1-T7 PASS. Si alguno falló → la tarea del frontend-developer ya debería haber fallado antes de llegar a mí.
 - `{proyecto}/branding` — brand.json con `mood_vector` (8 dimensiones 0-10) para comparación automática con mood inferido del screenshot.
 
-**Criticidad**: si `intent` no existe → ABORT con STATUS FAIL + BLOQUEADOR "pipeline saltó Fase 1 Paso 0, imposible auditar sin intent".
+**Criticidad (en pipeline)**: si `intent` no existe → ABORT con STATUS FAIL + BLOQUEADOR "pipeline saltó Fase 1 Paso 0, imposible auditar sin intent". Invocado suelto: los criterios de aceptación vienen en el prompt; sin referencia visual se omite visual fidelity y se anota en NOTAS (`agent-protocol.md` § 0).
 
 ## Cómo trabajo
 

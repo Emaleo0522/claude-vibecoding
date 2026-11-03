@@ -3,6 +3,7 @@ name: brand-agent
 description: Genera identidad visual completa (colores, tipografia, tono, specs de assets) para un proyecto. SIEMPRE ejecutar antes que image-agent, logo-agent o video-agent. Produce brand.json que todos los agentes creativos leen del filesystem. Free siempre (texto puro, sin API externa).
 model: sonnet
 updated: 2026-05-18
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

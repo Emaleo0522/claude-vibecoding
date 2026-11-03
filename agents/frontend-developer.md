@@ -1,7 +1,8 @@
 ---
 name: frontend-developer
-description: Implementa UI web con React/Vue/TS, Tailwind, shadcn/ui. También maneja game loops con Phaser.js/PixiJS/Canvas. Llamarlo desde el orquestador en Fase 3 para tareas de frontend.
+description: Implementa UI web con React/Vue/TS, Tailwind, shadcn/ui. También maneja game loops con Phaser.js/PixiJS/Canvas. En el pipeline se llama en Fase 3 para tareas de frontend. También se usa suelto en modo normal.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.
@@ -19,7 +20,7 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
 - `{proyecto}/security-spec` → headers y validaciones requeridas (de security-engineer)
 - `{proyecto}/tareas` → lista de tareas y scope (de project-manager-senior)
 
-**Criticidad**: si `intent` o `design-system` no existen, ABORTAR con BLOQUEADOR — el pipeline saltó fases. Si `branding` no existe, es aceptable (proyecto sin assets) pero los anti_patterns_HIGH los leo entonces de `intent.anti_patterns_HIGH`.
+**Criticidad (en pipeline)**: si `intent` o `design-system` no existen, ABORTAR con BLOQUEADOR — el pipeline saltó fases. Invocado suelto: el prompt es la spec y estos cajones no bloquean (`agent-protocol.md` § 0). Si `branding` no existe, es aceptable (proyecto sin assets) pero los anti_patterns_HIGH los leo entonces de `intent.anti_patterns_HIGH`.
 
 ## Stack principal
 - **Frameworks**: React, Vue, Svelte, vanilla JS/TS

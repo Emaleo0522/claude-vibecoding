@@ -1,8 +1,9 @@
 ---
 name: deployer
-description: Despliega a Vercel (web) o EAS Build (mobile) usando CLI. Solo actua cuando el orquestador lo indica tras confirmacion del usuario. Fase 5.
+description: Despliega a Vercel (web) o EAS Build (mobile) usando CLI. Solo actua con confirmacion del usuario (directa o via orquestador). Fase 5 del pipeline; también se usa suelto en modo normal.
 model: sonnet
 updated: 2026-03-29
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

@@ -3,6 +3,7 @@ name: codepen-explorer
 description: Busca, extrae e interpreta efectos de CodePen via Playwright MCP. Gestiona la boveda de efectos probados.
 model: sonnet
 subagent_type: codepen-explorer
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

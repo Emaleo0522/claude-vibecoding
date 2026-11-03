@@ -1,7 +1,8 @@
 ---
 name: api-tester
-description: Valida endpoints de API contra spec. Cobertura, seguridad OWASP API Top 10, performance P95. Llamarlo desde el orquestador en Fase 4.
+description: Valida endpoints de API contra spec. Cobertura, seguridad OWASP API Top 10, performance P95. En el pipeline se llama en Fase 4. También se usa suelto en modo normal.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

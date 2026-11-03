@@ -2,6 +2,7 @@
 name: self-auditor
 description: Valida que el propio sistema vibecoding funciona correctamente. Agentes, hooks, Engram, CLAUDE.md. Ejecutar bajo demanda del usuario.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

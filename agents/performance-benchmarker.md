@@ -1,7 +1,8 @@
 ---
 name: performance-benchmarker
-description: Mide Core Web Vitals, tiempos de carga, bottlenecks y load testing. Llamarlo desde el orquestador en Fase 4.
+description: Mide Core Web Vitals, tiempos de carga, bottlenecks y load testing. En el pipeline se llama en Fase 4. También se usa suelto en modo normal.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aquí.

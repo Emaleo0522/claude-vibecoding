@@ -10,6 +10,21 @@ Este archivo define los patrones que TODO subagente debe seguir. No dupliques es
 
 ---
 
+## 0. Pipeline o suelto (leer primero; agregado 2026-11-03)
+
+Todo agente de ejecución se puede usar de dos formas. Antes de leer cajones, decidí en cuál estás:
+
+- **En pipeline**: la delegación viene del orquestador; el prompt nombra la fase o la tarea del pipeline (`Fase N`, `tarea-{N}`), o trae `references_loaded` / DAG State. Rigen todas las reglas de este archivo y de tu `.md`, incluidas las de "Criticidad": si falta un cajón crítico, ABORTAR con BLOQUEADOR (el pipeline saltó una fase y hay que saberlo).
+- **Suelto (modo normal)**: cualquier otro caso. Claude te llama directo con la tarea en el prompt. Entonces:
+  1. **El prompt es la spec.** Lo que el prompt dice (alcance, archivos, criterios, restricciones) manda sobre los cajones del pipeline.
+  2. **Cajones del pipeline** (`intent`, `design-system`, `css-foundation`, `visual-direction`, `tareas`, `security-spec`, `tarea-{N}`, `qa-{N}`, `api-spec`): si el prompt nombra el proyecto y existen en Engram o en `.pipeline/`, usalos (mantienen la coherencia de un proyecto que pasó por el pipeline). Si no existen, NO son bloqueantes: seguí con el prompt y el código real, y anotá en NOTAS qué supusiste.
+  3. **Bloquear solo** si falta algo que el prompt no da y sin lo cual la tarea no se puede hacer bien (ej. `brand.json` para image/logo/video-agent: avisar que primero va brand-agent). Nunca inventar datos para tapar el hueco; lo ambiguo vuelve como pregunta en NOTAS, no se resuelve en silencio.
+  4. **Commit, push y deploy**: solo si el prompt lo autoriza explícitamente. Si no, dejar los cambios sin commitear.
+  5. **"Escalar al orquestador"** = devolver el Return Envelope a quien te llamó; no hay orquestador.
+  6. **Engram**: guardá en `{proyecto}/...` solo si el prompt nombra el proyecto; no crees DAG State.
+
+---
+
 ## 1. Engram — Lectura (2 pasos OBLIGATORIOS)
 
 NUNCA uses el preview de `mem_search` como dato final. Siempre completa los 2 pasos:
@@ -189,7 +204,7 @@ No esperes al final de la tarea. Guarda al momento.
 5. **Asumir que no hay proceso corriendo en el puerto** → verificar/matar antes de levantar servidor
 6. **Resúmenes cortos al orquestador** → nunca código completo, nunca archivos enteros
 7. **No duplicar lo que ya está en Engram** → pasar topic_key, no contenido
-8. **Respetar Delegation Stop Rules** → si llegás a 5+ Read sobre archivos distintos en la misma tarea, tocaste 2+ archivos no-triviales, o acumulás 20+ tool calls sin completar tu tarea, escalar al orquestador con `BLOQUEADORES: Stop Rule {N} disparada` en lugar de seguir solo. Detalle: CLAUDE.md global § "Delegation Stop Rules".
+8. **Stop Rules (en pipeline)** → si llegás a 5+ Read sobre archivos distintos en la misma tarea, tocaste 2+ archivos no-triviales, o acumulás 20+ tool calls sin completar tu tarea, escalar al orquestador con `BLOQUEADORES: Stop Rule {N} disparada` en lugar de seguir solo. Detalle: `orquestador.md` § "Auto-escalación durante el pipeline". Suelto, los conteos no frenan: devolvé el envelope cuando la tarea termine o cuando algo que el prompt no resuelve te bloquee (CLAUDE.md global § "Método con red").
 9. **Aplicar `references_loaded` del DAG State** → si el orquestador te pasó este campo en la delegación (ej: `references_loaded: ["better-auth", "linux-hardening"]`), leer cada `~/.claude/agents/{slug}-reference.md` y aplicar sus reglas durante la tarea. Si NO te lo pasó pero tu tarea sugiere que aplica (ej: deploy a VPS), consultarlo via `mem_search("{proyecto}/estado")` y leer el DAG State una sola vez. El orquestador es el único punto de decisión sobre qué refs cargar (Fase 1 Paso 0b).
 10. **Anti-código viejo — consultar Context7 antes de escribir código de librería específica** → cuando vas a generar código que usa un framework o librería específicos (Next.js, Tailwind, Expo, Flutter, FastAPI, Django, Drizzle, Better Auth, etc.) Y la tarea involucra features recientes o versiones modernas (Next.js 16 app router/server actions, Tailwind 4 utilities, Expo SDK 52+, React 19 server components, Drizzle 2.x, FastAPI async, Flutter 3.x widgets, Better Auth v1.x), **consultar Context7 ANTES de escribir**:
     ```

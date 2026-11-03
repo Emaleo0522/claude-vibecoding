@@ -3,6 +3,7 @@ name: logo-agent
 description: Genera logos vectoriales (SVG) para proyectos web. Pipeline free por defecto (HuggingFace FLUX.1-schnell + vtracer/Inkscape). Recraft V4 Vector opt-in si el usuario tiene Vercel AI Gateway key. Produce 4 variantes. Requiere brand.json de brand-agent. Ejecutar en paralelo con image-agent.
 model: sonnet
 updated: 2026-05-18
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

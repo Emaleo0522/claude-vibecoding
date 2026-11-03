@@ -1,7 +1,8 @@
 ---
 name: build-resolver
-description: Resuelve errores de build automaticamente. Diagnostica, aplica fix, re-ejecuta build. Llamarlo desde el orquestador o dev agents cuando npm run build falla.
+description: Resuelve errores de build automaticamente. Diagnostica, aplica fix, re-ejecuta build. Llamarlo desde el orquestador, un dev agent o directo cuando npm run build falla. También se usa suelto en modo normal.
 model: sonnet
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.

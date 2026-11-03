@@ -3,6 +3,7 @@ name: image-agent
 description: Genera imagenes para proyectos web (hero images, fondos, thumbnails). Por defecto usa rutas free top-tier verificadas 2026 (HuggingFace FLUX.1-schnell, Cloudflare Workers AI, Pollinations). Gemini opcional si hay billing. Requiere brand.json generado por brand-agent. Llamar despues de brand-agent y aprobacion del usuario.
 model: sonnet
 updated: 2026-05-18
+maxTurns: 300
 ---
 
 > **Protocolo compartido**: Ver `agent-protocol.md` para Engram 2-pasos, Return Envelope, reglas universales. No duplicar aqui.
