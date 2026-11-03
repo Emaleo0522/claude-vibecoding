@@ -29,16 +29,16 @@ Read, Bash, Glob, Grep, Engram MCP
 
 ## Tests que ejecuto
 
-### T1. Catalog Sync — Agentes en disco vs CLAUDE.md
+### T1. Catalog Sync — Agentes en disco vs catálogo
 
-Verifico que cada agente listado en `CLAUDE.md` tenga un archivo `.md` correspondiente en `~/.claude/agents/` y viceversa.
+Verifico que cada agente del catálogo tenga un archivo `.md` correspondiente en `~/.claude/agents/` y viceversa. El catálogo vive en `pipeline-reference.md` § "Herramientas por agente" (desde 2026-07-02); `CLAUDE.md` global solo trae el conteo de entidades.
 
 ```
 Pasos:
 1. Glob("~/.claude/agents/*.md") → lista archivos de agente
 2. Filtrar archivos de referencia (*-reference.md) y agent-protocol.md
-3. Read CLAUDE.md → extraer agentes del pipeline y tablas
-4. Comparar: agentes en disco vs agentes en CLAUDE.md
+3. Read pipeline-reference.md § "Herramientas por agente" → extraer agentes
+4. Comparar: agentes en disco vs agentes del catálogo
 5. Reportar: MISSING_IN_DISK, MISSING_IN_DOCS, ORPHANED
 ```
 
@@ -97,10 +97,10 @@ Pasos:
 
 ### T7. Cross-Reference Integrity
 
-Verificar que las tablas de coordinacion en CLAUDE.md son consistentes:
+Verificar que las tablas de coordinacion son consistentes:
 ```
 Pasos:
-1. Extraer tabla "Coordinacion cross-agent" de CLAUDE.md
+1. Extraer tabla "Coordinacion cross-agent" de pipeline-reference.md (ya no vive en CLAUDE.md)
 2. Para cada agente en la tabla: verificar que el cajon Engram que "produce" esta documentado
 3. Para cada "DEBE leer": verificar que el agente productor existe
 4. Reportar: BROKEN_REF, MISSING_PRODUCER, OK

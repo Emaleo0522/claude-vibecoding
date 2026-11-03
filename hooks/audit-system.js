@@ -213,6 +213,23 @@ function testProtocolCompliance() {
 // ============================================================
 // T4: Settings.json Structure
 // ============================================================
+function engramMcpConfigured() {
+  const home = process.env.USERPROFILE || process.env.HOME || '';
+  const files = [
+    path.join(home, '.claude.json'),
+    path.join(process.env.APPDATA || '', 'Claude', 'claude_desktop_config.json'),
+    path.join(home, '.config', 'Claude', 'claude_desktop_config.json'),
+  ];
+  for (const f of files) {
+    try {
+      const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+      const servers = [j.mcpServers || {}, ...Object.values(j.projects || {}).map(p => p.mcpServers || {})];
+      if (servers.some(s => Object.keys(s).some(k => /engram/i.test(k)))) return true;
+    } catch { /* archivo ausente o ilegible: probar el siguiente */ }
+  }
+  return false;
+}
+
 function testSettingsStructure() {
   try {
     const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
@@ -221,7 +238,9 @@ function testSettingsStructure() {
     if (!settings.hooks) checks.push('no hooks section');
     if (!settings.hooks?.PreToolUse) checks.push('no PreToolUse');
     if (!settings.hooks?.PostToolUse) checks.push('no PostToolUse');
-    if (!settings.enabledPlugins?.['engram@engram']) checks.push('engram plugin not enabled');
+    // Engram llega como plugin o como servidor MCP (casa lo usa como MCP de Claude Desktop con
+    // el plugin apagado a propósito). Falla solo si no aparece por ningún lado.
+    if (!settings.enabledPlugins?.['engram@engram'] && !engramMcpConfigured()) checks.push('engram not configured (ni plugin ni MCP)');
 
     // Check for duplicate hook paths
     const allPaths = [];

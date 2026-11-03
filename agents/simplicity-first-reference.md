@@ -5,7 +5,7 @@ description: Referencia operativa de Simplicity First en outputs. Triggers, anti
 
 # Simplicity First en outputs — Referencia operativa
 
-> **Cuándo cargar este archivo**: cuando estés por entregar una respuesta y dudes si va corta o larga. Para reglas core en 1 vistazo, leé `~/CLAUDE.md` § "Simplicity First en outputs". Acá tenés ejemplos buenos vs malos.
+> **Cuándo cargar este archivo**: cuando estés por entregar una respuesta y dudes si va corta o larga. Para reglas core en 1 vistazo, leé `~/.claude/CLAUDE.md` § "Simplicity First en outputs". Acá tenés ejemplos buenos vs malos.
 
 ## Doctrina (de CLAUDE.md global)
 
@@ -90,7 +90,7 @@ Antes de enviar una respuesta, grep-eate a vos mismo:
 
 ## Cross-references
 
-- `~/CLAUDE.md` § "Simplicity First en outputs" — reglas core
+- `~/.claude/CLAUDE.md` § "Simplicity First en outputs" — reglas core
 - Engram obs `claude-vibecoding/karpathy-4-rules-analysis-20260522` (#3328) — análisis original
 - Engram obs `claude-vibecoding/meta/authoritative-files-vs-summaries` (#3336) — leer archivo correcto antes de afirmar
 - Engram obs `claude-vibecoding/meta/trust-user-memory-verify-before-contradict` (#3338) — cuando el usuario corrige
