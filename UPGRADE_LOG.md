@@ -1,5 +1,23 @@
 # Upgrade Log — Context Management + Best Practices
 
+## Método con red (ODD adaptado) + topes anti-espera — 2026-11-03 ✅
+
+Origen: comparación del método real contra ODD de Gentleman (gentle-shell), SDD, BDD y TDD, con un agente de contexto limpio que propuso y otro que revisó con consigna de evidencia. Salida elegida: adaptar, no reemplazar.
+
+**Método**
+- CLAUDE.md global § "Método con red" reemplaza las Delegation Stop Rules: chica/grande por retomabilidad (no por conteos), spec en `docs/specs/<feature>.md` con criterios Dado/Cuando/Entonces para lo grande, revisión limpia con consigna de evidencia y OK de Ema antes de construir, TDD selectivo con RED visto y mutación, línea `Riesgo:` con 7 ítems (verificador independiente solo con ítem). Decisiones de Ema: bug pedido con causa clara va directo (test rojo + verificador); "subí" a server propio autoriza mirar y planear, no ejecutar.
+- Texto del pipeline movido del CLAUDE.md global a `pipeline-reference.md` § "Doctrina del pipeline"; el orquestador la lee en su Boot (0c). CLAUDE.md queda en 38,1 KB, el mismo tamaño que antes, ahora con el método escrito en lugar del pipeline.
+- `agent-protocol.md` § 0 "Pipeline o suelto": los agentes del pipeline sirven en modo normal sin abortar por cajones del pipeline; 17 descripciones actualizadas.
+- Prueba jev-review cerrada por su propia regla (24% vs 80%): script a `hooks/_archivo/`. El MCP jev y jev-route-check siguen.
+
+**Hooks**
+- `hooks/risk-line.js` (solo registro): mide si cada trabajo con cambios cierra con su línea `Riesgo:`. Spec `docs/specs/linea-riesgo-hook.md`, 65 tests, 24 mutantes muertos, 2 rondas de verificador. Revisión a los ~3 días para decidir si bloquea.
+- `engram-cloud-sync-on-stop.sh`: timeout 60 s por llamada, presupuesto 900 s, candado de una sola corrida, pasada extra pedida por Stops salteados. El log mostraba corridas de hasta 35 min, 30% sin terminar y superpuestas. Test `tests/engram-cloud-sync.test.sh` 23/23, 8 mutantes muertos.
+- `maxTurns` en 25 agentes (300; git 100), calibrado con el máximo histórico de herramientas por tipo.
+- `templates/settings.json`: entradas de risk-line y `session-start-context` "timeout" 10000 → 10 (la unidad es segundos).
+
+**Para pc004**: pull, copiar CLAUDE.md, agents y los 2 hooks; mergear a mano las 3 entradas de risk-line en settings.json (el instalador lo pisa); `drift-check.js`.
+
 ## Audit integral post-refactor + fixes de contratos — 2026-07-02 ✅
 
 ### Resumen

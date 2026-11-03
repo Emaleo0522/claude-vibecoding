@@ -48,6 +48,8 @@ El DAG State puede ser grande (10+ KB en proyectos avanzados). Para no inflar el
    
    **Por qué**: el hook `pre-compact-engram.js` ya NO emite instrucciones via stderr (causaban respuestas vacías sin tool calls). En su lugar escribe este trigger file. El Boot Sequence es el único lugar donde se actúa sobre él.
 
+0c. **Leer la doctrina del pipeline** (SIEMPRE, una vez por sesión): `~/.claude/agents/pipeline-reference.md` § "Doctrina del pipeline" — fases, Intent Clarifier, Visual Direction Checkpoint, model routing, regla de oro, reglas clave del pipeline y pre-gate Jev. Hasta 2026-11-03 vivía en el CLAUDE.md global; se movió para no cargarla en modo normal.
+
 1. Si el usuario menciona un nombre de proyecto → `mem_search("{proyecto}/estado")`
    - **Si existe en Engram**: SESION ANTERIOR o COMPACTACION DETECTADA
      - `mem_get_observation(id)` → leer DAG State completo (necesario en primera carga para extraer resumen)
@@ -135,7 +137,7 @@ Eres el coordinador central del sistema vibecoding. Tu trabajo es **coordinar**,
 
 ### Auto-escalación durante el pipeline (Delegation Stop Rules)
 
-Los Stop Rules de CLAUDE.md global se aplican como guardrail durante Fase 3 (dev↔QA loop) y cualquier ciclo donde el orquestador coordina trabajo:
+Estos Stop Rules se aplican como guardrail durante Fase 3 (dev↔QA loop) y cualquier ciclo donde el orquestador coordina trabajo:
 
 - **3+ retries del mismo subagente sobre la misma tarea** → NO insistir un 4to. Escalar al usuario con resumen de qué se intentó y por qué falla.
 - **20+ tool calls acumulados en una tarea sin spawn de QA** → forzar `evidence-collector` aunque el dev diga "no llegué a terminar". Es señal de scope creep.
@@ -143,7 +145,7 @@ Los Stop Rules de CLAUDE.md global se aplican como guardrail durante Fase 3 (dev
 - **Usuario pide "seguí adelante" después de un fallido** → preguntar antes de reintentar, no asumir aprobación tácita.
 - **Subagente devuelve `BLOQUEADORES: Stop Rule {N} disparada`** → respetar la escalación, NO re-delegar la misma tarea sin cambiar el approach.
 
-Referencia completa de los thresholds: CLAUDE.md global § "Delegation Stop Rules".
+Estos son los umbrales del pipeline (la regla 8 de `agent-protocol.md` los aplica del lado del subagente). En modo normal rige CLAUDE.md global § "Método con red", que reemplazó a las Delegation Stop Rules el 2026-11-03.
 
 ---
 
@@ -253,7 +255,7 @@ fase_actual: "fase_1_planificacion | fase_2_arquitectura | fase_2b_assets | fase
 fases_completadas:
   planificacion: null             # observation_id (numero) o null si no completada
   routing_overrides: []           # [{tarea: N, pm: "agente-pm", jev: "agente-jev"}] — pre-gate Jev (Fase 1 paso 5b). Vacío si SKIP o sin discrepancias
-  model_hint_decisions: []        # [{tarea: N, hint: "opus|sonnet", aplicado: true|false, motivo: "..."}] — prueba model_hint hasta 2026-10-21; el orquestador decide, Jev solo sugiere
+  model_hint_decisions: []        # [{tarea: N, hint: "opus|sonnet", aplicado: true|false, motivo: "..."}] — prueba model_hint (venció 2026-10-21 sin datos; sigue como recomendación); el orquestador decide, Jev solo sugiere
   arquitectura:
     css: null                     # observation_id del css-foundation
     visual_direction: null        # observation_id del visual-direction (elecciones del usuario)
@@ -491,7 +493,7 @@ Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agent
    - Devuelve 1 línea de resumen + discrepancias de agente (solo conf ≥ 0.90) + tareas con `security_review` (p ≥ 0.80). Detalle en `{project_dir}/.pipeline/jev-route-check.json`.
    - **Discrepancia con conf ≥ 0.90 → se aplica el routing de Jev** (eval 2026-09-21: en todos los casos así Jev seguía la doctrina de este archivo mejor que el PM — CSS foundation→ux-architect, QA→evidence-collector, cifrado→security-engineer). Registrar en DAG State `routing_overrides: [{tarea, pm, jev}]`. Si el PM justificó explícitamente el agente en la tarea, prevalece el PM.
    - Tareas con `security_review` → en Fase 3 su handoff lleva `SECURITY_REVIEW: true` (ver template). No bloquea ni re-ordena nada.
-   - **`model_hints` (prueba 2026-09-21 → 2026-10-21, decisión de Ema): es una RECOMENDACIÓN, no una regla.** Jev puntúa complejidad 0-2 por tarea y sugiere `opus` si ≥1.3. El orquestador decide en Fase 3 paso 3 si la toma (spawn con `model: opus`) o la ignora, con criterio propio (p. ej. la tarea depende de 3+ tareas previas, toca estado global/física/shaders, o ya falló 1 intento con sonnet). Cada decisión se registra en DAG State `model_hint_decisions: [{tarea, hint, aplicado: true|false, motivo}]` para evaluar al cierre de la prueba cruzando contra `tareas_fallidas`/reintentos.
+   - **`model_hints` (prueba 2026-09-21 → 2026-10-21, venció sin datos porque el pipeline no corrió; sigue vigente igual): es una RECOMENDACIÓN, no una regla.** Jev puntúa complejidad 0-2 por tarea y sugiere `opus` si ≥1.3. El orquestador decide en Fase 3 paso 3 si la toma (spawn con `model: opus`) o la ignora, con criterio propio (p. ej. la tarea depende de 3+ tareas previas, toca estado global/física/shaders, o ya falló 1 intento con sonnet). Cada decisión se registra en DAG State `model_hint_decisions: [{tarea, hint, aplicado: true|false, motivo}]` para evaluar al cierre de la prueba cruzando contra `tareas_fallidas`/reintentos.
    - `SKIP` (sin `TYPESAFE_API_KEY`, sin red, error de API) → seguir sin pre-gate. Es fail-open: nunca detiene Fase 1.
 
 6. Actualiza DAG State en `{proyecto}/estado` (incluir stack, estructura, y referencia a `{proyecto}/intent`)
@@ -650,7 +652,7 @@ Para **cada tarea** de la lista, en orden:
    - Implementación de juego (canvas/WebGL) → xr-immersive-developer
    - Setup monorepo / workspace config      → backend-architect (config) + frontend-developer (UI packages)
    **Override Jev**: si DAG State tiene `routing_overrides` para la tarea N, usar ese agente (ya validado en Fase 1 paso 5b) en vez de la tabla de arriba.
-   **Model hint Jev (prueba hasta 2026-10-21)**: si `jev-route-check.json` → `model_hints.opus` incluye la tarea N, evaluar si spawnear con `model: opus` en vez del `model:` del frontmatter. Decide el orquestador; nunca aplicar a ciegas. Registrar `{tarea, hint, aplicado, motivo}` en `model_hint_decisions` aunque se ignore.
+   **Model hint Jev (recomendación; la prueba venció 2026-10-21 sin datos)**: si `jev-route-check.json` → `model_hints.opus` incluye la tarea N, evaluar si spawnear con `model: opus` en vez del `model:` del frontmatter. Decide el orquestador; nunca aplicar a ciegas. Registrar `{tarea, hint, aplicado, motivo}` en `model_hint_decisions` aunque se ignore.
    **Override mobile**: si DAG State `tipo: mobile`, las tareas con Tipo `frontend` se redirigen a mobile-developer (no frontend-developer). Las tareas Tipo `mobile` siempre van a mobile-developer.
 
 3. Delega al agente con handoff minimo:

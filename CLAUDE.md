@@ -61,65 +61,51 @@ La mayoría de las sesiones son modo normal. En modo normal tenés a disposició
 
 **codegraph — retrieval estructurado del código (MCP, 2026-06-18):** si el proyecto tiene índice `.codegraph/`, preferí los tools `codegraph_explore` / `codegraph_node` / `codegraph_callers` / `codegraph_impact` ANTES de grep manual o de spawnear `Explore` — devuelven símbolos rankeados + blast radius + código fuente verbatim en 1 llamada (precisión verificada exacta en piloto vetconnect 2026-06-18; ~58% menos tool calls). Indexar un proyecto nuevo: `codegraph init .` una vez. Solo en proyectos medianos+ (en una landing de ~10 archivos el overhead fijo del MCP no amortiza → seguí con `Explore`/grep). Sin índice → `Explore`/grep como siempre. Detalle de la evaluación: Engram `vibecoding/repo-eval-2026-06-codegraph-ponytail-caveman`.
 
-Esta sección es el lado positivo de las **Delegation Stop Rules** de abajo: acá está *qué alcanzar proactivamente*; abajo, *cuándo ya es tan grande que conviene escalar al pipeline*.
+Esta sección es el lado positivo del **Método con red** de abajo: acá está *qué alcanzar proactivamente*; abajo, *cómo se trabaja cada pedido*.
 
-## Delegation Stop Rules — cuándo escalar al pipeline
+## Método con red (rige en todo proyecto; el CLAUDE.md de un proyecto puede endurecerlo, no aflojarlo)
 
-En modo Claude normal, si detectás cualquiera de estos triggers, sugerí al usuario activar el pipeline:
+Origen: método propio (spec, revisión limpia, decide Ema, TDD, ruta real) + piezas de ODD de Gentleman + criterios Dado/Cuando/Entonces de BDD. Adoptado 2026-11-03; reemplaza las Delegation Stop Rules.
 
-| Trigger | Umbral | Acción |
-|---|---|---|
-| Lecturas exploratorias consecutivas | 5+ archivos distintos | Spawn `Explore` o pausar |
-| Archivos leídos para entender un flow | 4+ en la misma tarea | Spawn `Explore` subagent |
-| Archivos no-triviales escritos | 2+ con cambios sustantivos | Fresh review con subagente |
-| Tool calls totales sin spawn | 20+ en una sesión | Pausar, sugerir orquestador |
-| Ediciones no-mecánicas consecutivas | 2+ con complejidad creciente | Pausar, justificar o delegar |
-| Después de incidente (`cd` mal, git accident, recovery merge) | siempre | Fresh audit antes de seguir |
-| Antes de commit/push/PR no-trivial | siempre | **Prueba hasta 2026-10-21**: `node ~/.claude/hooks/jev-review-check.js --repo .` primero, después la fresh review de siempre, después `--verdict` (ver § "Prueba jev-review") |
+1. **Autorizar.** Pregunta, explicación, auditoría o propuesta = solo lectura. Si no está claro si Ema quiere un cambio: una pregunta y esperar.
+2. **Entender en proporción.** Leer lo que voy a tocar y verificar la premisa en la ruta real. Presupuesto de evidencia: si entender pide más de una tanda de ~3 lecturas o más de ~5 búsquedas encadenadas, delegar `Explore` (o codegraph si hay `.codegraph/`) que devuelva ≤2k tokens con `ruta:línea`. La cantidad de archivos, tests o pasos nunca decide nada por sí sola.
+3. **Clasificar: chica o grande.**
+   - **Chica**: entendida, sin decisión de Ema abierta, sin funcionalidad nueva (un cambio de texto o estilo pedido literalmente no cuenta), sin ítem de riesgo, y que se pueda retomar solo con el pedido + `git diff`. Va inline, sin documento; si aparece una decisión puntual, una pregunta con mi recomendación.
+   - Los ítems de riesgo (paso 6) se estiman acá, al clasificar, y se confirman al cerrar.
+   - **Bug que Ema pidió arreglar**, con causa clara y un solo camino razonable: va directo aunque tenga ítem de riesgo, sin spec ni "dale": test que falla primero, arreglo, verificador limpio (paso 6). Si hay más de un camino razonable, antes de escribir una pregunta con mi recomendación. Decisión de Ema 2026-11-03.
+   - **Grande**: todo lo demás (feature nueva visible, decisión de diseño o negocio abierta, varias sesiones, espera externa, requisitos que una compactación puede perder).
+4. **Grande: spec antes de código.** `docs/specs/<feature>.md` (formato abajo). Una revisión con agente de contexto limpio (opus) con consigna de evidencia: "no encontré problemas" es válido; cada objeción con cita, escenario paso a paso, severidad y confianza; lo que no tenga escenario va a Dudas; veredicto listo / listo con ajustes / no ejecutar. Segunda ronda solo con ítem de riesgo 1, 2 o 5. **Ema decide** sobre la versión revisada y hay que esperar su "dale" ("si no decís nada sigo" no vale). Recién ahí `Estado: aprobado AAAA-MM-DD`. Para ops: relevar el estado real del server en solo lectura y escribir el plan con rollback antes de tocar nada.
+5. **Implementar.**
+   - Test primero, viéndolo fallar, cuando el comportamiento es determinista (lógica, economía, plata, datos, permisos). Test después o guardián para cableado y UI. Sin test: diagnóstico, texto, comentarios. Todo test nuevo sobre lógica que importa se muta.
+   - Delegar escritura solo con motivo: 2+ unidades independientes de ~100+ líneas en paralelo, contexto que se está llenando, o costo del modelo (sesión en Fable → ejecución a `Agent` opus/sonnet). Los agentes del pipeline sirven sueltos (`agent-protocol.md` § 0).
+   - Prompt al subagente: happy path + casuísticas enumeradas; lo ambiguo vuelve como pregunta, nunca se resuelve en silencio.
+   - Nada espera para siempre: todo comando en segundo plano (tests, builds, scripts largos) lleva su propio tope: en Bash/Git Bash `timeout N comando` (en PowerShell `timeout` es otra cosa: correrlo por Bash); los dev servers van por `preview_start`. Los agentes tienen `maxTurns` (300; git 100, calibrado sobre el uso real): si uno vuelve marcado como parcial, entender por qué antes de retomarlo, no relanzarlo a ciegas.
+6. **Riesgo.** Todo cambio de código u operación (deploy, migración, server) cierra con `Riesgo: ninguno` o `Riesgo: ítem N (motivo)`:
+   1 datos irreversibles o de producción · 2 seguridad, auth, plata, wallet o economía que representa valor (energía, créditos) · 3 contratos que otros ya usan (API, formatos guardados, config del sistema) · 4 concurrencia · 5 entrega o entorno (deploy, server, CI, dependencias) · 6 lógica que importa sin test que detecte una regresión (no aplica a texto, comentarios ni renombres mecánicos) · 7 código nuevo que nadie usó todavía de verdad.
+   - Con ítem: verificador de contexto limpio sobre el diff (en ops, sobre el plan con rollback), con la misma consigna de evidencia, después de los tests propios. Sus hallazgos se reproducen antes de creerles. Una tanda de corrección; lo que quede va a Ema como "Necesita tu decisión". Que Ema lo apruebe a ojo no reemplaza esta verificación. El cambio con ítem va en su propio commit.
+   - Sin ítem: test enfocado + suite, sin review extra.
+7. **Cerrar.** Qué verifiqué y con qué evidencia (ruta real, no maqueta; dos señales para una conclusión grande), qué falló o quedó pendiente, qué tiene que probar Ema y qué mirar, siguiente paso. Push y deploy solo con autorización (§ Reglas clave); SSH a servers propios, § Protocolos de guardado regla 5.
 
-Umbrales deterministas; "no-trivial" lo evalúa Claude. Adaptado de gentle-ai (2026-05-18).
+**Incidentes** (cwd equivocado, accidente de git, merge de rescate): parar, diagnosticar aparte y recién después seguir.
+
+**Formato de spec** (`docs/specs/<feature>.md` en el repo que versiona ese código; para mods y config del sistema, `claude-vibecoding`):
+- Encabezado: objetivo en 1-2 líneas · `Estado: borrador | en revisión | aprobado AAAA-MM-DD | hecho`.
+- `## Specs` S1..Sn: el pedido de Ema textual; criterios de aceptación en Dado / Cuando / Entonces cuando hay comportamiento observable; supuestos marcados como supuestos.
+- `## Tareas` T1..Tn: qué S cubre, estado, commit o evidencia (test visto fallar y pasar).
+- `## Log`: L1 = pedido original textual; correcciones de Ema con fecha; veredicto de la revisión con objeciones aceptadas y descartadas; evidencia de cierre.
+- Al crear y al cerrar: `mem_save` con topic `{proyecto}/spec-<feature>` (ruta, estado, próximo paso; no copia del documento).
+
+**Señales de que la verificación no terminó:** test que nunca vi fallar · datos que fabriqué yo · una sola señal · hallazgo de subagente no reproducido · algo raro en la salida y seguí igual · "anda bien" sin evidencia que pueda señalar · algo visual que no miré. Para afirmar que algo no existe, listar la carpeta completa.
 
 ## Skill & Reference Index
 
 `~/.claude/agents/AGENTS.md` mapea las 27 referencias (`*-reference.md`) con triggers y skip conditions. Consultar antes de cargar refs pesadas — evita tokens innecesarios. No es un agente ejecutable, es un índice. Adaptado de gentle-ai/guardian-angel — 2026-05-18.
 
-## Arquitectura
+## Pipeline orquestador (opcional)
 
-Este sistema usa un **orquestador central** (1 coordinador + 24 subagentes = 25 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
+Proyecto completo de punta a punta con un orquestador (1 coordinador + 24 subagentes = 25 entidades) y 5 fases más la 2B de assets (planificación, arquitectura, assets, dev↔QA, certificación, publicación). Se activa con las frases de la tabla de modos. Al activarse, el orquestador lee `orquestador.md` y `pipeline-reference.md` § "Doctrina del pipeline" (fases, Intent Clarifier, Visual Direction Checkpoint, model routing Opus/Sonnet, regla de oro, reglas clave del pipeline, pre-gate Jev). Los subagentes (frontend-developer, backend-architect, git, deployer, evidence-collector…) también se usan sueltos en modo normal; cada uno trae su `model:` en el frontmatter.
 
-### Pipeline (5 fases)
-```
-Fase 1  Planificación      → Paso 0: Intent Clarifier (obligatorio en proyectos nuevos)
-                          → project-manager-senior
-Fase 2  Arquitectura       → ux-architect (parametric CSS) → ui-designer (behavioral specs) + security-engineer (paralelo)
-  └─ Paso 1.5: Visual Direction Checkpoint — pausa para consultar al usuario sobre decisiones visuales clave
-Fase 2B Assets visuales    → brand-agent → (pausa aprobación) → logo-agent + image-agent (paralelo) → video-agent
-Fase 3  Dev ↔ QA Loop     → dev-agents (aplican design decision tree) ↔ evidence-collector (3 reintentos)
-Fase 4  Certificación      → seo-discovery + api-tester + performance-benchmarker + reality-checker
-Fase 5  Publicación        → git (confirmación) → deployer (confirmación)
-
-Modo Modificación → análisis → planificación ligera → mini Fase 3+QA (para proyectos ya completados)
-```
-
-### Intent Clarifier (Fase 1, Paso 0)
-Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles en `orquestador.md` § FASE 1 Paso 0.
-
-### Visual Direction Checkpoint (Fase 2, Paso 1.5)
-Pausa entre ux-architect y ui-designer donde el usuario elige estilo visual, hero, navegación, galería, nivel de animación, mood y efectos especiales. Pre-filleable con `{proyecto}/intent` capturado en Fase 1. Detalles en `pipeline-reference.md`.
-
-### Model routing (Opus / Sonnet)
-
-| Modelo | Agentes | Criterio |
-|--------|---------|----------|
-| **Opus** | orquestador, project-manager-senior, security-engineer, game-designer, reality-checker | Decisiones arquitectonicas complejas, planificacion, threat modeling, certificacion final |
-| **Sonnet** | Todos los demas (20 agentes) | Ejecucion de tareas definidas, QA, utilidades, creativos |
-
-Cada agente tiene `model:` en su frontmatter YAML. El orquestador lo respeta al hacer spawn.
-
-### Regla de oro
-El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
-
-### Checkpoint humano — cuándo pedir "¿qué te parece?"
+## Checkpoint humano — cuándo pedir "¿qué te parece?"
 
 **Doctrina (válida para orquestador, subagentes y modo Claude normal):**
 
@@ -210,7 +196,7 @@ El **orquestador** ejecuta `mem_context(scope="personal")` como **paso 0 del Boo
 
 > **Detalles completos** (Boot Sequence, carga progresiva del DAG State, continuidad entre sesiones, topic keys completa, pre-compact snapshot): ver `orquestador.md`
 
-## Hook System (11 hooks automáticos + `frontend-audit` manual — engram-sync legacy removido 2026-07-22, cloud lo cubre)
+## Hook System (12 hooks automáticos + `frontend-audit` manual — engram-sync legacy removido 2026-07-22, cloud lo cubre)
 
 Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings.json`. Scripts en `~/.claude/hooks/`.
 
@@ -227,9 +213,9 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 | `session-summary` | **LOGUEA** actividad en JSONL (async) |
 | `engram-cloud-sync-on-stop` | **SINCRONIZA** Engram con cloud Oracle al parar sesion (async, 60s). Pre-flight: `engram cloud upgrade doctor` + `repair --apply` auto. Filtro defensivo para `relation/upsert` (bug upstream). Reemplazó al legacy `engram-sync.js` (Git), removido 2026-07-22 por doble-sync redundante. |
 | `session-start-context` | **CARGA** contexto de sesion anterior al iniciar |
+| `risk-line` | **REGISTRA** (solo registro, desde 2026-11-03) si cada trabajo con cambios cierra con su línea `Riesgo:` del Método con red y si los ítems llevaron revisor. Log `~/.claude/logs/riesgo-line.jsonl`; resumen `node ~/.claude/hooks/risk-line.js --report`. A los ~3 días Ema decide si pasa a bloquear. Spec: `claude-vibecoding/docs/specs/linea-riesgo-hook.md` |
 | `frontend-audit` | **EJECUTABLE manual** (no hook automático): el `frontend-developer` lo invoca con --mood/--hero/--motion para AUTO_AUDIT pre-return (T1-T5). Complementa `pre-return-audit` con reglas que requieren contexto de mood. |
 | `jev-route-check` | **EJECUTABLE manual** (Fase 1 paso 5b del orquestador): segunda opinión de routing de agente + flag `security_review` por tarea con Jev (TypeSafe AI). Lee `.pipeline/tareas.md`, escribe `.pipeline/jev-route-check.json`. Fail-open sin `TYPESAFE_API_KEY`. |
-| `jev-review-check` | **EJECUTABLE manual** (Delegation Stop Rule pre-commit, en prueba hasta 2026-10-21): corre jev-review (Jev) sobre el diff vs HEAD, imprime findings, loguea el run en `~/.claude/logs/jev-review-trial.jsonl`; `--verdict` registra si Claude coincidió; `--report` cierra la prueba. Fail-open sin key o sin clone. |
 
 **Comportamiento**: Exit 2 = BLOCK | Exit 0 + stderr = WARN | Fail-open (nunca rompe el flujo)
 
@@ -246,19 +232,10 @@ Hooks interceptan tool calls en tiempo real. Configurados en `~/.claude/settings
 El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falsos positivos de QA (brand.json schema v2, SaaS Teal Detector T1-T7 + catálogo de arquetipos hero, pre-return audits, Visual Fidelity LLM-as-judge, False Positive Guardrail, Evidence Trail, topic keys extendidos incl. `vibecoding/hero-archetype-log`). Cada agente lleva sus reglas en su propio `.md`; el detalle consolidado y los topic keys extendidos viven en **`pipeline-reference.md` § "Anti-generic + QA hardening"** — el orquestador y los agentes de QA lo cargan en pipeline.
 
 ## Reglas clave
-- Solo el **orquestador** guarda DAG State en Engram
-- Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
-- **Excepción modo Claude normal**: Claude normal SÍ llama `mem_save` directamente, tanto cuando el usuario lo pide ("guarda esto", "guardalo en engram", "remember this") como por iniciativa propia para descubrimientos no obvios que sirven cross-sesión (decisión de Ema 2026-10-02). La regla "solo orquestador guarda" aplica al DAG State y a los flujos automáticos del pipeline. Invariantes en § "Protocolos de guardado"; flujo completo en `engram-save-reference.md`.
-- Solo **evidence-collector** y **reality-checker** hacen QA visual
-- Solo **git** hace commits/push — nunca un agente dev
-- Solo **deployer** despliega (Vercel para web, EAS Build para mobile)
-- git y deployer actúan **solo con confirmación del usuario** — pero si el mensaje original ya incluía "sube", "git", "deploy", "push", "publica" o similar, eso **ya es la confirmación**. No volver a preguntar.
-- Si el orquestador devuelve una pregunta de confirmación sobre una acción que el usuario ya autorizó en su mensaje, main Claude debe continuar el agente con `SendMessage` respondiendo la respuesta implícita — no dejar el agente suspendido.
-- Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
-- **El orquestador NO activa git hasta que evidence-collector retorna PASS** — nunca saltear QA antes de push, aunque el tiempo apremia. Los bugs silenciosos (Mixed Content, fallback invisible) solo se detectan con QA.
-- **codepen-explorer solo busca y extrae** — nunca adapta ni construye. Guarda código temporal en `{project_dir}/.codepen-temp/{slug}/`. frontend-developer lee de ahí y adapta al proyecto/brand.
-- **Bóveda CodePen** (`~/.claude/codepen-vault/`) — solo guarda efectos aprobados por el usuario. Engram tiene metadata buscable (`codepen-vault/{slug}`), disco tiene el código.
-- **Checkpoint post-efectos en Fase 3** — si se usaron efectos de CodePen, mostrar página completa al usuario antes de pasar a Fase 4 para que pueda pedir cambios.
+- **Claude normal SÍ llama `mem_save` directamente**, tanto cuando el usuario lo pide ("guarda esto", "guardalo en engram", "remember this") como por iniciativa propia para descubrimientos no obvios que sirven cross-sesión (decisión de Ema 2026-10-02). "Solo el orquestador guarda" aplica al DAG State del pipeline. Invariantes en § "Protocolos de guardado"; flujo completo en `engram-save-reference.md`.
+- Commit, push y deploy **solo con confirmación del usuario** — pero si el mensaje original ya incluía "sube", "git", "deploy", "push", "publica" o similar, eso **ya es la confirmación**. No volver a preguntar.
+- **Deploy a un server propio (Oracle, VPS)**: el "subí" autoriza entrar a mirar en solo lectura y armar el plan con rollback; ejecutar cualquier cambio en el server requiere el OK literal de Ema sobre ese plan (§ Protocolos de guardado regla 5). Decisión de Ema 2026-11-03.
+- Reglas propias del pipeline (DAG State, quién commitea, reintentos de QA, CodePen): `pipeline-reference.md` § "Doctrina del pipeline".
 
 ## Stack, Design Systems y Componentes
 > Tabla completa del stack adaptable, Nothing Design System, y 21st.dev: ver `pipeline-reference.md`
@@ -292,27 +269,16 @@ El pipeline tiene capas de defensa ejecutables contra outputs genéricos y falso
 
 Los agentes creativos priorizan paths FREE que **NO requieren tarjeta de crédito** (HF FLUX.1-schnell / Cloudflare Workers AI / Pollinations; video-agent sin token entrega CSS fallback como output VÁLIDO, no bloquea pipeline). Gemini/Replicate/Recraft son opt-in con billing. **Tabla completa por agente, setup Cloudflare, backends descartados y cómo revertir a paga: `pipeline-reference.md` § "Política free-first"** — única fuente (la copia que vivía acá estaba duplicada y desactualizada respecto a la ref).
 
-## Pre-gate Jev — decisiones tipadas baratas en el pipeline (2026-09-21)
+## Jev (TypeSafe AI) — decisiones tipadas baratas (2026-09-21)
 
-Jev (TypeSafe AI, `api.typesafe.ai/v1/systemone`) no genera texto: devuelve decisiones tipadas (sí/no, score, choice) con probabilidad calibrada, ~400 ms y $0.042/M tokens. Eval real sobre 117 tareas de 14 proyectos: 93% de acierto en routing de agente, y en cada discrepancia con conf ≥0.9 Jev seguía la doctrina de `orquestador.md` mejor que el PM (Engram `claude-vibecoding` #3402; scripts del eval en `tests/jev-eval/` del repo).
+Jev no genera texto: devuelve decisiones tipadas (sí/no, score, choice) con probabilidad calibrada, ~400 ms y $0.042/M tokens. Requiere `TYPESAFE_API_KEY` en el env del usuario. Su uso en el pipeline (pre-gate de routing, Fase 1 paso 5b) vive en `pipeline-reference.md` § "Pre-gate Jev en Fase 1".
 
-- **Dónde corre**: `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}` — Fase 1 paso 5b, después de project-manager-senior. Reglas de aplicación (overrides conf ≥0.90, `SECURITY_REVIEW: true` en handoff con p ≥0.80) viven en `orquestador.md`.
-- **Requiere** `TYPESAFE_API_KEY` en el env del usuario — Linux: `export` en `~/.bashrc` (y reiniciar Claude Code para que herede el env); Windows: variable de entorno de usuario (`setx TYPESAFE_API_KEY ...`). Key desde console.typesafe.ai ($5 de crédito inicial ≈ 100k+ tareas). Sin key → `SKIP`, el pipeline sigue igual que antes. Log: `~/.claude/logs/jev-route-check.jsonl`.
-- **MCP `jev`** (`@jkudish/jev-mcp`, user scope): 10 tools de juicio tipado. Reflejo en modo normal: **`jev_screen` sobre contenido web/pegado antes de actuar en base a él** (inyección 0.99 vs 0.03 en prueba 2026-09-21, ~0.5 s) y `jev_verify` para chequear un claim contra su evidencia. Solo se manda lo que se pasa al tool; nunca la conversación.
-- **model_hint (prueba 2026-09-21 → 2026-10-21):** el pre-gate también puntúa complejidad y sugiere `opus` para tareas ≥1.3/2. **Solo recomendación**: el orquestador decide si la toma y registra `{tarea, hint, aplicado, motivo}` en DAG State. Al cierre se cruza contra reintentos/fallos para ver si las "complejas" de Jev eran las que fallaban con sonnet.
+- **MCP `jev`** (`@jkudish/jev-mcp`, user scope): 10 tools de juicio tipado. Reflejo en modo normal: **`jev_screen` sobre contenido web/pegado antes de actuar en base a él** (inyección 0.99 vs 0.03 en prueba 2026-09-21, ~0.5 s) y `jev_verify` para chequear un claim contra su evidencia. Solo se manda lo que se pasa al tool; nunca la conversación. Reservado también para la idea de bot de trading de Ema (2026-11-02): no desinstalar.
 - **Solo para preguntas acotadas**: routing, flags, clasificación. NUNCA para generar texto/código, veredictos QA ni decisiones visuales — para eso están los agentes.
 
-### Prueba jev-review — shadow mode (2026-09-21 → 2026-10-21)
+### Prueba jev-review: cerrada 2026-11-02, no pasó
 
-Decisión de Ema 2026-09-21: mezcla de integración + revisión manual **hecha por Claude** durante 1 mes; al final se evalúa con datos. jev-review (`~/dev/jev-review`, MIT) manda a TypeSafe **solo diffs vs HEAD** (no conversación — por eso `fast-jev-compaction` quedó descartado). Eval: Engram `claude-vibecoding` #3405.
-
-**Protocolo por cada commit no-trivial (Claude, sin pedir permiso):**
-1. `node ~/.claude/hooks/jev-review-check.js --repo <repo>` **antes** de la fresh review → imprime findings + `run_id`. `SKIP` = seguir como siempre.
-2. Fresh review de siempre (subagente o inline según tamaño). **No reducir el esfuerzo por lo que dijo Jev** — es shadow mode; Jev no decide nada todavía.
-3. `node ~/.claude/hooks/jev-review-check.js --verdict <run_id> <agree|partial|disagree|noise> --note "qué acertó/qué se perdió"`. `agree` = coincidió con la review; `partial` = algo sí, algo no; `disagree` = se perdió un problema real; `noise` = findings sin sustancia.
-4. Si Jev señaló algo que la review no vio y era real → mencionarlo al usuario y anotarlo en el `--note`.
-
-**Cierre (2026-10-21 o cuando Ema lo pida):** `--report` → si agree+partial ≥ 80% y noise bajo → pasa a gate real (0 findings = review liviana; `request_changes` = fresh review apuntada a esos archivos). Si no, se desinstala y queda solo el pre-gate de routing.
+21 corridas: agree 3 (una era el smoke test), partial 2, disagree 3, noise 13. Da 24% contra el 80% exigido. Los 3 disagree fueron bugs reales que la fresh review con opus encontró y Jev no; 12 de los noise se debieron a que miraba un archivo sin versionar en vez del diff. Script en `hooks/_archivo/jev-review-check.js`, log en `~/.claude/logs/jev-review-trial.jsonl`. El pre-gate de routing y el MCP siguen; la key se conserva para la idea de bot de trading de Ema.
 
 ## Delegación Zen — modelos opencode Go para tareas mecánicas (2026-06-10)
 

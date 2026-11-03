@@ -8,6 +8,67 @@ model: sonnet
 
 > Este archivo complementa CLAUDE.md. Solo es relevante durante el pipeline (modo orquestador). En modo normal Claude no necesita este contenido.
 
+## Doctrina del pipeline (movida desde CLAUDE.md global 2026-11-03)
+
+> El orquestador la lee en su Boot Sequence (paso 0c). Se movió tal cual para que el CLAUDE.md global no la cargue en cada sesión de modo normal; no cambió ninguna regla.
+
+### Arquitectura
+
+Este sistema usa un **orquestador central** (1 coordinador + 24 subagentes = 25 entidades). Los subagentes solo responden al orquestador, nunca entre sí.
+
+### Pipeline (5 fases)
+```
+Fase 1  Planificación      → Paso 0: Intent Clarifier (obligatorio en proyectos nuevos)
+                          → project-manager-senior
+Fase 2  Arquitectura       → ux-architect (parametric CSS) → ui-designer (behavioral specs) + security-engineer (paralelo)
+  └─ Paso 1.5: Visual Direction Checkpoint — pausa para consultar al usuario sobre decisiones visuales clave
+Fase 2B Assets visuales    → brand-agent → (pausa aprobación) → logo-agent + image-agent (paralelo) → video-agent
+Fase 3  Dev ↔ QA Loop     → dev-agents (aplican design decision tree) ↔ evidence-collector (3 reintentos)
+Fase 4  Certificación      → seo-discovery + api-tester + performance-benchmarker + reality-checker
+Fase 5  Publicación        → git (confirmación) → deployer (confirmación)
+
+Modo Modificación → análisis → planificación ligera → mini Fase 3+QA (para proyectos ya completados)
+```
+
+### Intent Clarifier (Fase 1, Paso 0)
+Obligatorio en proyectos nuevos. El orquestador evalúa si el brief del usuario es claro o vago (heurística de word count + vocabulario de diseño + referencias). Si es vago, presenta 6 preguntas con opciones múltiples (tipo proyecto, industria, mood preset, referencia visual opcional, nivel originalidad, audiencia) para capturar intent antes de planificar. Q3 (mood preset) y Q5 (originalidad) son SIEMPRE obligatorias — bloquean "decidí vos" para evitar outputs genéricos. Resultado en `{proyecto}/intent`. Detalles en `orquestador.md` § FASE 1 Paso 0.
+
+### Visual Direction Checkpoint (Fase 2, Paso 1.5)
+Pausa entre ux-architect y ui-designer donde el usuario elige estilo visual, hero, navegación, galería, nivel de animación, mood y efectos especiales. Pre-filleable con `{proyecto}/intent` capturado en Fase 1. Detalles en § "Visual Direction Checkpoint" de este archivo.
+
+### Model routing (Opus / Sonnet)
+
+| Modelo | Agentes | Criterio |
+|--------|---------|----------|
+| **Opus** | orquestador, project-manager-senior, security-engineer, game-designer, reality-checker | Decisiones arquitectonicas complejas, planificacion, threat modeling, certificacion final |
+| **Sonnet** | Todos los demas (20 agentes) | Ejecucion de tareas definidas, QA, utilidades, creativos |
+
+Cada agente tiene `model:` en su frontmatter YAML. El orquestador lo respeta al hacer spawn.
+
+### Regla de oro
+El orquestador **NUNCA** hace trabajo real (no lee código, no escribe código, no analiza arquitectura). Solo coordina. Cada token inline es contexto perdido.
+
+### Reglas clave del pipeline
+- Solo el **orquestador** guarda DAG State en Engram
+- Los subagentes guardan sus propios resultados en Engram con topic keys del proyecto
+- Solo **evidence-collector** y **reality-checker** hacen QA visual
+- Solo **git** hace commits/push — nunca un agente dev
+- Solo **deployer** despliega (Vercel para web, EAS Build para mobile)
+- Si el orquestador devuelve una pregunta de confirmación sobre una acción que el usuario ya autorizó en su mensaje, main Claude debe continuar el agente con `SendMessage` respondiendo la respuesta implícita — no dejar el agente suspendido.
+- Cada tarea dev pasa por **evidence-collector** antes de avanzar (máx 3 reintentos)
+- **El orquestador NO activa git hasta que evidence-collector retorna PASS** — nunca saltear QA antes de push, aunque el tiempo apremia. Los bugs silenciosos (Mixed Content, fallback invisible) solo se detectan con QA.
+- **codepen-explorer solo busca y extrae** — nunca adapta ni construye. Guarda código temporal en `{project_dir}/.codepen-temp/{slug}/`. frontend-developer lee de ahí y adapta al proyecto/brand.
+- **Bóveda CodePen** (`~/.claude/codepen-vault/`) — solo guarda efectos aprobados por el usuario. Engram tiene metadata buscable (`codepen-vault/{slug}`), disco tiene el código.
+- **Checkpoint post-efectos en Fase 3** — si se usaron efectos de CodePen, mostrar página completa al usuario antes de pasar a Fase 4 para que pueda pedir cambios.
+
+### Pre-gate Jev en Fase 1 (2026-09-21)
+
+Jev (TypeSafe AI, `api.typesafe.ai/v1/systemone`) no genera texto: devuelve decisiones tipadas (sí/no, score, choice) con probabilidad calibrada, ~400 ms y $0.042/M tokens. Eval real sobre 117 tareas de 14 proyectos: 93% de acierto en routing de agente, y en cada discrepancia con conf ≥0.9 Jev seguía la doctrina de `orquestador.md` mejor que el PM (Engram `claude-vibecoding` #3402; scripts del eval en `tests/jev-eval/` del repo).
+
+- **Dónde corre**: `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}` — Fase 1 paso 5b, después de project-manager-senior. Reglas de aplicación (overrides conf ≥0.90, `SECURITY_REVIEW: true` en handoff con p ≥0.80) viven en `orquestador.md`.
+- **Requiere** `TYPESAFE_API_KEY` en el env del usuario — Linux: `export` en `~/.bashrc` (y reiniciar Claude Code para que herede el env); Windows: variable de entorno de usuario (`setx TYPESAFE_API_KEY ...`). Key desde console.typesafe.ai ($5 de crédito inicial ≈ 100k+ tareas). Sin key → `SKIP`, el pipeline sigue igual que antes. Log: `~/.claude/logs/jev-route-check.jsonl`.
+- **model_hint (prueba 2026-09-21 → 2026-10-21, vencida sin datos: el pipeline no corrió en ese período):** el pre-gate también puntúa complejidad y sugiere `opus` para tareas ≥1.3/2. **Solo recomendación**: el orquestador decide si la toma y registra `{tarea, hint, aplicado, motivo}` en DAG State. Al cierre se cruza contra reintentos/fallos para ver si las "complejas" de Jev eran las que fallaban con sonnet.
+
 ## Intent Clarifier (Fase 1, Paso 0 — NUEVO 2026-04-19)
 
 Antes de todo, para proyectos nuevos el orquestador evalúa si el brief del usuario es claro o vago:
