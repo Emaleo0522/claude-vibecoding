@@ -34,7 +34,7 @@ Cuando el usuario diga "guarda en engram", "guardalo", "guardá esto", "remember
 
 **Razón**: validado empíricamente 2026-05-15 — obs guardada en casa con auto-detect `project=system32` → invisible desde pc004 con auto-detect distinto. Solo después de `mem_search("...", project="<el-correcto>")` explícito desde la otra PC, la obs aparece.
 
-**Cloud allowlist** (resuelto self-hosted 2026-05-15): el server Oracle Cloud (`161.153.203.83`) tiene `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env`. Para agregar un bucket nuevo: SSH al server, editar `.env`, `docker compose up -d cloud`. Backup automático por convención `.env.bak.YYYYMMDD-pre-{razon}`. Issue upstream para auto-allow opt-in: github.com/Gentleman-Programming/engram
+**Cloud allowlist** (resuelto self-hosted 2026-05-15): el server Oracle Cloud tiene `ENGRAM_CLOUD_ALLOWED_PROJECTS` en `/opt/engram-cloud/.env`. Para agregar un bucket nuevo: SSH al server, editar `.env`, `docker compose up -d cloud`. Backup automático por convención `.env.bak.YYYYMMDD-pre-{razon}`. Issue upstream para auto-allow opt-in: github.com/Gentleman-Programming/engram
 
 **Anti-patrón a evitar**: dejar que el MCP auto-detecte project del cwd. SIEMPRE pasar `project=` explícito en ambos `mem_save` y `mem_search` cross-PC. El bucket personal global es `project="personal"`. **NUNCA `system32`**: es un proyecto accidental (cwd `C:\Windows\System32` del MCP en Windows) con contenido mezclado; la sugerencia vieja de usarlo como convención quedó derogada el 2026-10-02.
 

@@ -290,7 +290,7 @@ Si el cajón ya existe (el orquestador pidió revisión de arquitectura):
 Paso 1: mem_search("{proyecto}/css-foundation") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido completo actual
 Paso 3: Merge contenido existente con cambios solicitados
-Paso 4: mem_update(observation_id, sistema CSS actualizado)
+Paso 4: mem_update(observation_id, sistema CSS actualizado, expected_project="{proyecto}")
 ```
 
 ## Nothing Design System (condicional)

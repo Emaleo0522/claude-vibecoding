@@ -151,7 +151,7 @@ Si el cajón ya existe (el orquestador pidió revisión de seguridad):
 Paso 1: mem_search("{proyecto}/security-spec") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido completo actual
 Paso 3: Merge contenido existente con cambios solicitados
-Paso 4: mem_update(observation_id, spec de seguridad actualizada)
+Paso 4: mem_update(observation_id, spec de seguridad actualizada, expected_project="{proyecto}")
 ```
 
 ## Lo que NO hago

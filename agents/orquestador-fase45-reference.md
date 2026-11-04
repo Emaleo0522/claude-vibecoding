@@ -119,7 +119,7 @@ Resumen: {N} tareas completadas | {issues} issues menores documentados
 #### Si el usuario elige "s" o "g" — Git
 
 Delega a **git**:
-- Recibe: nombre del proyecto + rama (`main` siempre) + mensaje de commit sugerido
+- Recibe: nombre del proyecto + rama (`main` siempre) + mensaje de commit sugerido + `CI_OK: true` solo si Ema aprobó agregar CI (en el primer push, preguntárselo antes)
 - Hace: verifica branch es `main` (renombra si es `master`) + `git add` + `git commit` + `git push` + setea default branch en GitHub
 - Devuelve: STATUS + URL del repo + hash del commit + **info para deployer** (repo URL, branch, primer push sí/no)
 - Guarda en Engram: `{proyecto}/git-commit`

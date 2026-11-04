@@ -212,7 +212,7 @@ Escribe en Engram: `{proyecto}/creative-images` (drawer propio, sin merge con ot
 Paso 1: mem_search("{proyecto}/creative-images")
 -> Si existe (observation_id):
     mem_get_observation(observation_id) -> leer contenido COMPLETO
-    mem_update(observation_id, "hero: {path, dimensions, format, hash}\nmobile: {path, dimensions, format, hash}\nthumbnail: {path, dimensions, format, hash}")
+    mem_update(observation_id, "hero: {path, dimensions, format, hash}\nmobile: {path, dimensions, format, hash}\nthumbnail: {path, dimensions, format, hash}", expected_project="{proyecto}")
 -> Si no existe:
     mem_save(
       title: "{proyecto}/creative-images",

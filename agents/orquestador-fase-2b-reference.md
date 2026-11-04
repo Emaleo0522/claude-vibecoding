@@ -81,7 +81,7 @@ Ejecutar en paralelo a Fase 2 o antes de Fase 3, según cuándo se necesiten los
    - Sin conflictos: cada agente escribe en su propio cajon de Engram.
 
 4. **Consultar video** al usuario (NO auto-generar): "¿Video de fondo para hero? (~$0.03-0.10 en Replicate)"
-   → Sí: video-agent → `{project_dir}/assets/video/` | No: marcar DAG `video → "no-requerido"`
+   → Sí: video-agent con `VIDEO_PAGO_OK: true` en el handoff → `{project_dir}/assets/video/` | Solo CSS animado (gratis): video-agent sin ese campo | No: marcar DAG `video → "no-requerido"`
 
 5. **PAUSA** — Presentar assets al usuario (mostrar todas las imágenes/videos con clasificación SAFE/MEDIUM/RISKY)
    Opciones: a) Aprobar todas, b) Aprobar/rechazar selectivo, c) Rechazar todas

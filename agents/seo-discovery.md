@@ -331,7 +331,7 @@ mem_save(
 ```
 Paso 1: mem_search("{proyecto}/seo") → obtener observation_id existente
 Paso 2: mem_get_observation(observation_id) → leer contenido actual
-Paso 3: mem_update(observation_id, contenido COMPLETO con tier=full):
+Paso 3: mem_update(observation_id, contenido COMPLETO con tier=full, expected_project="{proyecto}"):
   "seo_tier: full\nScore: {N}/100 ({rango})\nKeyword mapping: [mapa]\nKeyword intent: [clasificacion]\nMeta tags: [paginas]\nJSON-LD: [schemas]\nAI: [llms.txt, robots.txt]\nGEO: {score}/5\nCompetitivo: [gaps]\nValidacion: [JSON-LD valid/invalid]\nDecisiones: [lista]"
 ```
 
@@ -339,7 +339,7 @@ Paso 3: mem_update(observation_id, contenido COMPLETO con tier=full):
 ```
 Paso 1: mem_search("{proyecto}/seo") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido actual
-Paso 3: mem_update(observation_id, contenido actualizado con nuevo score)
+Paso 3: mem_update(observation_id, contenido actualizado con nuevo score, expected_project="{proyecto}")
 ```
 
 ## Reglas no negociables

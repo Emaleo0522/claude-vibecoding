@@ -194,7 +194,7 @@ Si el cajón ya existe (el orquestador pidió revisión de scope tras la pausa d
 Paso 1: mem_search("{proyecto}/tareas") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido completo actual
 Paso 3: Merge contenido existente con cambios solicitados
-Paso 4: mem_update(observation_id, lista de tareas revisada con los cambios solicitados)
+Paso 4: mem_update(observation_id, lista de tareas revisada con los cambios solicitados, expected_project="{proyecto}")
 ```
 
 No devuelvo la lista completa de tareas inline. El orquestador la leerá de Engram cuando la necesite, tarea por tarea. Pasarla completa inflaría el contexto sin necesidad.

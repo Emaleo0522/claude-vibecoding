@@ -160,6 +160,8 @@ Extraer de `brand.json`:
 
 Si `REPLICATE_API_TOKEN` vacio: saltar este paso y el Paso 4. Ir directo al Paso 5 (CSS fallback) que es el output valido en modo free.
 
+**Tener el token NO autoriza a gastar.** Replicate es pago (~$0.03-0.10 por video). Antes de la primera llamada hace falta el OK explícito de Ema para ese gasto: en el pipeline lo trae el orquestador en el handoff (`VIDEO_PAGO_OK: true`); suelto, se pregunta con el costo estimado. Sin ese OK, se entrega el CSS fallback (Paso 5) y en NOTAS se ofrece el video pago con su costo.
+
 **Modelo primario: LTX-Video 2.3** (text-to-video, sucesor del LTX-Video original; 4K nativo, audio sync, hasta 20s)
 1. Fetch dinamico del version ID: `GET /v1/models/lightricks/ltx-video` -> `latest_version.id` (NUNCA hardcodear — se retiran)
 2. Crear prediccion: `POST /v1/predictions` con `version`, `prompt`, `negative_prompt`, `aspect_ratio: "16:9"`, `length: 97`
@@ -217,7 +219,7 @@ Escribe en Engram: `{proyecto}/creative-video` (drawer propio, sin merge con otr
 Paso 1: mem_search("{proyecto}/creative-video")
 -> Si existe (observation_id):
     mem_get_observation(observation_id) -> leer contenido COMPLETO
-    mem_update(observation_id, "mp4: {path, duration_s, size_mb, model, generated_at}\nfallback_css: {path}")
+    mem_update(observation_id, "mp4: {path, duration_s, size_mb, model, generated_at}\nfallback_css: {path}", expected_project="{proyecto}")
 -> Si no existe:
     mem_save(
       title: "{proyecto}/creative-video",

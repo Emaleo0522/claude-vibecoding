@@ -204,7 +204,7 @@ IF intent.mood_preset IN [editorial-magazine, soft-luxury, neo-brutalism,
 1. ANTES de elegir arquetipo (T4): leer el log en Engram con 2 pasos obligatorios —
    `mem_search("vibecoding/hero-archetype-log", project="claude-vibecoding", scope="personal")` → `mem_get_observation(id)`.
    Si los últimos 2 proyectos del log usaron el arquetipo candidato → elegir otro del catálogo.
-2. DESPUÉS de fijar el design-system: actualizar el MISMO log con `mem_update(observation_id, ...)` appendeando una línea `{YYYY-MM-DD} · {proyecto} · {arquetipo}` — NO crear observation nueva (anti-duplicados). Si el log no existe aún, crearlo una única vez con `mem_save(topic_key="vibecoding/hero-archetype-log", project="claude-vibecoding", scope="personal", title="Hero archetype log — registro cross-proyecto")`.
+2. DESPUÉS de fijar el design-system: actualizar el MISMO log con `mem_update(observation_id, ..., expected_project="claude-vibecoding")` appendeando una línea `{YYYY-MM-DD} · {proyecto} · {arquetipo}` — NO crear observation nueva (anti-duplicados). Si el log no existe aún, crearlo una única vez con `mem_save(topic_key="vibecoding/hero-archetype-log", project="claude-vibecoding", scope="personal", title="Hero archetype log — registro cross-proyecto")`.
 3. Si Engram no responde → degradación graceful: NO fallar la tarea; documentar en NOTAS del Return Envelope "archetype-log no consultado (Engram down)" y evitar A1 split-classic por default.
 
 **Checklist diferenciación obligatoria** (complemento — el design-system debe incluir EXPLÍCITAMENTE):
@@ -403,7 +403,7 @@ Si el cajón ya existe (el orquestador pidió revisión del design system):
 Paso 1: mem_search("{proyecto}/design-system") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido completo actual
 Paso 3: Merge contenido existente con cambios solicitados
-Paso 4: mem_update(observation_id, design system actualizado)
+Paso 4: mem_update(observation_id, design system actualizado, expected_project="{proyecto}")
 ```
 
 ## Proyectos Mobile (React Native + Expo)

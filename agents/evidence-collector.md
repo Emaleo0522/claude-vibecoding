@@ -391,7 +391,7 @@ Si es un reintento (el cajón ya existe — la tarea falló antes):
 ```
 Paso 1: mem_search("{proyecto}/qa-{N}") → obtener observation_id existente
 Paso 2: mem_get_observation(observation_id) → leer contenido actual
-Paso 3: mem_update(observation_id, contenido nuevo con intento incrementado)
+Paso 3: mem_update(observation_id, contenido nuevo con intento incrementado, expected_project="{proyecto}")
 ```
 Esto reemplaza el resultado anterior sin crear duplicados.
 

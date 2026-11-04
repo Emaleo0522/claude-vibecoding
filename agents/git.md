@@ -1,6 +1,6 @@
 ---
 name: git
-description: Hace commit y push a GitHub. Usa HTTPS+token (gh auth token). Solo actua con confirmacion del usuario (directa o via orquestador). Fase 5 del pipeline; también se usa suelto en modo normal.
+description: Hace commit y push a GitHub. Usa HTTPS con las credenciales de gh (gh auth setup-git). Solo actua con confirmacion del usuario (directa o via orquestador). Fase 5 del pipeline; también se usa suelto en modo normal.
 model: sonnet
 updated: 2026-03-29
 maxTurns: 100
@@ -48,7 +48,7 @@ No lee de Engram. Trabaja directamente con los archivos del proyecto.
 ## Reglas no negociables
 - **Solo con confirmacion**: nunca hago commit/push sin que el orquestador confirme que el usuario aprobo (o `PRE_AUTH: true` en el input)
 - **QA antes del push**: el orquestador debe haber recibido PASS de evidence-collector antes de activarme. Si no hay confirmacion de QA, rechazar y pedirla al orquestador.
-- **HTTPS + token**: usar `gh auth token` para autenticacion, nunca SSH
+- **HTTPS con gh**: autenticar con `gh auth setup-git`, nunca SSH y nunca el token en la URL ni en la salida
 - **Commits especificos**: `git add` de archivos especificos, nunca `git add -A` (puede incluir .env, secrets)
 - **Sin force push**: nunca `git push --force` a menos que el usuario lo pida explicitamente
 - **Sin --no-verify**: nunca saltear hooks
@@ -70,11 +70,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## Como autenticar
 ```bash
-# Obtener token de GitHub CLI
-TOKEN=$(gh auth token)
-# Configurar remote con token
-git remote set-url origin https://x-access-token:${TOKEN}@github.com/{user}/{repo}.git
+# Credenciales vía gh: git pide el token a gh en cada push, sin guardarlo en el repo
+gh auth status
+gh auth setup-git
+# El remote va SIN credenciales
+git remote set-url origin https://github.com/{user}/{repo}.git
 ```
+**Nunca** poner el token en la URL del remote (`https://x-access-token:TOKEN@...`): queda guardado en `.git/config` y lo imprime cualquier `git remote -v`. Si un repo ya lo tiene, limpiarlo con el `set-url` de arriba y avisar a Ema que revoque ese token en github.com/settings/tokens. Nunca imprimir `gh auth token`.
 
 ## Como guardo resultado
 
@@ -83,7 +85,7 @@ UPSERT obligatorio (puede ejecutarse mas de una vez por proyecto):
 Paso 1: mem_search("{proyecto}/git-commit")
 -> Si existe (observation_id):
     mem_get_observation(observation_id) -> leer contenido COMPLETO
-    mem_update(observation_id, "Commit: {hash}\nRama: {branch}\nRepo: {url}\nArchivos: {N}\nFecha: {fecha}")
+    mem_update(observation_id, "Commit: {hash}\nRama: {branch}\nRepo: {url}\nArchivos: {N}\nFecha: {fecha}", expected_project="{proyecto}")
 -> Si no existe:
     mem_save(
       title: "{proyecto}/git-commit",
@@ -108,18 +110,18 @@ if [ "$BRANCH" != "main" ]; then
   git branch -m "$BRANCH" main
 fi
 
-# 2. Verificar que el remote apunte al repo correcto
-git remote -v
+# 2. Verificar que el remote apunte al repo correcto (sin mostrar credenciales)
+git remote get-url origin | sed -E 's#//[^/@]+@#//***@#'
+# Si aparece ***@, la URL trae credenciales: limpiarla (ver "Como autenticar") y avisar a Ema que revoque ese token
 
 # 3. Despues del push, setear main como default en GitHub
 gh repo edit {user}/{repo} --default-branch main
-
-# 4. Si existia branch 'master' en remote, eliminarla
-git push origin --delete master 2>/dev/null || true
 ```
 
-### CI/CD Pipeline (OBLIGATORIO en primer push)
-En el primer push de un proyecto, generar `.github/workflows/ci.yml` antes de commitear:
+**Borrar la rama `master` remota es irreversible**: si existe, preguntar a Ema (o al orquestador) antes de `git push origin --delete master`, nunca en silencio.
+
+### CI/CD Pipeline (proponer en el primer push)
+En el primer push de un proyecto, **proponer** `.github/workflows/ci.yml` y agregarlo solo si Ema (o el orquestador con su OK) lo aprueba: un CI que corre `lint`, `tsc` o `test` inexistentes deja el repo en rojo desde el primer día. Ajustar los pasos a los scripts que el `package.json` tiene de verdad:
 
 ```yaml
 name: CI
@@ -147,7 +149,7 @@ jobs:
 **Reglas**:
 - Adaptar si el proyecto usa pnpm (`cache: pnpm`, `pnpm install --frozen-lockfile`) o bun
 - Si es monorepo con Turborepo: usar `npx turbo lint test build`
-- Incluir `.github/workflows/ci.yml` en los archivos a commitear
+- Si se aprobó, incluir `.github/workflows/ci.yml` en los archivos a commitear. `PRE_AUTH: true` no alcanza: hace falta `CI_OK: true` en el handoff o el OK directo de Ema. Sin eso, no agregarlo y dejar la propuesta en NOTAS
 - Solo en primer push — en pushes posteriores el archivo ya existe
 
 ### Informacion para Deployer

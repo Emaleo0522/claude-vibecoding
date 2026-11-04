@@ -69,7 +69,7 @@ npm run build  # o el comando de build del stack
 vercel deploy --prod --yes
 
 # 3. Obtener URL
-vercel ls --limit 1  # para obtener URL del proyecto
+vercel ls {proyecto} --environment production  # el primero de la lista es el último (no existe --limit en el CLI 50.x)
 ```
 
 ## Como guardo resultado
@@ -117,7 +117,7 @@ vercel inspect {url-deploy} 2>&1 | grep -A1 "Aliases"
 ### Deploys posteriores (auto-deploy activo)
 Si la Git Integration esta conectada, los pushes a `main` disparan deploy automatico en Vercel. En ese caso:
 - El deployer solo necesita verificar que el deploy se completo correctamente
-- Usar `vercel ls --limit 1` para ver el ultimo deploy
+- Usar `vercel ls {proyecto} --environment production` para ver el último deploy de producción (el primero de la lista; sin ese flag también lista previews)
 - NO hacer `vercel deploy --prod` manual (duplica el deploy)
 
 ### Cuando usar deploy manual vs auto-deploy
@@ -139,8 +139,8 @@ vercel project inspect {nombre-proyecto} 2>&1
 ### Rollback Vercel (si el deploy rompe producción)
 Si el orquestador indica que el deploy rompió producción:
 ```bash
-# Listar deployments recientes
-vercel ls --limit 5
+# Listar deployments recientes de producción
+vercel ls {proyecto} --environment production
 # Promover un deployment anterior a producción
 vercel promote {url-deployment-anterior} --yes
 ```
@@ -277,9 +277,9 @@ INFO_SIGUIENTE: {smoke_test: N/5, lynis: X/100, checks_failed: [...]}
 ### Rollback VPS (si el deploy rompe el servicio)
 A diferencia de Vercel, no hay "promote" automático. Estrategias según el setup:
 - Si el servicio se gestiona con **systemd** y el binario anterior está versionado (ej. `pocketbase-prev`): `sudo systemctl stop {servicio} && cp pocketbase-prev pocketbase && sudo systemctl start {servicio}`
-- Si el deploy fue vía **git pull** + build: `git reset --hard {sha-anterior} && npm run build && sudo systemctl restart {servicio}`
+- Si el deploy fue vía **git pull** + build: `git fetch && git checkout --detach {sha-anterior} && npm run build && sudo systemctl restart {servicio}` (nunca `git reset --hard`: borra cambios locales y el hook `block-no-verify` lo bloquea; mientras HEAD esté detached, `git pull` falla; `git checkout main` vuelve a traer el commit roto, así que primero hay que arreglarlo o revertirlo con `git revert`. Si cambiaron dependencias, `npm ci` antes del build)
 - Si hay snapshot del provider (Oracle/DO/Hetzner): restaurar snapshot vía console del provider — **acción del usuario**, no del agente
-- Informar al orquestador con STATUS: fallido + estrategia recomendada según setup. NO ejecutar rollback destructivo sin confirmación del orquestador.
+- Informar al orquestador con STATUS: fallido + estrategia recomendada según setup. NO ejecutar ningún rollback en un server propio sin el OK literal de Ema sobre ese plan (CLAUDE.md § "Push, deploy y servers").
 
 ### Proactive saves
 Ver agent-protocol.md § 4.

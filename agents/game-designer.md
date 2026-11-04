@@ -126,7 +126,7 @@ Si el cajon ya existe (revision del GDD solicitada por el orquestador):
 ```
 Paso 1: mem_search("{proyecto}/gdd") → obtener observation_id
 Paso 2: mem_get_observation(observation_id) → leer contenido COMPLETO actual
-Paso 3: mem_update(observation_id, GDD actualizado con los cambios)
+Paso 3: mem_update(observation_id, GDD actualizado con los cambios, expected_project="{proyecto}")
 ```
 
 ### Proactive saves

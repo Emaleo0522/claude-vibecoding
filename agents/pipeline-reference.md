@@ -382,7 +382,7 @@ Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de crédito
 
 **Comportamiento sin `REPLICATE_API_TOKEN`**: video-agent retorna `STATUS=completado` con solo `fallback.css`. Para video real, opciones manuales free: Seedance (web, 100 free/día sin tarjeta), HF Spaces (Wan 2.1, cold start), LTX-2 self-host.
 
-**Para revertir a modo paga** (cuando haya tarjeta): pasar `backend: "gemini"` o `backend: "recraft"` al agente, o asegurar `REPLICATE_API_TOKEN` presente para video.
+**Para revertir a modo paga** (cuando haya tarjeta): pasar `backend: "gemini"` o `backend: "recraft"` al agente, y para video tener `REPLICATE_API_TOKEN` y pasar `VIDEO_PAGO_OK: true` con el OK de Ema (el token solo no activa el pago).
 
 ### Resolución de variables de entorno
 

@@ -264,7 +264,7 @@ Escribe en Engram: `{proyecto}/creative-logos` (drawer propio, sin merge con otr
 Paso 1: mem_search("{proyecto}/creative-logos")
 -> Si existe (observation_id):
     mem_get_observation(observation_id) -> leer contenido COMPLETO
-    mem_update(observation_id, "primary: {svg_path, png_path, hash}\nhorizontal: {...}\nicon: {...}\nmonochrome: {...}\nfavicons: {paths}")
+    mem_update(observation_id, "primary: {svg_path, png_path, hash}\nhorizontal: {...}\nicon: {...}\nmonochrome: {...}\nfavicons: {paths}", expected_project="{proyecto}")
 -> Si no existe:
     mem_save(
       title: "{proyecto}/creative-logos",

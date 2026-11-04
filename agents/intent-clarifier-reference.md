@@ -72,7 +72,7 @@ Q1. ¿Qué tipo de proyecto es?  (saltar si brief ya lo especifica)
   g) Otra: ___
 
 Q2. ¿En qué industria / rubro se ubica?
-  {dinámico: ejecutar `node ~/.claude/design-data/search.js "{brief_keywords}" --limit 5`}
+  {dinámico: ejecutar `node ~/.claude/design-data/search.js "{brief_keywords}" -n 5`}
   a-e) Top 5 industrias coincidentes del motor
   f) Otra: ___
 

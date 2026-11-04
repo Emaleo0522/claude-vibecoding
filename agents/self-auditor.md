@@ -190,17 +190,18 @@ NOTAS: Score X/8. {resumen de issues si hay}
 Guardar resultado con UPSERT pattern (actualizar, no duplicar):
 ```
 # Paso 1: buscar si ya existe
-result = mem_search("system/audit-latest")
+result = mem_search("system/audit-latest", project="claude-vibecoding")
 
 # Paso 2: actualizar o crear
 if result.observation_id:
-    mem_update(result.observation_id, "{output completo del audit}")
+    mem_update(result.observation_id, "{output completo del audit}", expected_project="claude-vibecoding")
 else:
     mem_save(
       title: "System audit {date}",
       content: "{output completo del audit}",
       type: "discovery",
       topic_key: "system/audit-latest",
-      project: "vibecoding-system"
+      project: "claude-vibecoding",
+      scope: "personal"
     )
 ```

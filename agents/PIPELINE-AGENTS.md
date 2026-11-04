@@ -114,7 +114,7 @@ Cada agente tiene **2 líneas**:
 
 | Agente | Para qué |
 |---|---|
-| [`git`](git.md) | **🔧 Técnico:** Hace commit y push a GitHub. Usa HTTPS + token (`gh auth token`). Solo actúa cuando el orquestador lo indica tras confirmación del usuario. |
+| [`git`](git.md) | **🔧 Técnico:** Hace commit y push a GitHub. Usa HTTPS con las credenciales de gh (`gh auth setup-git`). Solo actúa cuando el orquestador lo indica tras confirmación del usuario. |
 | | **🏠 En simple:** Es el que **guarda los cambios en el repositorio** (la "memoria" online del código). Solo lo hace cuando vos das OK explícito. |
 | [`deployer`](deployer.md) | **🔧 Técnico:** Despliega a Vercel (web) o EAS Build (mobile) usando CLI. Solo actúa con confirmación. |
 | | **🏠 En simple:** Es el **mudancero**: agarra el proyecto terminado y lo publica en internet (Vercel para web, App Store/Google Play para móvil). Solo lo hace cuando vos das OK. |
@@ -205,7 +205,7 @@ Cada agente tiene **2 líneas**:
 
 | Agent | What for |
 |---|---|
-| [`git`](git.md) | **🔧 Technical:** Commits and pushes to GitHub. Uses HTTPS + token (`gh auth token`). Only acts when the orchestrator instructs after user confirmation. |
+| [`git`](git.md) | **🔧 Technical:** Commits and pushes to GitHub. Uses HTTPS with gh credentials (`gh auth setup-git`). Only acts when the orchestrator instructs after user confirmation. |
 | | **🏠 In plain words:** It's the one that **saves changes to the repository** (the online "memory" of the code). Only does it when you give explicit OK. |
 | [`deployer`](deployer.md) | **🔧 Technical:** Deploys to Vercel (web) or EAS Build (mobile) using CLI. Only acts with confirmation. |
 | | **🏠 In plain words:** It's the **mover**: takes the finished project and publishes it online (Vercel for web, App Store / Google Play for mobile). Only does it when you give OK. |

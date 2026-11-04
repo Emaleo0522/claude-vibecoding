@@ -34,14 +34,14 @@ El DAG State puede ser grande (10+ KB en proyectos avanzados). Para no inflar el
 ### Secuencia de inicio
 
 0. **Cargar perfil personal del usuario** (SIEMPRE, antes de cualquier otra cosa):
-   `mem_context(scope="personal")` — carga el perfil de Leonardo Emanuel Mansilla (@Tio / PM en Reyesoft)
+   `mem_context(scope="personal")` — carga el perfil personal de Ema (preferencias y contexto de trabajo)
    **NOTA**: Ningún hook puede hacer esto (los hooks no tienen acceso a MCPs).
    Esta llamada es responsabilidad del orquestador al inicio de cada sesión.
 
 0b. **Verificar trigger de compactación pendiente** (solo si hay proyecto activo):
    Leer `~/.claude/snapshots/compaction-pending.json` via Bash/Read.
    - Si existe → compactación ocurrió sin dual-write: ejecutar inmediatamente:
-     1. `mem_update({proyecto}/estado, currentDagState)` — guardar estado en Engram
+     1. `mem_update({proyecto}/estado, currentDagState, expected_project="{proyecto}")` — guardar estado en Engram
      2. Escribir `.pipeline/estado.yaml` en disco
      3. Eliminar el trigger file (`rm ~/.claude/snapshots/compaction-pending.json`)
    - Si no existe → continuar normalmente (caso habitual)
@@ -86,7 +86,7 @@ Cuando el orquestador necesita el DAG State completo:
 ```
 mem_get_observation(dag_state_observation_id) → leer completo
 Tomar la decision
-mem_update(dag_state_observation_id, updated_dag) → guardar cambios
+mem_update(dag_state_observation_id, updated_dag, expected_project="{proyecto}") → guardar cambios
 Volver a retener solo el resumen ligero
 ```
 
@@ -213,7 +213,7 @@ mem_session_summary(
 | brand-agent | nada (recibe brief directo) | `{proyecto}/branding` |
 | logo-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-logos` |
 | image-agent | nada (lee brand.json del filesystem) | `{proyecto}/creative-images` |
-| video-agent | nada (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-video` |
+| video-agent | nada salvo `VIDEO_PAGO_OK: true` si Ema aprobó el pago (lee brand.json + hero.png del filesystem) | `{proyecto}/creative-video` |
 | seo-discovery | `{proyecto}/tareas` (estructura de páginas) | `{proyecto}/seo` |
 | evidence-collector | `{proyecto}/tarea-{N}` (criterios de la tarea) | `{proyecto}/qa-{N}` |
 | api-tester | `{proyecto}/api-spec` (generado por backend-architect; sin fallback — si no existe, el orquestador re-delega a backend-architect para generarlo) | `{proyecto}/api-qa` |
@@ -301,7 +301,7 @@ qa_mode: "full"                   # "full" | "code-only" (si Playwright no dispo
 engram_degraded: false            # true si Engram tuvo fallas en esta sesion
 ```
 
-**Cuando guardar DAG State (mem_update):**
+**Cuando guardar DAG State (mem_update, siempre con `expected_project="{proyecto}"`, obligatorio desde Engram v3):**
 - Despues de cada fase completada
 - Despues de cada tarea que pasa QA (PASS)
 - Despues de cada decision del usuario (scope, marca, stack)
@@ -444,7 +444,7 @@ Antes de decidir stack o delegar a project-manager-senior, leer `~/.claude/agent
    **Decisión de stack** (el orquestador decide, NO el PM):
 
    **Orden de precedencia** (de mayor a menor prioridad):
-   1. **Si el usuario especificó stack** → usar ese, sin importar el default. **Override absoluto** (ej: Reyesoft Vue 3 + PrimeVue, ComPatas Flutter + Firebase — validados en producción).
+   1. **Si el usuario especificó stack** → usar ese, sin importar el default. **Override absoluto** (ej: un proyecto de trabajo en Vue 3 + PrimeVue, o uno móvil en Flutter + Firebase: validados en producción).
    2. **Si el usuario NO especificó stack pero el tipo tiene >1 alternativa válida común** → hacer **1 sola pregunta enfocada** antes de aplicar default (ver tabla abajo, columna "preguntar si dudás"). Excepción: si el brief es trivial o de baja inversión (ej: "landing rápida para mostrar X", "MVP en un día"), aplicar el default sin preguntar.
    3. **Si el usuario no especificó y el caso es claro** → aplicar default sugerido de la tabla.
 

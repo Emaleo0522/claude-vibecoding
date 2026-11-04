@@ -370,51 +370,37 @@ Complementa los hooks en tiempo real (`config-protection`, `quality-gate`) escan
 
 #### 6.1 — Secret Scan (scan estatico de codigo fuente)
 
-Buscar patrones de API keys/tokens hardcodeados. Excluir `node_modules`, `.next`, `build`, `dist`, `.env.example`, `__tests__`, `*.test.*`, `*.spec.*`, `docs/` para evitar falsos positivos.
+Buscar patrones de API keys/tokens hardcodeados. Se excluyen `node_modules`, `.next`, `build`, `dist`, `.git`, `coverage`, `.vercel` y `.env.example`; los matches en tests o docs se juzgan con la regla de abajo. Probado 2026-11-03 con claves falsas de los 11 tipos: detecta las 11 y no imprime ningún valor. `-e` es obligatorio: sin él, el patrón que arranca con `-----` se toma como opción y falla en silencio.
 
 ```bash
-# AWS Access Key ID
-grep -rnE 'AKIA[0-9A-Z]{16}' --include='*.{ts,tsx,js,jsx,mjs,cjs,json,yaml,yml,env}' \
-  --exclude-dir={node_modules,.next,build,dist,.git,coverage,__tests__,docs} \
-  --exclude='*.test.*' --exclude='*.spec.*' --exclude='.env.example' . 2>/dev/null
+# Globs sin llaves: grep --include NO expande '*.{ts,js}' entre comillas (con llaves no encuentra nada).
+INC=(--include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.mjs' --include='*.cjs'
+     --include='*.json' --include='*.yaml' --include='*.yml' --include='*.toml' --include='*.py'
+     --include='*.html' --include='*.astro' --include='*.vue' --include='*.svelte' --include='*.sh'
+     --include='*.env' --include='.env*' --include='Dockerfile*')
+EXC=(--exclude-dir=node_modules --exclude-dir=.next --exclude-dir=build --exclude-dir=dist
+     --exclude-dir=.git --exclude-dir=coverage --exclude-dir=.vercel --exclude='.env.example')
+# Imprime solo archivo:línea y el tipo, NUNCA el valor (no re-filtrar el secreto en el reporte)
+scan() { grep -rnoE -e "$2" "${INC[@]}" "${EXC[@]}" . 2>/dev/null | cut -d: -f1,2 | sed "s/\$/  [$1]/"; }
 
-# GitHub Personal Access Token
-grep -rnE 'ghp_[A-Za-z0-9]{36}' --include='*.{ts,tsx,js,jsx,mjs,cjs,json,yaml,yml,env}' \
-  --exclude-dir={node_modules,.next,build,dist,.git,coverage,__tests__,docs} . 2>/dev/null
-
-# GitHub OAuth / App Token
-grep -rnE '(gho_|ghu_|ghs_|ghr_)[A-Za-z0-9]{36}' --include='*.{ts,tsx,js,jsx,mjs,cjs}' \
-  --exclude-dir={node_modules,.next,build,dist,.git} . 2>/dev/null
-
-# Stripe Live Key
-grep -rnE 'sk_live_[A-Za-z0-9]{24,}' --include='*.{ts,tsx,js,jsx,mjs,cjs,env}' \
-  --exclude-dir={node_modules,.next,build,dist,.git} --exclude='.env.example' . 2>/dev/null
-
-# Slack Bot Token
-grep -rnE 'xox[baprs]-[0-9]+-[0-9]+-[A-Za-z0-9]+' --include='*.{ts,tsx,js,jsx,mjs,cjs,env,yml,yaml}' \
-  --exclude-dir={node_modules,.next,build,dist,.git} . 2>/dev/null
-
-# Google API Key
-grep -rnE 'AIza[0-9A-Za-z_-]{35}' --include='*.{ts,tsx,js,jsx,mjs,cjs,env,json}' \
-  --exclude-dir={node_modules,.next,build,dist,.git} --exclude='.env.example' . 2>/dev/null
-
-# OpenAI / Anthropic API Key
-grep -rnE '(sk-[A-Za-z0-9]{32,}|sk-ant-[A-Za-z0-9_-]{32,})' --include='*.{ts,tsx,js,jsx,mjs,cjs,env}' \
-  --exclude-dir={node_modules,.next,build,dist,.git} --exclude='.env.example' . 2>/dev/null
-
-# Private key headers (RSA/EC/DSA/PGP)
-grep -rnE -- '-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----' \
-  --exclude-dir={node_modules,.next,build,dist,.git} . 2>/dev/null
-
-# JWT en codigo (comun cuando se hardcodea un token de test en produccion)
-grep -rnE 'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' \
-  --include='*.{ts,tsx,js,jsx}' --exclude-dir={node_modules,.next,build,dist,.git,__tests__} \
-  --exclude='*.test.*' . 2>/dev/null
+scan "AWS access key"        'AKIA[0-9A-Z]{16}'
+scan "GitHub token"          '(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}'
+scan "Stripe live key"       '(sk|rk)_live_[A-Za-z0-9]{24,}'
+scan "Slack token"           'xox[baprs]-[0-9]+-[0-9]+-[A-Za-z0-9]+'
+scan "Google API key"        'AIza[0-9A-Za-z_-]{35}'
+scan "OpenAI o Anthropic"   'sk-(proj|svcacct|admin|ant)-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}'
+scan "Telegram bot token"    '[0-9]{8,10}:AA[0-9A-Za-z_-]{33}'
+scan "Discord bot token"     '[MNO][A-Za-z0-9_-]{23,25}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}'
+scan "URL de DB con clave"   '(postgres(ql)?|mysql|mariadb|mongodb(\+srv)?|redis|rediss|amqp)://[^:/[:space:]"'"'"']*:[^@/[:space:]"'"'"']+@'
+scan "Clave privada"         '-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----'
+scan "JWT"                   'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'
 ```
 
 **Regla de interpretacion**:
-- CUALQUIER match en archivo de codigo fuente = **BLOCKER** (NEEDS WORK)
+- Match en archivo de codigo fuente versionado = **BLOCKER** (NEEDS WORK), salvo las excepciones de abajo
 - Match en `.env.example`, `README.md`, `docs/`, tests → NO es blocker si el valor es claramente placeholder (ej: `AKIA...example...`, `sk_live_xxxxx`)
+- `.env*` que git ignora (`git check-ignore {archivo}` da 0) → NO es blocker: es el lugar correcto. Si está versionado (`git ls-files {archivo}` lo lista) → **BLOCKER**
+- NO son blocker: claves públicas por diseño (`apiKey` de Firebase, anon key de Supabase), URLs armadas con variables (`postgres://${DB_USER}:${DB_PASS}@...`) y credenciales de desarrollo local en docker-compose (`postgres:postgres@db`) si el servicio no se publica
 - Si el usuario usa secret management (Vercel env vars, Supabase secrets): NO deberian existir en codigo
 - Reportar: archivo + linea + tipo de secret detectado (NO incluir el valor real en el reporte para no re-filtrarlo)
 
@@ -658,7 +644,7 @@ Si el cajón ya existe (re-certificación tras haber dado NEEDS WORK):
 ```
 Paso 1: mem_search("{proyecto}/certificacion") → obtener observation_id existente
 Paso 2: mem_get_observation(observation_id) → leer contenido actual
-Paso 3: mem_update(observation_id, nuevo resultado con blockers resueltos o pendientes)
+Paso 3: mem_update(observation_id, nuevo resultado con blockers resueltos o pendientes, expected_project="{proyecto}")
 ```
 
 ## Production Readiness Checklist (obligatorio)

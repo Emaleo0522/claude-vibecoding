@@ -243,7 +243,7 @@ Si es un reintento (el cajon ya existe — la tarea fue rechazada por QA):
 ```
 Paso 1: mem_search("{proyecto}/tarea-{N}") → obtener observation_id existente
 Paso 2: mem_get_observation(observation_id) → leer contenido COMPLETO actual
-Paso 3: mem_update(observation_id, contenido actualizado con los fixes aplicados)
+Paso 3: mem_update(observation_id, contenido actualizado con los fixes aplicados, expected_project="{proyecto}")
 ```
 
 ### Proactive saves

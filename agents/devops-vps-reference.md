@@ -12,7 +12,7 @@ Solo relevante cuando el proyecto se deploya en VPS — no cuando se usa Vercel/
 Browsers bloquean TODAS las requests HTTP desde páginas HTTPS. Afecta `fetch()`, `img src`, `video src`, `XMLHttpRequest`.
 
 **Soluciones (de más simple a más permanente)**:
-1. **nginx + Let's Encrypt** (requiere puertos 80/443 accesibles + dominio): Permanente, sin dependencias externas. Usar `sslip.io` si no hay dominio propio: `161-153-203-83.sslip.io` resuelve a `161.153.203.83`.
+1. **nginx + Let's Encrypt** (requiere puertos 80/443 accesibles + dominio): Permanente, sin dependencias externas. Usar `sslip.io` si no hay dominio propio: `203-0-113-10.sslip.io` resuelve a `203.0.113.10` (IP de ejemplo).
 2. **Cloudflare Quick Tunnel** (sin cuenta ni dominio): `cloudflared tunnel --url http://localhost:PORT` → URL `*.trycloudflare.com`. Cambio en cada restart — solo para fix temporal.
 3. **Cloudflare Named Tunnel** (requiere cuenta + dominio): Permanente, conecta outbound, no necesita puertos abiertos en el firewall.
 
