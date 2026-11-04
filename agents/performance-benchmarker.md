@@ -32,10 +32,13 @@ TEST_URL="${DEPLOY_URL:-http://localhost:${PORT:-3000}}"
 Si deploy_url existe, ejecutar PageSpeed Insights API (requiere URL pública):
 ```bash
 # https://developers.google.com/speed/docs/insights/v5/get-started
-curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${TEST_URL}&strategy=mobile&category=performance&category=accessibility&category=best-practices&category=seo" | jq '.lighthouseResult.categories'
+mkdir -p /tmp/qa
+curl -s --max-time 120 -o /tmp/qa/psi-report.json "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${TEST_URL}&strategy=mobile&category=performance&category=accessibility&category=best-practices&category=seo"
+# jq no está instalado en esta PC. En Windows el /tmp de Git Bash no es el que ve node: leer por stdin, no por ruta
+node -e 'const c=JSON.parse(require("fs").readFileSync(0,"utf8")).lighthouseResult?.categories||{};for(const[k,v]of Object.entries(c))console.log(k,Math.round((v.score||0)*100))' < /tmp/qa/psi-report.json
 ```
 
-Guardar el reporte PSI en `/tmp/qa/psi-report.json` y citar el path en la evidencia.
+El reporte PSI queda en `/tmp/qa/psi-report.json`: citar el path en la evidencia.
 
 ## Lo que mido
 
@@ -73,6 +76,30 @@ Reportar `bundle_size_pass: true|false` en el resultado para que reality-checker
 - Time to interactive
 - Carga completa con cache vacío
 - Carga con cache primed
+
+### 4B. Carga liviana (load testing)
+Paso real, sin instalar nada (Node 18+ trae `fetch`). **Por defecto corre contra local o un entorno de test, nunca contra `deploy-url` ni producción**: la carga es una prueba que agrede, y solo se apunta a una URL pública o de producción con el OK explícito de Ema para esa prueba (mismo criterio que `api-tester.md` § Testing environment). Por eso usa `LOAD_URL`, separado de `TEST_URL` (que sí puede ser el deploy para PSI). Sobre endpoints de lectura salvo que el prompt diga otra cosa. Sube la concurrencia en pasos (por ejemplo C=10, 25, 50) y reporta el escalón donde p95 o los errores se degradan.
+
+Tope real: cada `fetch` lleva `AbortSignal.timeout(10000)` (cuenta también la lectura del cuerpo) y el comando va dentro de un `timeout` externo (S + 30 s) para que termine solo aunque el server no responda. Es un error cualquier fallo, timeout, status no-2xx, cuerpo vacío o, si se pasa `EXPECT`, cuerpo que no contiene ese texto.
+```bash
+LOAD_URL="${LOAD_URL:-http://localhost:${PORT:-3000}}"   # local o test; deploy-url solo con OK de Ema
+URL="$LOAD_URL/api/endpoint" C=20 S=15 timeout 45 node -e '
+const u=process.env.URL,c=+process.env.C,s=+process.env.S,ex=process.env.EXPECT,end=Date.now()+s*1000,t=[];let err=0;
+const w=async()=>{while(Date.now()<end){const a=performance.now();try{const r=await fetch(u,{signal:AbortSignal.timeout(10000)});const b=Buffer.from(await r.arrayBuffer());if(!r.ok||b.length===0||(ex&&!b.toString().includes(ex)))err++}catch{err++}t.push(performance.now()-a)}};
+Promise.all(Array.from({length:c},w)).then(()=>{t.sort((a,b)=>a-b);const p=q=>t[Math.min(t.length-1,Math.floor(t.length*q))].toFixed(0);console.log(`reqs=${t.length} rps=${(t.length/s).toFixed(1)} err=${err} p50=${p(.5)}ms p95=${p(.95)}ms p99=${p(.99)}ms`)})'
+```
+Este es el P95 de verdad; el stress de 10 requests de api-tester es solo de humo.
+
+### 4C. FPS en juegos (Canvas, Phaser, Three.js)
+Medir cuadros por segundo y tiempo de frame con Playwright: navegar a la página (server por `preview_start`) y correr con `mcp__playwright__browser_evaluate`, mientras la escena está en juego. Reportar `fps` y `frame_p95_ms` (objetivo 60 fps, frame p95 < 20 ms):
+```js
+() => new Promise(res => { const d=[]; let last=performance.now(), done=false; const end=last+5000;
+  const fin=v=>{ if(done) return; done=true; res(v) };
+  setTimeout(()=>fin({error:'sin frames: la pestaña está oculta o requestAnimationFrame no dispara', frames:d.length}), 9000);
+  const f=n=>{ d.push(n-last); last=n; if(n<end) requestAnimationFrame(f); else { d.sort((a,b)=>a-b); fin({fps:+(d.length/5).toFixed(1), frame_p95_ms:+d[Math.floor(d.length*.95)].toFixed(1)}) } };
+  requestAnimationFrame(f) })
+```
+Si devuelve `error`, la medición no vale: traer la pestaña al frente y repetir, o reportar FPS como no medido.
 
 ### 5. Bottlenecks identificados
 - Imágenes sin optimizar (formato, tamaño, lazy loading)

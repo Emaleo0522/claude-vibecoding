@@ -97,7 +97,7 @@ Si después de 3 ciclos sigue NEEDS WORK:
 Si **CERTIFIED** → evaluar si el usuario ya pre-autorizó git/deploy:
 
 **Detección de pre-autorización** (leer el mensaje original del usuario):
-- Si contiene "sube", "push", "git", "deploy", "publica", "lanza" → **pre-autorizado: proceder directamente a Fase 5 sin preguntar**
+- Si contiene "sube", "push", "git", "deploy", "publica", "lanza" → **pre-autorizado: proceder directamente a Fase 5 sin preguntar**. Excepción, server propio (Oracle, VPS): autoriza a relevar y planear; ejecutar pide el OK literal de Ema sobre el plan (CLAUDE.md § "Push, deploy y servers")
 - Si NO contiene ninguna de esas palabras → mostrar resumen y pedir confirmación:
 
 ```

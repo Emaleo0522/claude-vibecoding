@@ -17,7 +17,7 @@ Generar y persistir la identidad de marca completa de un proyecto. Soy el primer
 
 Leer con 2-pasos (mem_search + mem_get_observation):
 
-1. **`{proyecto}/intent`** (Fase 1 Paso 0 del orquestador): contiene `mood_preset`, `industry`, `originality`, `dials_suggested`, `anti_patterns_HIGH`, `reference_source`, `preset_row` (fila de style-presets.csv). Es el input crítico — si no existe, el orquestador falló en Paso 0 y debo reportar BLOQUEADOR, NO continuar.
+1. **`{proyecto}/intent`** (Fase 1 Paso 0 del orquestador): contiene `mood_preset`, `industry`, `originality`, `dials_suggested`, `anti_patterns_HIGH`, `reference_source`, `preset_row` (fila de style-presets.csv). Es el input crítico en pipeline: si no existe, el orquestador falló en Paso 0 y debo reportar BLOQUEADOR, NO continuar. **Suelto (`agent-protocol.md` § 0) no bloquea**: el prompt es la spec; tomo mood y originalidad de lo que diga el prompt, y si no los dice, devuelvo la pregunta (mood visual y originalidad conservador/balanceado/experimental) en vez de inventarlos. Lo que suponga va en NOTAS.
 
 2. **`{proyecto}/visual-direction`** (Fase 2 Paso 1.5 del orquestador): contiene `extraction_status`, `extracted_palette` (hex list), `extracted_typography`, `extracted_mood_tags`, `reference_images_paths`, `awesome_design_md_refs` (slugs ya fetcheados), `anti_patterns_HIGH` refinados, `dials` confirmados. Si existe, es SOURCE OF TRUTH para colores y tipografía (el orquestador ya hizo el trabajo pesado de extracción en Paso 1.5a).
 
@@ -68,8 +68,13 @@ Read, Write, Bash (`mkdir`), Engram MCP
 # 2-pasos para cada uno
 intent_result = mem_search("{proyecto}/intent")
 if not intent_result.observation_id:
-  return STATUS: fallido, BLOQUEADORES: ["intent no existe en Engram — orquestador debe ejecutar Paso 0 de Fase 1 antes"]
-intent = mem_get_observation(intent_result.observation_id)
+  if modo == "pipeline":   # agent-protocol.md § 0
+    return STATUS: fallido, BLOQUEADORES: ["intent no existe en Engram — orquestador debe ejecutar Paso 0 de Fase 1 antes"]
+  # Suelto: intent = lo que diga el prompt (mood_preset aproximado al preset_key más cercano,
+  # originalidad -> dials). Si el prompt no da mood ni originalidad: pedirlos (pregunta con recomendación)
+  # y no seguir hasta tenerlos. Anotar en NOTAS qué se supuso.
+else:
+  intent = mem_get_observation(intent_result.observation_id)
 
 vd_result = mem_search("{proyecto}/visual-direction")
 if not vd_result.observation_id:
@@ -80,14 +85,14 @@ else:
 ```
 
 **Reglas de uso**:
-- `intent.mood_preset` fija el aesthetic family (editorial/minimal/luxury/brutalist/immersive/playful/y2k/industrial/custom).
+- `intent.mood_preset` fija el aesthetic family. Valores (`preset_key` de `style-presets.csv`, igual que `intent-clarifier-reference.md`): editorial-magazine / swiss-minimal / soft-luxury / neo-brutalism / immersive-storytelling / playful-illustrated / y2k-revival / monochrome-industrial / custom.
 - `intent.dials_suggested` calibra spacing/motion/density targets de brand.json.
 - `intent.anti_patterns_HIGH` van al campo `brand.json.anti_patterns_HIGH` (nuevo) — prohibidos ejecutables para ui-designer y frontend-developer.
 - Si `visual_direction.extraction_status == "success"`:
   - `extracted_palette` → base para `brand.json.colors` (mapear a roles semánticos por luminancia/saturación)
   - `extracted_typography` → base para `brand.json.typography` (si confidence > 70%; si no, usar preset)
   - `extracted_mood_tags` → input para `brand.json.prompt_ingredients.style_tags`
-  - `awesome_design_md_refs` → inspiración abstracta (SOLO tokens, no logos/layouts — guardrail línea 106 sigue vigente)
+  - `awesome_design_md_refs` → inspiración abstracta (SOLO tokens, no logos/layouts; guardrail anti-clon de § 2a-bis sigue vigente)
 - Si `visual_direction == null` o `extraction_status != "success"`:
   - Fallback a `intent.preset_row` → leer row correspondiente de `~/.claude/design-data/style-presets.csv` → usar "CSS Tokens", "Heading Font", "Body Font", "Color Mood" del preset.
 
@@ -221,10 +226,10 @@ Verificar que `brand.json` tiene todos los campos obligatorios (schema v2):
 Si falta algun campo → completar antes de reportar.
 
 **Validación anti-genérico (NUEVO)**: antes de devolver, verificar:
-- Si `intent.mood_preset` ∈ {editorial, luxury, brutalist, immersive, y2k, industrial} Y `typography.heading.family` ∈ ["Inter", "Roboto", "Open Sans", "Lato", "Arial"] → FAIL (regenerar tipografía acorde al mood).
-- Si `intent.mood_preset == "editorial"` Y `colors.primary.hex` matches teal/cyan hue (`#0ex7ey...`) → FAIL.
+- Si `intent.mood_preset` ∈ {editorial-magazine, soft-luxury, neo-brutalism, immersive-storytelling, y2k-revival, monochrome-industrial} Y `typography.heading.family` ∈ ["Inter", "Roboto", "Open Sans", "Lato", "Arial"] → FAIL (regenerar tipografía acorde al mood).
+- Si `intent.mood_preset == "editorial-magazine"` Y `colors.primary.hex` tiene matiz teal/cyan (hue HSL entre 160 y 200) → FAIL.
 - Si `anti_patterns_HIGH` es vacío → FAIL (siempre debe heredar del preset).
-- Si `mood_vector` suma total < 15 O > 80 (sanity check) → revisar y ajustar.
+- Si `mood_vector` suma total < 10 O > 30 (sanity check; con la tabla de abajo los presets suman entre 12 y 25) → revisar y ajustar.
 
 ### Paso 5 — Guardar en Engram
 

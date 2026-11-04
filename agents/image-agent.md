@@ -1,6 +1,6 @@
 ---
 name: image-agent
-description: Genera imagenes para proyectos web (hero images, fondos, thumbnails). Por defecto usa rutas free top-tier verificadas 2026 (HuggingFace FLUX.1-schnell, Cloudflare Workers AI, Pollinations). Gemini opcional si hay billing. Requiere brand.json generado por brand-agent. Llamar despues de brand-agent y aprobacion del usuario.
+description: Genera imagenes para proyectos web (hero images, fondos, thumbnails). Por defecto usa rutas free (HuggingFace FLUX.1-schnell, Cloudflare Workers AI, Pollinations), con chequeo previo de cuál responde. Gemini opcional si hay billing. Requiere brand.json generado por brand-agent. Llamar despues de brand-agent y aprobacion del usuario.
 model: sonnet
 updated: 2026-05-18
 maxTurns: 300
@@ -21,11 +21,13 @@ Generar imagenes de alta calidad para proyectos web leyendo la identidad visual 
 
 **Politica por defecto (2026-05-18, verificada con curl real): el agente prioriza paths FREE top-tier que NO requieren tarjeta de credito**. Gemini (de paga) queda como opt-in solo si el usuario tiene billing.
 
+> **Nota 2026-11-03 (auditoria)**: la verificacion de mayo esta vieja. En octubre de 2026 el endpoint de HF FLUX.1-schnell dio **410** y Pollinations bajo de calidad (ver Paso 4.0). El orden de la cadena no cambia, pero **ningun backend se asume vivo**: se chequea antes de cada uso y se salta al siguiente si responde 410/404. Sondeo sin clave del 2026-11-03: la ruta de HF responde 401 sin token (existe, pero eso no prueba que FLUX responda con token) y Pollinations devuelve 200 sin key.
+
 | Backend | Env var(s) | Costo real 2026 | Cuando usarlo |
 |---------|------------|------------------|---------------|
-| **HuggingFace** (PRIMARIO) | `HF_TOKEN` | Free users: $0.10/mes (~150 imgs FLUX-schnell), reset mensual. No requiere tarjeta. | Default. Calidad alta. Cuidar el quota mensual. |
+| **HuggingFace** (PRIMARIO) | `HF_TOKEN` | Free users: $0.10/mes (~150 imgs FLUX-schnell), reset mensual. No requiere tarjeta. | Default de la cadena, **pero dio 410 el 2026-10-27**: chequear la ruta antes (Paso 4.0). Cuidar el quota mensual. |
 | **Cloudflare Workers AI** (SECUNDARIO recomendado) | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN` | **10,000 neurons/dia gratis, SIN tarjeta** (fuente: developers.cloudflare.com). FLUX-schnell consume ~6 neurons/img -> cientos de imgs/dia. | Cuando se agota HF o se necesita quota grande. Setup en dash.cloudflare.com/profile/api-tokens (permiso Account -> Workers AI -> Read) |
-| **Pollinations.ai** (FALLBACK sin key) | ninguna | **Unlimited free FLUX images** (FAQ oficial pollinations.ai). Rate limit ~1 pollen/h por IP para publishable keys; sin auth es funcional. | Cuando ninguna key esta configurada o todo lo demas fallo. Modelo default actual: Sana. |
+| **Pollinations.ai** (FALLBACK sin key) | ninguna | Gratis sin key, **con limites**: en octubre de 2026 se registro 1024x576, marca de agua y ~1 imagen cada 45 s, calidad baja. Rate limit ~1 pollen/h por IP para publishable keys. | Ultimo recurso, cuando ninguna key esta configurada o todo lo demas fallo. Avisar que la calidad es menor. Modelo default actual: Sana. |
 | **Gemini** (OPT-IN, requiere billing) | `GEMINI_API_KEY` | $0.02-0.04/img + billing habilitado en Google Cloud | Solo si el usuario lo pide explicitamente y tiene billing. Mejor comprension de prompts pero filtros agresivos. |
 
 **Backends descartados** (verificado 2026-05-18 contra fuentes primarias):
@@ -153,7 +155,18 @@ amateur photography, stock photo artifacts
 
 ### Paso 4 — Llamar API con retry logic (cadena free-first)
 
-**Cadena por defecto** (`backend: "auto"` o no especificado), verificada con curl real el 2026-05-18:
+**4.0 Chequeo previo de la ruta** (antes de gastar quota; un GET sin cuerpo no pide ninguna imagen). Un chequeo por backend, cada uno con su propio header y solo contra su propio host; el token de HF nunca se manda a Cloudflare ni a terceros:
+```bash
+# Un chequeo por backend, cada uno con SU propio header y solo contra SU host. Nunca mandar HF_TOKEN a otro destino.
+chk() { curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$@"; }
+HF_CODE=""; CF_CODE=""
+[ -n "$HF_TOKEN" ] && HF_CODE=$(chk -H "Authorization: Bearer $HF_TOKEN" "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell")
+[ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$CLOUDFLARE_AI_TOKEN" ] && CF_CODE=$(chk -H "Authorization: Bearer $CLOUDFLARE_AI_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/ai/run/@cf/black-forest-labs/flux-1-schnell")
+for B in "HF:$HF_CODE" "CF:$CF_CODE"; do case "${B#*:}" in 410|404) echo "${B%%:*} no disponible (${B#*:}): salto al siguiente backend";; esac; done
+```
+Un 410 o 404 = ruta retirada: saltar al siguiente backend (en Cloudflare un 404 tambien puede ser un `CLOUDFLARE_ACCOUNT_ID` incorrecto: revisarlo antes de descartarlo). Un 200, 401 o 405 solo dice que la ruta existe; la prueba real es el primer intento de generacion, que se valida en el Paso 5. **Pollinations no tiene chequeo previo**: su endpoint genera una imagen y gasta cupo con cada request, asi que se intenta directo, como ultimo recurso, y se valida el resultado. Anotar en NOTAS que backend se salto y con que codigo.
+
+**Cadena por defecto** (`backend: "auto"` o no especificado; orden verificado por ultima vez el 2026-05-18, ver la nota de arriba):
 
 1. **FLUX.1-schnell via HuggingFace** (primario, free $0.10/mes): `router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell`
    - Requiere `HF_TOKEN`. Si no esta o quota agotada -> saltar al paso 2
@@ -163,7 +176,7 @@ amateur photography, stock photo artifacts
    - Requiere `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`
    - Devuelve JSON con `result.image` en base64 -> decodificar a PNG
    - Resolucion default 1024x1024
-4. **Pollinations.ai** (ultimo recurso, sin token, unlimited FLUX): `image.pollinations.ai/prompt/{encoded}?width=1920&height=1080&nologo=true`
+4. **Pollinations.ai** (ultimo recurso, sin token, calidad y resolucion limitadas): `image.pollinations.ai/prompt/{encoded}?width=1920&height=1080&nologo=true`
 
 **Si `backend: "gemini"`** (opt-in con billing):
 1. **Gemini** (Google): `generativelanguage.googleapis.com`
@@ -181,8 +194,14 @@ curl -sS "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/a
   -d '{"prompt":"'"$PROMPT"'","steps":4}'
 
 # Respuesta: {"result":{"image":"base64..."},"success":true,...}
-# Decodificar:
-#   jq -r '.result.image' response.json | base64 -d > output.png
+# Decodificar (jq NO esta instalado en esta PC: chequear antes de usarlo)
+if command -v jq >/dev/null 2>&1; then
+  jq -r '.result.image' response.json | base64 -d > output.png
+elif command -v python3 >/dev/null 2>&1; then
+  python3 -c "import json,base64,sys;sys.stdout.buffer.write(base64.b64decode(json.load(open('response.json'))['result']['image']))" > output.png
+else
+  echo "FALTA jq y python3: instalar jq (winget install jqlang.jq) o Python 3" >&2
+fi
 ```
 
 **Llamada Gemini** (solo si `backend=gemini` y billing OK):
@@ -278,10 +297,10 @@ ACCION REQUERIDA: {que necesita el usuario/orquestador}
 | `{"error":"Rate limit"}` | Demasiadas requests | Pasar al siguiente fallback inmediatamente |
 | `file: HTML document` | API devolvio error HTML | Leer primeras lineas para diagnostico, reintentar |
 | `SAFETY` / `content not permitted` (Gemini) | Filtros de contenido de Google rechazaron el prompt | Simplificar prompt (quitar personas, marcas), reintentar. Si persiste -> fallback a HuggingFace |
-| `403 PERMISSION_DENIED` (Gemini) | API key sin billing habilitado | Caer automaticamente a cadena free (HF -> Together -> Pollinations). NO bloquear al usuario por billing |
+| `403 PERMISSION_DENIED` (Gemini) | API key sin billing habilitado | Caer automaticamente a cadena free (HF -> Cloudflare -> Pollinations). NO bloquear al usuario por billing |
 | `404 model not found` (Gemini) | Modelo deprecado o incorrecto | Usar `gemini-2.5-flash-image` o `imagen-4-fast`. Modelos preview se retiran periodicamente |
 | Cloudflare `7003` o `10000` (auth) | `CLOUDFLARE_AI_TOKEN` invalido o sin permiso Workers AI Read | Verificar token en dash.cloudflare.com/profile/api-tokens. Saltar a Pollinations.ai |
-| Cloudflare quota exceeded (10K neurons/dia) | Cuota diaria gratuita agotada | Esperar 24h o saltar a Pollinations.ai (unlimited) |
+| Cloudflare quota exceeded (10K neurons/dia) | Cuota diaria gratuita agotada | Esperar 24h o saltar a Pollinations.ai (con sus limites) |
 | Pollinations rate limit (1 pollen/h por IP) | Demasiadas requests desde misma IP | Esperar 1h o usar HF/Cloudflare si esta disponible |
 
 ### Proactive saves

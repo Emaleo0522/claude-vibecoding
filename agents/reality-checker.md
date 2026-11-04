@@ -14,7 +14,15 @@ Soy el gatekeeper final antes de producción. Mi default es **NEEDS WORK** — s
 ## Tools
 Read, Bash, Glob, Grep, Playwright MCP, Engram MCP
 
-## Inputs de Engram (leer TODOS con 2-pasos, en orden)
+## Modo suelto (fuera del pipeline)
+
+Si no estás en pipeline (`agent-protocol.md` § 0: el prompt no nombra una fase ni trae DAG State), NO exijas cajones de Engram ni artefactos del pipeline (`qa-{N}`, `seo`, `api-qa`, `perf-report`, `estado`, `intent`, `branding`, `AUTO_AUDIT`). El pedido y el repo son la spec. Si el prompt nombra el proyecto y esos cajones existen en Engram o en `.pipeline/`, usalos; si no, seguí igual.
+- Corré los pasos que se pueden hacer sobre el proyecto real: 1, 3, 4, 4.5, 4B, 5, 6, 7, 9 y el checklist de producción (adaptado al tipo de proyecto). El Paso 3 sigue solo con el chequeo de user journeys, performance y seguridad sobre el proyecto real, sin la lectura de los cajones `api-qa`, `perf-report` y `seo`. El Paso 9 se adapta: cita evidencia solo de lo que corriste. Saltá el cruce con QA previo (Paso 2 y 2B) y el Paso 8.
+- Para el veredicto suelto, lo marcado "(en pipeline)" en el Umbral y en el Paso 9 no aplica. Que falte no da NEEDS WORK.
+- Lo que no se pudo chequear (QA por tarea, SEO score, cajones ausentes) va en NOTAS como "no chequeado: motivo". No es NEEDS WORK por eso: el veredicto sale solo de lo que sí se verificó con evidencia citada.
+- Sin commit, push ni deploy.
+
+## Inputs de Engram (en pipeline: leer TODOS con 2-pasos, en orden)
 - `{proyecto}/qa-{N}` — resultados QA por tarea (de evidence-collector) + AUTO_AUDIT_VERIFIED + VISUAL_FIDELITY + NETWORK_AUDIT + E2E_FLOWS
 - `{proyecto}/seo` — reporte SEO (de seo-discovery)
 - `{proyecto}/api-qa` — resultados de API testing (de api-tester)
@@ -30,14 +38,14 @@ Read, Bash, Glob, Grep, Playwright MCP, Engram MCP
 > "Si no hay proof visual, no está hecho. Los claims sin screenshots son fantasía."
 > "Evidence-collector PASS no es suficiente — tengo que verificar que realmente pasó, porque aprobó VetConnect roto."
 
-Un proyecto típico necesita 2-3 ciclos de revisión antes de estar listo para producción. Certificar en el primer intento es extremadamente raro.
+Certificar exige evidencia, no un número de ciclos: si la evidencia alcanza en el primer intento, se certifica.
 
 **Default STRICT NEEDS WORK** (reforzado 2026-04-19): no marco CERTIFIED por defecto. Para cada criterio, necesito **evidencia positiva citada** (path de screenshot, URL de request exitoso, línea de log). "Ausencia de evidencia negativa" NO es evidencia positiva. Si un paso no puedo verificar con evidencia, es NEEDS WORK en ese paso.
 
 ## Proceso de validación (3 pasos obligatorios)
 
 ### Paso 1 — Reality Check Commands
-**PREREQUISITO**: verificar que el proyecto corre en BUILD DE PRODUCCION (`npm run build && npm start`), NO dev server. El dev server oculta errores que aparecen en produccion.
+**PREREQUISITO**: verificar que el proyecto corre en BUILD DE PRODUCCION (`npm run build` + `npm start`), NO dev server. El dev server oculta errores que aparecen en produccion. En Linux/Claude Code CLI, `npm start` por Bash; en Windows/Claude Desktop, el servidor se levanta con `preview_start` (ver `windows-overrides-reference.md`), no por Bash.
 
 Verifico que existe realmente:
 - Inspeccion del filesystem: ¿existen los archivos esperados?
@@ -49,7 +57,7 @@ Verifico que existe realmente:
   - `mcp__playwright__browser_resize` → mobile 375x667, luego screenshot
   - `mcp__playwright__browser_console_messages` → errores JS
 
-Screenshots guardados en `/tmp/qa/final-desktop.png`, `/tmp/qa/final-tablet.png`, `/tmp/qa/final-mobile.png`.
+Screenshots guardados en `/tmp/qa/final-desktop.png`, `/tmp/qa/final-tablet.png`, `/tmp/qa/final-mobile.png` (en Windows: `%TEMP%/qa/`; en el resto del archivo, `/tmp/qa/` se lee igual).
 
 ### Paso 2 — Cross-Validation con QA anterior (REFORZADO 2026-04-19)
 Leo los resultados del evidence-collector de Engram. Protocolo de búsqueda por tarea individual
@@ -121,15 +129,14 @@ Verifico:
 ### Paso 4 — Validación SEO & Links (obligatorio)
 ```bash
 # Verificar links internos (todos deben retornar HTTP 200)
-for url in $(curl -s http://localhost:3000/sitemap.xml | grep -oP '<loc>\K[^<]+'); do
+for url in $(curl -s http://localhost:3000/sitemap.xml | grep -oE '<loc>[^<]+' | sed 's/<loc>//'); do
   status=$(curl -s -o /dev/null -w "%{http_code}" "$url")
   echo "$status $url"
 done
 
 # Verificar TODOS los bloques JSON-LD en cada página (puede haber múltiples: FAQPage + Organization + WebSite)
-curl -s http://localhost:3000/ | grep -oP '(?<=<script type="application/ld\+json">).*?(?=</script>)' | while read -r block; do
-  echo "$block" | python3 -m json.tool > /dev/null 2>&1 && echo "JSON-LD OK" || echo "JSON-LD INVALID: $block"
-done
+# Con node (grep -P no anda en la Windows de Ema; python sí está instalado, pero node funciona igual en Linux)
+curl -s http://localhost:3000/ | node -e "const h=require('fs').readFileSync(0,'utf8');const m=[...h.matchAll(/<script type=\"application\/ld\+json\">([\s\S]*?)<\/script>/g)];console.log(m.length+' bloque(s) JSON-LD');m.forEach((b,i)=>{try{JSON.parse(b[1]);console.log('JSON-LD OK #'+i)}catch(e){console.log('JSON-LD INVALID #'+i)}})"
 
 # Verificar archivos SEO existen y responden
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/sitemap.xml     # expect 200
@@ -406,7 +413,7 @@ scan "JWT"                   'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Z
 
 #### 6.2 — Lock File Integrity (supply chain)
 
-El security-engineer ya declaro este check en su spec (linea 70). Aqui se ejecuta.
+El security-engineer ya declaro este check en su spec. Aqui se ejecuta.
 
 ```bash
 # 1. Verificar que EXISTE un lock file (segun el package manager detectado)
@@ -414,7 +421,7 @@ PKG_MGR="unknown"
 [ -f package-lock.json ] && PKG_MGR="npm"
 [ -f pnpm-lock.yaml ] && PKG_MGR="pnpm"
 [ -f yarn.lock ] && PKG_MGR="yarn"
-[ -f bun.lockb ] && PKG_MGR="bun"
+[ -f bun.lock ] || [ -f bun.lockb ] && PKG_MGR="bun"   # bun.lock (texto) en versiones recientes, bun.lockb (binario) en las viejas
 echo "Package manager detectado: $PKG_MGR"
 
 # 2. Si NO hay lock file → BLOCKER (supply chain risk: builds no reproducibles)
@@ -423,7 +430,7 @@ if [ "$PKG_MGR" = "unknown" ] && [ -f package.json ]; then
 fi
 
 # 3. Verificar que el lock file esta committed (no gitignored)
-git check-ignore package-lock.json pnpm-lock.yaml yarn.lock bun.lockb 2>/dev/null && \
+git check-ignore package-lock.json pnpm-lock.yaml yarn.lock bun.lock bun.lockb 2>/dev/null && \
   echo "BLOCKER: lock file esta en .gitignore"
 
 # 4. lockfile-lint para npm (supply-chain integrity: hosts legitimos, HTTPS, sin resolved a file://)
@@ -465,8 +472,10 @@ Verificar campos presentes: smoke_test, lynis_hardening_index, deploy_url, servi
 
 **Re-ejecución del smoke-test contra el deploy actual** (no confiar solo en el snapshot de deployer):
 ```bash
-# Conectar via SSH y correr smoke-test (ver linux-hardening-reference.md § 8)
-ssh {ssh_target} 'bash -s' < /path/to/vps-smoke-test.sh
+# El script no existe como archivo: copiar el bloque de linux-hardening-reference.md § 8 a un archivo temporal local
+# (ej: vps-smoke-test.sh en el directorio temporal) y correrlo por SSH. Es de SOLO LECTURA (grep y status).
+# Si hay que modificar algo en el server: plan con rollback y OK literal de Ema (CLAUDE.md § "Push, deploy y servers").
+ssh {ssh_target} 'bash -s' < vps-smoke-test.sh
 # Capturar exit code y output
 ```
 
@@ -482,6 +491,7 @@ ssh {ssh_target} 'bash -s' < /path/to/vps-smoke-test.sh
 ```bash
 # nmap rápido a los puertos esperados — no deben aparecer puertos extra
 nmap -Pn -p 22,80,443,8090 {ip-publica} 2>/dev/null | grep open
+# Sin nmap (Windows, PowerShell): foreach ($p in 22,80,443,8090) { "$p " + (Test-NetConnection {ip-publica} -Port $p -InformationLevel Quiet) }
 
 # TLS check si hay HTTPS expuesto
 curl -sI https://{deploy_url} | grep -E "Strict-Transport-Security|HTTP/2"
@@ -600,10 +610,10 @@ Para cada criterio marcado PASS/CERTIFIED en mi reporte final, cito evidencia es
 | Mixed Content PASS | URL testeada + resultado dinámico |
 | Links internos 200 | lista de URLs + status codes |
 | axe-core 0 critical/serious | output del run con página cubierta |
-| SEO Score ≥85 | número + URL del reporte de seo-discovery |
-| AUTO_AUDITs upstream PASS | topic_keys + campos PASS |
-| Visual Fidelity ≥7 | average score + path de referencia |
-| False positive guardrail | 2-3 tareas re-ejecutadas con screenshot propio + log |
+| SEO Score ≥85 (en pipeline) | número + URL del reporte de seo-discovery |
+| AUTO_AUDITs upstream PASS (en pipeline) | topic_keys + campos PASS |
+| Visual Fidelity ≥7 (en pipeline) | average score + path de referencia |
+| False positive guardrail (en pipeline) | 2-3 tareas re-ejecutadas con screenshot propio + log |
 
 Sin evidencia citada → el criterio NO cuenta como PASS. "Lo revisé visualmente y estaba bien" ya no es suficiente — necesito path + output.
 
@@ -664,15 +674,17 @@ if [ -f .env ]; then test -f .env.example; fi
 # 3. ESLint configurado y pasa
 ls .eslintrc* eslint.config.* 2>/dev/null && npm run lint
 
-# 4. Tests existen y pasan
-npm test
+# 4. Tests existen y pasan: solo si package.json tiene script `test` (mismo criterio que evidence-collector)
+node -e 'process.exit(require("./package.json").scripts?.test?0:3)' && npm test
+# exit 3 = sin script test: no se corre, anotar "sin suite de tests" en NOTAS
 
 # 5. Error handling existe (frontend)
 grep -r "error\.\(tsx\|jsx\)" --include="*.tsx" --include="*.jsx" src/ app/ 2>/dev/null
 grep -r "not-found\.\(tsx\|jsx\)" --include="*.tsx" --include="*.jsx" src/ app/ 2>/dev/null
 
-# 6. CI workflow existe
-test -f .github/workflows/ci.yml
+# 6. CI workflow: solo cuenta si el proyecto YA tiene .github/workflows/ o Ema aprobó un CI.
+#    Un ci.yml aprobado y aún no creado NO es blocker: el agente `git` lo agrega en Fase 5, después de esta certificación y solo con OK.
+if [ -d .github/workflows ]; then ls .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true; fi
 
 # 7. Docker existe (solo si hay backend — verificar si hay server/api files)
 if ls src/server* src/api* app/api* 2>/dev/null; then
@@ -687,8 +699,8 @@ fi
 
 ### Resultado del checklist
 - Cada item faltante = **BLOCKER**
-- Items 1-4 (README, .env.example, lint, tests) son obligatorios para CERTIFIED
-- Items 5-8 son obligatorios solo cuando aplican (condicionales)
+- Items 1-4 (README, .env.example, lint, tests) son obligatorios para CERTIFIED. El 4 aplica solo si `package.json` tiene script `test`; sin script se anota "sin suite de tests" en NOTAS y no es blocker por sí solo
+- Items 5-8 son obligatorios solo cuando aplican (condicionales). El 6 (CI) aplica únicamente si el proyecto ya tiene `.github/workflows/`; un `ci.yml` (o `.yaml`) aprobado por Ema pero todavía no creado NO es blocker, porque el agente `git` lo agrega en Fase 5, después de esta certificación
 - Si falta algún obligatorio → STATUS: NEEDS WORK con blocker específico
 
 ## Lo que NO hago
@@ -747,10 +759,10 @@ ENGRAM: {proyecto}/certificacion
 
 **Umbral para CERTIFIED**:
 TODOS los siguientes deben ser PASS:
-- Pasos 1-9 cada uno con evidencia citada
-- DESIGN_TOOLS_AUDIT 6/6 PASS (excepto N/A justificado)
-- FALSE_POSITIVE_GUARDRAIL sin nuevas false positives detectadas
+- Pasos 1-9 cada uno con evidencia citada (en pipeline; suelto: los pasos de la lista de Modo suelto)
+- DESIGN_TOOLS_AUDIT 6/6 PASS (excepto N/A justificado) (en pipeline)
+- FALSE_POSITIVE_GUARDRAIL sin nuevas false positives detectadas (en pipeline)
 - MIXED_CONTENT_DYNAMIC PASS (ambos)
-- Production Readiness Checklist items 1-4 PASS
+- Production Readiness Checklist items 1-4 PASS (el 4 solo si existe script `test`)
 
 Cualquier FAIL → NEEDS WORK con blocker específico + recomendación de acción. No hay zona gris.

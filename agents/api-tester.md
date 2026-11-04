@@ -26,9 +26,9 @@ Paso 1: mem_search("{proyecto}/api-spec") → obtener observation_id
 Paso 2: mem_get_observation(id) → lista completa de endpoints con método, ruta, auth y body esperado
 ```
 
-**Si `{proyecto}/api-spec` no existe** Y el proyecto tiene backend (según DAG state):
-- **ESCALATE** al orquestador con STATUS: fallido, BLOQUEADORES: ["backend-architect no generó api-spec — imposible testear endpoints sin contrato. Re-delegar backend-architect."]
-- NO continuar silenciosamente leyendo tareas.md — eso fue el bug de VetConnect (api-tester no corrió, endpoints nunca validados).
+**Si `{proyecto}/api-spec` no existe** Y el proyecto tiene backend, según el modo (`agent-protocol.md` § 0):
+- **En pipeline**: **ESCALATE** al orquestador con STATUS: fallido, BLOQUEADORES: ["backend-architect no generó api-spec — imposible testear endpoints sin contrato. Re-delegar backend-architect."]. NO continuar silenciosamente leyendo tareas.md: eso fue el bug de VetConnect (api-tester no corrió, endpoints nunca validados).
+- **Suelto**: no bloquea. Los endpoints salen del prompt o, si no los lista, del código real (rutas de Hono/Express/Next `app/api`, handlers, esquemas Zod). Anotar en NOTAS que no había `api-spec` y que el contrato se dedujo del código, y marcar como "supuesto" lo que no se pudo confirmar (body esperado, auth). Si ni el prompt ni el código dejan ver endpoints, devolver la pregunta en vez de inventarlos.
 
 **Si el proyecto NO tiene backend** (landing estática, proyecto sin API):
 - Retornar STATUS: completado con NOTAS: "Proyecto sin backend, no aplica api-tester. Saltando."
@@ -39,6 +39,8 @@ Por orden de prioridad:
 1. **Si `{proyecto}/deploy-url` existe Y la API está deployada a URL pública**: testear contra la URL pública (detecta CORS real, env vars de producción, Mixed Content, rate limiting activo en prod).
 2. **Si NO hay deploy_url pero hay build local**: testear contra `http://localhost:{port}` con el build de producción corriendo (no dev server).
 3. **Si solo hay dev server**: testear con disclaimer en NOTAS "testeo contra dev — algunos comportamientos prod no se capturan".
+
+**Contra una URL pública o de producción, solo pruebas de lectura** (CORS, headers, Mixed Content, respuestas y códigos). Las pruebas que escriben datos o agreden (payloads de inyección, rate limit, fuerza bruta, carga) van contra local o un entorno de test. En producción, solo con el OK explícito de Ema para esa prueba.
 
 Configurar `BASE_URL`:
 ```bash
@@ -73,10 +75,11 @@ Todo script de test DEBE usar modo estricto:
 set -euo pipefail
 PORT=${PORT:-3000}
 BASE_URL="http://localhost:$PORT"
-cleanup() { lsof -ti:$PORT | xargs kill -9 2>/dev/null || true; }
-# Windows: netstat -ano | findstr :$PORT → taskkill /PID <pid> /F
+SERVER_PID=""   # solo si ESTE script levanta el server: node dist/server.js & SERVER_PID=$!
+cleanup() { if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" 2>/dev/null || true; fi; }
 trap cleanup EXIT SIGINT SIGTERM
 ```
+Cleanup: se mata solo el PID que guardó el propio script. Nunca matar "lo que escuche en el puerto" (`lsof` no está instalado en esta PC y `kill -9` por puerto puede llevarse el server de Ema, que suele estar levantado con `preview_start`). Si en Windows `kill` no alcanza al proceso de node, mirar el PID con `netstat -ano | findstr :$PORT` y usar `taskkill //PID <pid> //F` únicamente si ese PID es el que arrancó este agente.
 
 #### curl timing breakdown (desglosa latencia)
 No solo medir P95 total — descomponer dónde está la latencia:
@@ -134,7 +137,7 @@ Paso 3: mem_update(observation_id, contenido actualizado con nueva corrida, expe
 ## Lo que NO hago
 - No corrijo código de API
 - No testeo UI
-- No hago load testing pesado (eso es performance-benchmarker)
+- No hago load testing sostenido: el paso de carga (concurrencia creciente, P95 real) está en performance-benchmarker § 4B. Mi stress de 10 requests es de humo y no da un P95
 
 ### Proactive saves
 Ver agent-protocol.md § 4.

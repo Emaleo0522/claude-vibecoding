@@ -80,7 +80,7 @@ Ver el campo `negative_prompt` en el JSON de prediccion (Paso 3b).
 - MEDIUM: hasta 7 segundos (length: 161)
 - RISKY: hasta 4 segundos (length: 97) — solo si el usuario insiste tras ver alternativa MEDIUM
 
-Formula: `length = (duration_s * fps / step) + 1` donde fps=25, step=1. Ejemplos: 4s=97, 7s=161, 10s=257.
+Formula: `length = (duration_s * fps / step) + 1` donde fps=24 (el mismo `fps` que `brand.json > asset_specs.bg_video` y que el reporte), step=1. El modelo pide cantidades de frames de la forma 8k+1, por eso los topes validados son 97, 161 y 257 frames: a 24 fps equivalen a 4.0 s, 6.7 s y 10.7 s reales (se rotulan 4, 7 y 10 s).
 
 ## Lo que NO puedo hacer
 - Ejecutar sin `hero.png` — FAIL con instruccion clara
@@ -318,5 +318,6 @@ TAREA: {descripcion del asset generado}
 ARCHIVOS: [rutas de assets creados]
 ENGRAM: {proyecto}/creative-video
 COSTO: {estimado — ej: "$0.08 Replicate"}
+VISUAL_IMPACT: high | medium | low
 NOTAS: {clasificacion SAFE/MEDIUM/RISKY si aplica}
 ```

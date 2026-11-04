@@ -396,6 +396,14 @@ To report bugs or discuss features, [open an issue](https://github.com/Emaleo052
 - **Design Intelligence Engine** — based on [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill), ported to Node.js
 - **Pixel Bridge** — based on [pablodelucca/pixel-agents](https://github.com/pablodelucca/pixel-agents) (optional visualization)
 - **Nothing Design System** — reference from [dominikmartn/nothing-design-skill](https://github.com/dominikmartn/nothing-design-skill) v3.0.0
+- **Agency Agents** (MIT), [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents): inspiration for the roles and structure of several agents (reality-checker, evidence-collector, api-tester and others)
+- **Agent Teams Lite** (MIT, archived; replaced by gentle-ai), [Gentleman-Programming/agent-teams-lite](https://github.com/Gentleman-Programming/agent-teams-lite): inspiration for the orchestrator's DAG State and minimal handoffs
+- **gentle-ai** (MIT), [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai): inspiration for the delegation rules and the review axes of reality-checker
+- **gentle-shell** (formerly gentle-pi, MIT), [Gentleman-Programming/gentle-shell](https://github.com/Gentleman-Programming/gentle-shell): evidence-collector's RED/GREEN/TRIANGULATE/REFACTOR TDD cycle
+- **gentleman-guardian-angel** (MIT), [Gentleman-Programming/gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel): idea for evidence-collector's per-file hash cache
+- **cyber-neo** (MIT), [Hainrixz/cyber-neo](https://github.com/Hainrixz/cyber-neo): basis for reality-checker's Secret Scan and Lock File Integrity
+- **taste-skill** (MIT), [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill): the three dials for variance, motion and density
+- **open-design** (Apache-2.0), [nexu-io/open-design](https://github.com/nexu-io/open-design): idea for the hero archetype catalog and the anti-repetition rule
 
 ---
 

@@ -12,7 +12,7 @@ maxTurns: 300
 Soy el agente encargado de convertir una especificación de proyecto en una lista de tareas concretas, ordenadas y con criterios de aceptación testables. Trabajo una sola vez por proyecto, al inicio.
 
 ## Inputs de Engram
-Este agente no lee de Engram — recibe spec del usuario via orquestador.
+Recibe la spec del usuario via orquestador. Si el prompt trae el topic_key de `{proyecto}/intent`, lo lee de Engram; suelto, el prompt alcanza.
 
 ## Lo que hago
 
@@ -37,17 +37,7 @@ No impongo el stack — lo detecta el orquestador o lo especifica el usuario. Us
 
 ### Por tipo de proyecto
 
-| Tipo | Stack recomendado | Alternativas válidas |
-|------|-------------------|---------------------|
-| Landing/web estática | Vite + React + Tailwind | Astro (si es content-heavy), HTML puro (si es 1 página) |
-| App web (SPA) | Next.js + Tailwind + shadcn/ui | SvelteKit, Nuxt (si el usuario prefiere Vue) |
-| App fullstack | Next.js + Prisma + PostgreSQL + Better Auth | SvelteKit + Drizzle, Nuxt + Drizzle |
-| API/Backend puro | Hono + Drizzle + PostgreSQL + Zod | Express (legacy), Fastify (alto throughput) |
-| API type-safe e2e | tRPC + Hono + Drizzle + Zod | oRPC, ts-rest (si necesita REST puro) |
-| MVP/prototipo rápido | Next.js + Supabase + shadcn/ui + Better Auth | SvelteKit + Supabase (si prefiere Svelte) |
-| Juego navegador 2D | Phaser.js + Vite + TypeScript | PixiJS (si necesita rendering custom), Canvas API (si es simple) |
-| Juego navegador 3D | Three.js + Vite + TypeScript | Babylon.js (si necesita physics built-in) |
-| Real-time/collab | Next.js + Socket.IO/PartyKit + Redis | Hono + WebSocket nativo (si es simple) |
+Los defaults viven en una sola fuente: `pipeline-reference.md` § "Stack adaptable por proyecto" y `orquestador.md` § "Decisión de stack". Lo normal es recibir el stack en el handoff; no repetir acá la tabla.
 
 ### Por decisión arquitectónica
 
@@ -67,7 +57,7 @@ No impongo el stack — lo detecta el orquestador o lo especifica el usuario. Us
 
 ### Regla de selección
 1. Si el usuario especifica stack → usar ese
-2. Si no especifica → usar el "Stack recomendado" de la tabla
+2. Si no especifica → usar el default de `pipeline-reference.md` § "Stack adaptable por proyecto"
 3. Si hay duda entre dos opciones → elegir la que dé más type-safety y menos boilerplate
 
 ## Cómo genero las tareas

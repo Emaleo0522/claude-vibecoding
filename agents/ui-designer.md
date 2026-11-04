@@ -198,6 +198,8 @@ IF intent.mood_preset IN [editorial-magazine, soft-luxury, neo-brutalism,
     fuera de los mensajes de bloqueo.
 ```
 
+**Equivalencia con `frontend-audit.sh`** (el script que corre el frontend-developer sobre el código): la numeración T1-T7 de este archivo es la canónica (la citan evidence-collector, reality-checker y `pipeline-reference.md`). El script tiene 5 checks con numeración propia T1-T5: `saas_teal_check` = T1, `heading_font_check` = T2, `shadow_coherent` = T6. Sus otros dos checks (`hero_media_check`, `motion_coherent`) no tienen T# acá: la T4 de este archivo es la estructura del hero, no la presencia de media. T3, T5 y T7 se verifican solo sobre el design-system (T7 la repite el frontend-developer a mano).
+
 **Acción al bloqueo**: documentar en DAG State qué regla falló + ajustar design-system antes de devolver. Si después de 2 reintentos internos sigue fallando, reportar BLOQUEADOR al orquestador con: "SaaS Teal Default detectado, no pude romper el patrón — necesito input del usuario sobre {dimensión específica}".
 
 **Anti-repetición de arquetipo hero (2026-07-01 — enforced, ADR #3517 P4.4)**:
@@ -304,16 +306,9 @@ El frontend-developer LEE estas behavioral rules y las implementa. No tiene que 
 
 ### 5. Validación de color y tokens
 
-#### Contrast validation en build time
-Implementar función de contraste WCAG 2.2 que valida en compilación:
-```scss
-@function color-contrast($background, $color-dark: #000, $color-light: #fff, $min-ratio: 4.5) {
-  // Calcula luminancia relativa
-  // Retorna el color con mejor contraste
-  // Emite @warn si ningún candidato alcanza el ratio mínimo
-}
-```
-El error se detecta en **build time**, antes de QA — no es honor system.
+#### Contrast validation antes de QA
+Validar el contraste WCAG 2.2 de cada par de tokens texto/fondo (4.5:1 texto, 3:1 elementos UI) en light y en dark con un chequeo ejecutable (script en Node con la fórmula de luminancia relativa sobre los tokens CSS / `@theme`), no solo declarativo. El error se detecta antes de QA, no es honor system.
+*Solo si el proyecto usa Sass/SCSS (por pedido de Ema; el stack por defecto es Tailwind 4 con tokens en CSS):* se puede hacer en build time con una `@function color-contrast($background, $color-dark: #000, $color-light: #fff, $min-ratio: 4.5)` que emita `@warn` si ningún candidato alcanza el ratio.
 
 #### Variantes semánticas por modo: text-emphasis, bg-subtle, border-subtle
 Por cada color del tema, generar 3 variantes que se invierten en dark mode:
@@ -343,14 +338,8 @@ Por cada color brand, generar escala 100-900:
 {color}-800: shade 60%
 {color}-900: shade 80%  (más oscuro)
 ```
-NUNCA usar `lighten()` ni `darken()` — están deprecated. Usar `tint-color()` y `shade-color()`.
-
-#### `fusv` — Detectar variables no usadas
-Ejecutar `find-unused-sass-variables` como paso de limpieza:
-```bash
-npx find-unused-sass-variables scss/
-```
-Detecta tokens huérfanos después de refactors.
+NUNCA usar `lighten()` ni `darken()` de Sass — están deprecated. Generar tints/shades con `color-mix(in oklab, {color} N%, white|black)` en CSS (Tailwind 4 lo soporta) o, solo si el proyecto usa Sass, con `tint-color()` y `shade-color()`.
+*Solo con Sass/SCSS:* ejecutar `npx find-unused-sass-variables scss/` como limpieza de tokens huérfanos después de refactors. Con tokens CSS, buscar variables sin uso con grep.
 
 #### Atomic Design — Jerarquía de componentes
 Organizar componentes en 5 niveles:

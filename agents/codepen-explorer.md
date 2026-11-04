@@ -108,7 +108,7 @@ Paginacion en CodePen (IMPORTANTE — cursor-based, NO page numbers):
 - Metodo correcto:
   1. scroll(down, 10) para ver el boton Next al fondo
   2. Intentar: find("Next page button") → click
-  3. Si el click por ref no funciona (modal bloqueando), usar click por coordenadas del boton Next (~848, 557 tipicamente)
+  3. Si el click por ref no funciona (modal bloqueando), cerrar el modal (Escape, o `find("Close")` y click por ref) y volver a localizar el boton con `find("Next")` / `read_page`; reintentar siempre por ref o selector, nunca por coordenadas fijas (cambian con el viewport y el layout)
   4. Verificar que la URL cambio a `&cursor=Mg` (pag 2), `&cursor=Mw` (pag 3)
   5. Si la URL no cambio, presionar Escape primero (puede haber un modal) y reintentar
 - El boton es un `<button>` (no `<a>`) — no se puede navegar por URL directa
@@ -181,6 +181,8 @@ editors.forEach(ed => {
 JSON.stringify({ externalJS, externalCSS, cssPre, jsPre, codeLengths });
 ```
 
+**Autor y licencia (siempre, junto con Paso 1):** anotar `author` (el usuario de la URL `codepen.io/{autor}/pen/{ID}`) y `license`. La licencia es la que declare el pen (comentario de licencia en el codigo o mencion en la descripcion de la pagina). Si no declara ninguna, registrar `"license": "unspecified"` y en NOTAS aclarar que CodePen publica los pens publicos como MIT por defecto, a confirmar en la pagina del pen. **Si la licencia no es MIT, o es desconocida, avisar al orquestador/usuario antes de copiar el codigo a un proyecto o a la boveda** (pen-packager exige MIT).
+
 **Paso 2 — Codigo completo (solo si usuario/orquestador aprueba):**
 
 IMPORTANTE: browser_evaluate puede truncar respuestas con CSS/JS largo.
@@ -218,7 +220,7 @@ Guardar el codigo extraido en `{project_dir}/.codepen-temp/{slug}/`:
 - `original.html` — HTML del pen
 - `original.css` — CSS del pen (indicar preprocessor en comentario)
 - `original.js` — JS del pen
-- `meta.json` — deps, preprocessors, URL, titulo
+- `meta.json` — deps, preprocessors, URL, titulo, `author` y `license`
 
 El slug se genera del titulo del pen: lowercase, spaces→hyphens, sin caracteres especiales.
 Ejemplo: "Boujee Animated Gradient Text" → `boujee-animated-gradient-text`
@@ -260,6 +262,8 @@ Si un CDN no tiene equivalente npm conocido, marcarlo como `MANUAL: {url}`.
 STATUS: OK
 PEN: {url}
 TITLE: {titulo}
+AUTHOR: {autor}
+LICENSE: {MIT | otra declarada | unspecified} {aviso si no es MIT}
 EXTRACTED_TO: {project_dir}/.codepen-temp/{slug}/
 DEPS_JS: gsap (npm i gsap), scrollmagic (npm i scrollmagic)
 DEPS_CSS: ninguna
@@ -306,6 +310,7 @@ codepen-explorer solo guarda cuando el orquestador se lo indica (modo vault-save
   "url": "https://codepen.io/autor/pen/ID",
   "title": "Animated SVG Timeline",
   "author": "vincebrown",
+  "license": "MIT | otra declarada | unspecified",
   "extracted": "2026-03-29",
   "preprocessors": { "css": "scss", "js": "none" },
   "dependencies": {

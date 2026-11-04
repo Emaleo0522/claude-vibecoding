@@ -394,6 +394,14 @@ Para reportar bugs o discutir features, [abrí un issue](https://github.com/Emal
 - **Design Intelligence Engine** — basado en [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill), portado a Node.js
 - **Pixel Bridge** — basado en [pablodelucca/pixel-agents](https://github.com/pablodelucca/pixel-agents) (visualización opcional)
 - **Nothing Design System** — referencia tomada de [dominikmartn/nothing-design-skill](https://github.com/dominikmartn/nothing-design-skill) v3.0.0
+- **Agency Agents** (MIT), [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents): inspiración para los roles y la estructura de varios agentes (reality-checker, evidence-collector, api-tester y otros)
+- **Agent Teams Lite** (MIT, archivado; lo reemplazó gentle-ai), [Gentleman-Programming/agent-teams-lite](https://github.com/Gentleman-Programming/agent-teams-lite): inspiración del DAG State y los handoffs mínimos del orquestador
+- **gentle-ai** (MIT), [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai): inspiración de las reglas de delegación y de los ejes de revisión de reality-checker
+- **gentle-shell** (antes gentle-pi, MIT), [Gentleman-Programming/gentle-shell](https://github.com/Gentleman-Programming/gentle-shell): ciclo TDD RED/GREEN/TRIANGULATE/REFACTOR de evidence-collector
+- **gentleman-guardian-angel** (MIT), [Gentleman-Programming/gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel): idea del cache por hash de archivo de evidence-collector
+- **cyber-neo** (MIT), [Hainrixz/cyber-neo](https://github.com/Hainrixz/cyber-neo): base del Secret Scan y del Lock File Integrity de reality-checker
+- **taste-skill** (MIT), [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill): los tres dials de variance, motion y density
+- **open-design** (Apache-2.0), [nexu-io/open-design](https://github.com/nexu-io/open-design): idea del catálogo de arquetipos de hero y de la regla anti-repetición
 
 ---
 

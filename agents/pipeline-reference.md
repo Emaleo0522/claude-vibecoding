@@ -69,7 +69,7 @@ Jev (TypeSafe AI, `api.typesafe.ai/v1/systemone`) no genera texto: devuelve deci
 
 - **Dónde corre**: `node ~/.claude/hooks/jev-route-check.js --file {project_dir}/.pipeline/tareas.md --project {proyecto}` — Fase 1 paso 5b, después de project-manager-senior. Reglas de aplicación (overrides conf ≥0.90, `SECURITY_REVIEW: true` en handoff con p ≥0.80) viven en `orquestador.md`.
 - **Requiere** `TYPESAFE_API_KEY` en el env del usuario — Linux: `export` en `~/.bashrc` (y reiniciar Claude Code para que herede el env); Windows: variable de entorno de usuario (`setx TYPESAFE_API_KEY ...`). Key desde console.typesafe.ai ($5 de crédito inicial ≈ 100k+ tareas). Sin key → `SKIP`, el pipeline sigue igual que antes. Log: `~/.claude/logs/jev-route-check.jsonl`.
-- **model_hint (prueba 2026-09-21 → 2026-10-21, vencida sin datos: el pipeline no corrió en ese período):** el pre-gate también puntúa complejidad y sugiere `opus` para tareas ≥1.3/2. **Solo recomendación**: el orquestador decide si la toma y registra `{tarea, hint, aplicado, motivo}` en DAG State. Al cierre se cruza contra reintentos/fallos para ver si las "complejas" de Jev eran las que fallaban con sonnet.
+- **model_hint (prueba 2026-09-21 → 2026-10-21, vencida sin datos registrados):** el pre-gate también puntúa complejidad y sugiere `opus` para tareas ≥1.3/2. **Solo recomendación**: el orquestador decide si la toma. Ya no se registra en DAG State.
 - **MCP `jev` en modo normal**: el reflejo `jev_screen` vive en CLAUDE.md global § Jev (en casa el MCP está pausado desde 2026-11-03; en pc004 sigue). Evidencia de la prueba 2026-09-21: inyección 0.99 vs 0.03, ~0.5 s. El pre-gate de Fase 1 no usa el MCP: llama a la API por `fetch`, así que corre aunque el MCP esté pausado.
 - **Prueba jev-review: cerrada 2026-11-02, no pasó.** 21 corridas: agree 3 (una era el smoke test), partial 2, disagree 3, noise 13. Da 24% contra el 80% exigido. Los 3 disagree fueron bugs reales que la fresh review con opus encontró y Jev no; 12 de los noise se debieron a que miraba un archivo sin versionar en vez del diff. Script en `hooks/_archivo/jev-review-check.js`, log en `~/.claude/logs/jev-review-trial.jsonl`. El pre-gate de routing sigue; el MCP está pausado en casa desde 2026-11-03 (en pc004 sigue); la key se conserva para la idea de bot de trading de Ema.
 
@@ -364,7 +364,7 @@ Los agentes priorizan paths FREE top-tier que **NO requieren tarjeta de crédito
 | Agente | Free primario | Free secundario | Free fallback | Opt-in (paga) |
 |--------|---------------|------------------|----------------|----------------|
 | image-agent | HF FLUX.1-schnell (`HF_TOKEN`) — $0.10/mes free, reset mensual | Cloudflare Workers AI FLUX-schnell (`CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN`) — **10K neurons/día sin tarjeta** | Pollinations.ai (sin key) — **FLUX unlimited free** | Gemini (`GEMINI_API_KEY` + billing) |
-| logo-agent | HF + vtracer/Inkscape | Cloudflare Workers AI + vtracer | Pollinations + vtracer | Recraft V4 Vector SVG nativo (`RECRAFT_API_KEY`, $5 free/mes via Vercel AI Gateway) o Gemini |
+| logo-agent | HF + vtracer | Cloudflare Workers AI + vtracer | Pollinations + vtracer | Recraft V4 Vector SVG nativo (`RECRAFT_API_KEY`, $5 free/mes via Vercel AI Gateway) o Gemini |
 | video-agent | **CSS fallback animado** (output VÁLIDO sin token, NO bloquea pipeline) | — | — | Replicate LTX-Video 2.3 (`REPLICATE_API_TOKEN`) |
 | brand-agent | Free siempre (texto puro) | + dembrandt MCP opcional para extraer tokens de URLs | — | — |
 

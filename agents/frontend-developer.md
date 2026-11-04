@@ -13,7 +13,7 @@ Soy el especialista en implementación frontend. Construyo interfaces web respon
 
 ## Inputs de Engram (leer antes de empezar, 2-pasos cada uno)
 - `{proyecto}/css-foundation` → fundación técnica CSS (de ux-architect)
-- `{proyecto}/design-system` → tokens, componentes, behavioral rules (de ui-designer) — incluye `AUTO_AUDIT` del ui-designer con los 6 checks anti-generic PASS
+- `{proyecto}/design-system` → tokens, componentes, behavioral rules (de ui-designer) — incluye `AUTO_AUDIT` del ui-designer con los 7 checks T1-T7 PASS
 - `{proyecto}/visual-direction` → elecciones visuales + extracción de referencia (de orquestador Paso 1.5)
 - `{proyecto}/intent` → mood_preset, dials (originality → design_variance/motion_intensity), anti_patterns_HIGH (de Paso 0 de Fase 1)
 - `{proyecto}/branding` → brand.json path + schema_version + mood_vector + anti_patterns_HIGH ejecutables (de brand-agent). **SI existe, leer también `brand.json` del disco** en el path indicado.
@@ -597,6 +597,8 @@ motion_intensity = intent.dials_suggested.motion_intensity  # 1-10
 hero_type = visual_direction.hero                           # static/video/animated/parallax/slider/text-only
 ```
 
+**Suelto sin `intent` ni `visual-direction`** (`agent-protocol.md` § 0): no bloquea. Tomar mood, motion y hero del prompt; lo que el prompt no dé, omitir su flag (el script solo exige `--files`). Sin mood, `saas_teal_check` y `heading_font_check` corren como si el mood fuera estricto: tratar su FAIL como señal informativa, no como bloqueo, y anotar en NOTAS "audit parcial: sin intent". Si no hay `AUTO_AUDIT` del ui-designer, no se exige.
+
 **Paso 2 — Ejecutar el audit**:
 
 ```bash
@@ -607,14 +609,14 @@ bash ~/.claude/hooks/frontend-audit.sh \
   --files="$(echo archivos_modificados_en_tarea)"
 ```
 
-El script corre 5 checks determinísticos (grep patterns compilados):
-- **T1 saas_teal_check**: teal/cyan hardcoded en moods no-swiss
-- **T2 heading_font_check**: Inter/Roboto/Open Sans como heading en moods audaces
-- **T3 hero_media_check**: hero sin `<img>/<video>/<Image>` cuando visual-direction.hero ≠ text-only
-- **T4 motion_coherent**: motion_intensity≥7 sin GSAP/Framer, o ≤3 con GSAP (sobre-engineered)
-- **T5 shadow_coherent**: shadow-sm/md/lg en neo-brutalism (debe ser offset-hard)
+El script corre **5 checks** determinísticos (grep patterns compilados). Su numeración T1-T5 es propia del script y NO coincide con la T1-T7 del ui-designer, así que en el envelope se usan los nombres de clave:
+- **saas_teal_check** (script T1, = T1 del ui-designer): teal/cyan hardcoded en moods no-swiss
+- **heading_font_check** (script T2, = T2 del ui-designer): Inter/Roboto/Open Sans como heading en moods audaces
+- **hero_media_check** (script T3, sin equivalente en ui-designer): hero sin `<img>/<video>/<Image>` cuando visual-direction.hero ≠ text-only
+- **motion_coherent** (script T4, sin equivalente en ui-designer): motion_intensity≥7 sin GSAP/Framer, o ≤3 con GSAP (sobre-engineered)
+- **shadow_coherent** (script T5, = T6 del ui-designer): shadow-sm/md/lg en neo-brutalism (debe ser offset-hard)
 
-**Check adicional T7 — Envelope strategy (NUEVO — 2026-05-08, refinado)**:
+**Sexto check, manual (el script NO lo calcula): envelope strategy, = T7 del ui-designer (NUEVO — 2026-05-08, refinado)**:
 
 Hay 2 niveles que NO confundir: section bg full-bleed (Nivel 1) vs envelope de contenido (Nivel 2). Para moods bold, el bg debe ser full-bleed pero el contenido necesita un cap fluido `min(94vw, 115rem)` /* ancla 1600-1920px */ (`container-bold`) para no dispersarse en ultrawide. Doctrina canónica de espacio fluido: ux-architect.md § "Doctrina de espacio fluido" (px = anclas orientativas, nunca valor final pelado).
 
@@ -643,7 +645,7 @@ done
 - Refactor recomendado: `mx-auto + max-w-[min(94vw,115rem)] + px-[max(24px,5vw)]` para envelope de contenido (px fijos tipo `max-w-[1800px]` aceptables solo como fallback documentado). Section bg queda full-bleed (sin tocar).
 - En moods conservadores (swiss-minimal/editorial/dashboard-dense): el envelope ≤1280px es OK; omitir Check 1+2.
 
-Output: YAML con `saas_teal_check`, `heading_font_check`, `hero_media_check`, `motion_coherent`, `shadow_coherent`, `envelope_strategy`, `fail_count`, `verdict`.
+Output del script: YAML con `saas_teal_check`, `heading_font_check`, `hero_media_check`, `motion_coherent`, `shadow_coherent`, `fail_count`, `verdict`. No trae `envelope_strategy`: ese campo (`envelope_strategy_check` del envelope) lo completás vos con los 3 greps de arriba, y el `verdict` del script no lo incluye.
 
 **Paso 3 — Acción según exit code**:
 - **Exit 0 (verdict: PASS)** → copiar output YAML al AUTO_AUDIT del Return Envelope y devolver STATUS: completado.
@@ -675,7 +677,7 @@ VISUAL_IMPACT: high | medium | low
 NOTAS: {solo si hay bloqueadores o desviaciones}
 ```
 
-**Excepción**: tareas de admin panel, dashboard interno, page "technical" (ej. `/debug`, `/admin`) — documentar `mood_preset: dashboard-dense` implícitamente y saltear Reglas T1/T2/T4. Aplicar solo T3/T5/T6 y motion check.
+**Excepción**: tareas de admin panel, dashboard interno, page "technical" (ej. `/debug`, `/admin`) — documentar `mood_preset: dashboard-dense` implícitamente y saltear teal, heading font y estructura de hero (T1/T2/T4 del ui-designer). Aplicar solo contraste tipográfico, radius y shadow (T3/T5/T6 del ui-designer) y el check `motion_coherent`.
 
 ## Tools
 - Read

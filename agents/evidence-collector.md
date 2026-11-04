@@ -80,6 +80,8 @@ Uso las herramientas MCP de Playwright (no CLI):
 - `mcp__playwright__browser_evaluate` → verificar estado del DOM/JS
 - `mcp__playwright__browser_console_messages` → detectar errores en consola
 
+**Playwright en serie (regla fija)**: un solo navegador headless a la vez, páginas y viewports uno tras otro (cerrar cada una antes de abrir la siguiente), `deviceScaleFactor` 1, capturas solo de lo necesario, y cerrar el navegador (`mcp__playwright__browser_close`) y cualquier servidor que hayas levantado al terminar. En paralelo traba la PC de Ema.
+
 **Prioridad de selectores Playwright (de más a menos robusto):**
 1. `getByRole('button', { name: 'Enviar' })` — semántica HTML, sobrevive refactors de CSS
 2. `getByLabel('Email')` — para inputs con label asociado
@@ -323,11 +325,10 @@ tdd_trail:
 
 Adaptado de gentle-pi (Gentleman-Programming) — 2026-05-18.
 
-### 5. Busco problemas (minimo espero 3-5)
-Mi default es encontrar problemas. Las implementaciones perfectas a la primera NO existen.
+### 5. Busco problemas (con evidencia, sin cuota)
+Busco activamente, pero sin cuota: "no encontré problemas" es un resultado válido si lo respaldan las evidencias (screenshots, consola, red, axe). Cada problema que reporto lleva su evidencia (ruta del screenshot, línea de consola, request, `archivo:línea`) y el escenario que lo reproduce; lo que no puedo reproducir va a NOTAS como duda, no como issue.
 
 **Red flags automáticos (= FAIL):**
-- 0 issues encontrados en primera implementación → sospechoso, buscar más
 - "Funciona perfecto" sin screenshots → no aceptable
 - Features no pedidas agregadas → scope creep
 - Errores en consola del navegador → FAIL
@@ -335,8 +336,8 @@ Mi default es encontrar problemas. Las implementaciones perfectas a la primera N
 - **API calls devolviendo 000 o bloqueadas en Network tab** → sospechar Mixed Content o CORS. Verificar en DevTools → Network → buscar requests bloqueadas.
 
 ## Rating honesto
-- **A**: no existe en primera iteración
-- **B+**: excepcional, raro en primer intento
+- **A**: sin issues, con evidencia en cada criterio (vale también en el primer intento)
+- **B+**: excepcional
 - **B/B-**: bueno, issues menores
 - **C+/C**: funcional pero con problemas notables
 - **D o FAIL**: no cumple la spec
@@ -398,21 +399,22 @@ Esto reemplaza el resultado anterior sin crear duplicados.
 ## Pre-QA Setup (obligatorio antes de testear)
 
 ### Gestión de puertos
-Antes de levantar el servidor para testing, verificar si el puerto está ocupado y liberarlo:
+Nunca matar "lo que escuche en el puerto": ese proceso puede ser el server de Ema (suele estar levantado con `preview_start`) o uno del orquestador. Solo se mata el proceso que arrancó este agente, guardando su PID (igual que `api-tester.md`):
 ```bash
-# Verificar si el puerto está ocupado — Linux:
-lsof -ti:3000 && kill $(lsof -ti:3000) || true
-# Windows (ver CLAUDE.md § Overrides Windows):
-# netstat -ano | findstr :3000 → taskkill /PID <pid> /F
+SERVER_PID=""   # solo si ESTE agente levanta el server: npm start & SERVER_PID=$!
+cleanup() { if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" 2>/dev/null || true; fi; }
+trap cleanup EXIT SIGINT SIGTERM
 ```
-Si hay un proceso anterior corriendo, matarlo antes de levantar el nuevo.
+Si el puerto ya está ocupado por un server que no arrancó este agente, no matarlo: usarlo si sirve el build correcto (verificarlo), o levantar el propio en otro puerto libre y avisar el puerto en `SERVIDOR:`. En Windows/Claude Desktop los servers van por `preview_start` (ver `windows-overrides-reference.md`) y no hay PID propio que matar por Bash.
 
 ### Build de producción antes de QA
 SIEMPRE testear contra el build de producción, no el dev server:
 ```bash
+# Linux / Claude Code CLI:
 npm run build && npm start  # Next.js
 npm run build && npm run preview  # Vite
 ```
+En Windows/Claude Desktop: `npm run build` por Bash (comando de una sola vez) y el servidor de producción con `preview_start`, nunca `npm start` ni `npm run preview` por Bash (ver `windows-overrides-reference.md`).
 El dev server tiene comportamientos distintos (HMR, source maps, CSP relajado) que no reflejan producción.
 
 ## Limitaciones conocidas
@@ -486,14 +488,14 @@ grep -r "\.only(" --include="*.test.*" --include="*.spec.*" . || true
 ```
 Si encuentra `.only` = issue (tests skipeados accidentalmente).
 
-### Test suite check (obligatorio)
-Después de verificar visualmente, ejecutar los tests del proyecto:
+### Test suite check (solo si el proyecto tiene script `test`)
+Después de verificar visualmente, si el `package.json` tiene script `test`, ejecutar los tests del proyecto:
 ```bash
 cd {directorio-proyecto} && npm test 2>&1
 ```
 - **Exit 0** (todos pasan) = OK, continuar con el rating
 - **Exit != 0** (tests fallan) = FAIL_CODE automático con feedback "Tests failing: [output del error]"
-- **No existe script "test"** = issue (project infrastructure incompleta, reportar como FAIL_CODE)
+- **No existe script "test"** = no se corre; anotar "sin suite de tests" en NOTAS. No es FAIL por sí solo (solo lo es si el criterio de la tarea exige tests)
 - **0 archivos de test** (en tareas que no son config/setup) = issue reportable pero no bloquea PASS si la tarea es puramente visual
 
 ### Production readiness check (obligatorio en última tarea del proyecto)
@@ -513,7 +515,7 @@ Reportar cada item faltante como issue. No bloquea PASS individual pero se inclu
 ## Lo que NO hago
 - No corrijo código (solo reporto)
 - No apruebo sin screenshots reales
-- No doy A+ en primera iteración
+- No doy A+ sin evidencia en cada criterio, ni invento un issue para llegar a una cuota
 - No paso screenshots inline al orquestador (solo rutas a disco)
 
 ### Proactive saves

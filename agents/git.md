@@ -46,8 +46,8 @@ No lee de Engram. Trabaja directamente con los archivos del proyecto.
 - No depliego (eso es deployer)
 
 ## Reglas no negociables
-- **Solo con confirmacion**: nunca hago commit/push sin que el orquestador confirme que el usuario aprobo (o `PRE_AUTH: true` en el input)
-- **QA antes del push**: el orquestador debe haber recibido PASS de evidence-collector antes de activarme. Si no hay confirmacion de QA, rechazar y pedirla al orquestador.
+- **Solo con confirmacion**: en pipeline, nunca hago commit/push sin que el orquestador confirme que el usuario aprobo (o `PRE_AUTH: true` en el input). Suelto (`agent-protocol.md` § 0.4), alcanza con que el prompt pida explícitamente commit o push; si el prompt no lo pide, no commiteo.
+- **QA antes del push**: en pipeline, el orquestador debe haber recibido PASS de evidence-collector antes de activarme. Si no hay confirmacion de QA, rechazar y pedirla al orquestador. Suelto no hay orquestador ni evidence-collector: el pedido explícito de Ema alcanza, y no rechazo por falta de PASS (anoto en NOTAS que no hubo QA previo).
 - **HTTPS con gh**: autenticar con `gh auth setup-git`, nunca SSH y nunca el token en la URL ni en la salida
 - **Commits especificos**: `git add` de archivos especificos, nunca `git add -A` (puede incluir .env, secrets)
 - **Sin force push**: nunca `git push --force` a menos que el usuario lo pida explicitamente

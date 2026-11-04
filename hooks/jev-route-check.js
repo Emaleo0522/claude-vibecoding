@@ -9,8 +9,9 @@
  * Lee el dual-write en disco (nunca Engram — no infla contexto). Por cada tarea pregunta:
  *   agente         → choice entre los agentes dev del pipeline (segunda opinión al Tipo/Agente del PM)
  *   toca_seguridad → noul: auth/permisos/secrets/validación/headers/RLS
- *   complejidad    → score 0-2 (simple/media/compleja) → model_hint sonnet|opus. SOLO RECOMENDACIÓN (prueba
- *                    2026-09-21 → 2026-10-21): el orquestador decide si la toma y registra la decisión en DAG State.
+ *   complejidad    → score 0-2 (simple/media/compleja) → model_hint sonnet|opus. SOLO RECOMENDACIÓN: el
+ *                    orquestador decide si la toma; la decisión ya no se registra en el DAG State (la prueba
+ *                    de medición 2026-09-21 → 2026-10-21 venció sin datos).
  * Escribe {project_dir}/.pipeline/jev-route-check.json y devuelve por stdout un resumen corto.
  *
  * Umbrales: discrepancia se reporta solo con conf >= 0.90; flag de seguridad con p >= 0.80.
@@ -140,7 +141,7 @@ function skip(msg) { console.log('jev-route-check: SKIP — ' + msg); process.ex
     tareas: ok.length, errores: results.length - ok.length, tokens, cost_usd: +cost.toFixed(6), ms: Date.now() - t0,
     discrepancias: disc.map(r => ({ n: r.n, title: r.title, pm: r.pm_agente_efectivo, jev: r.jev_agente, conf: r.conf })),
     security_review: sec.map(r => ({ n: r.n, title: r.title, p: r.seguridad_p })),
-    model_hints: { opus: opus.map(r => ({ n: r.n, title: r.title, complejidad: r.complejidad, conf: r.complejidad_conf })), sonnet: ok.length - opus.length, note: 'recomendación en prueba hasta 2026-10-21 — el orquestador decide; registra {tarea, hint, aplicado} en DAG State model_hint_decisions' },
+    model_hints: { opus: opus.map(r => ({ n: r.n, title: r.title, complejidad: r.complejidad, conf: r.complejidad_conf })), sonnet: ok.length - opus.length, note: 'recomendación: el orquestador decide si la toma' },
     tasks: ok.map(({ desc, ...r }) => r),
   };
   fs.writeFileSync(outFile, JSON.stringify(report, null, 1));

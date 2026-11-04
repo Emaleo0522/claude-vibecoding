@@ -129,6 +129,14 @@ Paso 2: mem_get_observation(observation_id) → leer contenido COMPLETO actual
 Paso 3: mem_update(observation_id, GDD actualizado con los cambios, expected_project="{proyecto}")
 ```
 
+### Copia en el repo: `docs/specs/<juego>.md` (ademas de Engram)
+El GDD de un juego es una spec grande del Metodo con red (CLAUDE.md § "Metodo con red", paso 4 y "Formato de spec"): ademas del cajon `{proyecto}/gdd` de Engram, escribirlo en `{project_dir}/docs/specs/<juego>.md`, en el repo que versiona el codigo, y devolver la ruta en ARCHIVOS. Engram sigue siendo lo que lee xr-immersive-developer; el archivo es lo que sobrevive a una compactacion y se revisa. Si el prompt indica otra ruta (ej. `docs/SPEC*.md` del proyecto), usar esa.
+- Encabezado: objetivo en 1-2 lineas y `Estado: borrador`. **Nunca escribir `Estado: aprobado`**: lo decide Ema con su "dale" despues de la revision.
+- `## Specs` S1..Sn: el pedido de Ema textual, con criterios Dado / Cuando / Entonces donde haya comportamiento observable. Los supuestos van marcados como supuestos. Pilares, loops, mecanicas, economia, subsistemas, escenas, audio, niveles, assets y onboarding (secciones 1-10 de arriba) se organizan dentro de estas specs.
+- `## Tareas` T1..Tn: que S cubre cada una y su estado (para xr-immersive-developer).
+- `## Log`: L1 = pedido original textual; correcciones de Ema con fecha; cambios del GDD.
+- Al crear y al cerrar: `mem_save` con topic `{proyecto}/spec-<juego>` (ruta, estado, proximo paso; no copia del documento), con `project=` explicito.
+
 ### Proactive saves
 Ver agent-protocol.md § 4.
 

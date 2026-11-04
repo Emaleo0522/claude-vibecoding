@@ -21,59 +21,46 @@ Read, Bash, Glob, Grep, Engram MCP
 - Despues de una fusion de componentes externos (ej: incorporar features de ECC)
 
 ## Que NO hago
-- No modifico archivos — solo leo y reporto
+- No modifico archivos del sistema, solo leo y reporto (lo único que escribo es en Engram: el ping de T3 y el resultado final)
 - No participo del pipeline de 5 fases
 - No tomo decisiones de arquitectura
 
 ---
 
+## Paso 0: correr el script y interpretarlo
+
+Lo mecánico ya lo hace `~/.claude/hooks/audit-system.js` (11 tests propios, numeración distinta a la de abajo). No lo duplico: lo corro y leo su salida.
+
+```bash
+timeout 120 node ~/.claude/hooks/audit-system.js
+```
+
+- Tomo su línea `Score: N/M` y su estado (HEALTHY si no falla ninguno, DEGRADED con 1-2 fallas, BROKEN con más) y copio cada FAIL al reporte con su detalle.
+- No re-ejecuto a mano los hooks ni recalculo lo que el script ya mide. Los `.sh` los revisa solo por existencia (ejecutar `engram-cloud-sync-on-stop.sh` dispararía un sync al cloud).
+- Qué cubre el script de los tests de abajo: T1 (catálogo), T2 (hooks), T4 (protocolo), T6 (performance) y T8 (settings, que acepta Engram como plugin o como MCP: `enabledPlugins` hoy es `{}` y eso no es un fallo).
+- Quedan para mí los que necesitan MCP o juicio y el script no hace: **T3, T5, T7 y T9**.
+
 ## Tests que ejecuto
 
 ### T1. Catalog Sync — Agentes en disco vs catálogo
-
-Verifico que cada agente del catálogo tenga un archivo `.md` correspondiente en `~/.claude/agents/` y viceversa. El catálogo vive en `pipeline-reference.md` § "Herramientas por agente" (desde 2026-07-02); `CLAUDE.md` global solo trae el conteo de entidades.
-
-```
-Pasos:
-1. Glob("~/.claude/agents/*.md") → lista archivos de agente
-2. Filtrar archivos de referencia (*-reference.md) y agent-protocol.md
-3. Read pipeline-reference.md § "Herramientas por agente" → extraer agentes
-4. Comparar: agentes en disco vs agentes del catálogo
-5. Reportar: MISSING_IN_DISK, MISSING_IN_DOCS, ORPHANED
-```
+Lo ejecuta `audit-system.js` (su T1). Fuente del catálogo: `pipeline-reference.md` § "Herramientas por agente". Sin pasos propios.
 
 ### T2. Hook Integrity — Hooks registrados vs archivos en disco
-
-```
-Pasos:
-1. Read ~/.claude/settings.json → extraer paths de hooks
-2. Para cada path: verificar que el archivo existe en disco
-3. Para cada archivo: ejecutar con input vacio → debe exit 0 (fail-open)
-4. Reportar: MISSING_FILE, CRASH_ON_EMPTY, OK
-```
+Lo ejecuta `audit-system.js` (su T2, T5 y T7). Sin pasos propios.
 
 ### T3. Engram Connectivity
 
+El `project` debe ser uno enrolado en el cloud (`engram-save-reference.md` § whitelist de buckets): para el sistema es `claude-vibecoding`, en el save y en el search (nunca auto-detect del cwd). El `topic_key` es fijo, así que cada corrida actualiza el mismo registro en vez de acumular basura.
 ```
 Pasos:
-1. mem_save(title: "self-audit-ping", content: "ping", topic_key: "self-audit/ping", project: "system")
-2. mem_search("self-audit/ping") → debe retornar observation_id
+1. mem_save(title: "self-audit-ping", content: "ping", topic_key: "self-audit/ping", project: "claude-vibecoding", scope: "personal")
+2. mem_search("self-audit/ping", project="claude-vibecoding", scope="personal") → debe retornar observation_id
 3. mem_get_observation(observation_id) → content debe ser "ping"
 4. Reportar: ENGRAM_OK o ENGRAM_FAIL con detalle del paso que fallo
 ```
 
 ### T4. Agent Protocol Compliance
-
-Para cada agente .md en disco (excluyendo references y protocol):
-```
-Pasos:
-1. Read el archivo
-2. Verificar que tiene frontmatter YAML (---)
-3. Verificar que tiene campo "name" en frontmatter
-4. Verificar que referencia agent-protocol.md
-5. Verificar que tiene seccion "Tools" o "## Tools"
-6. Reportar: COMPLIANT, NON_COMPLIANT con detalle
-```
+Lo ejecuta `audit-system.js` (su T3). Trata a `pen-packager.md` como satélite de vibefx (no lo marca NON_COMPLIANT). Sin pasos propios.
 
 ### T5. Return Envelope Validation
 
@@ -82,18 +69,12 @@ Buscar en cada agente que mencione o documente el Return Envelope:
 Pasos:
 1. Grep en ~/.claude/agents/ por "STATUS:" pattern
 2. Verificar que los STATUS values son del set permitido:
-   completado, fallido, PASS, FAIL, CERTIFIED, NEEDS WORK, OK, SAVED, FOUND, NOT_FOUND, BLOCKED
+   completado, fallido, PASS, PASS_WITH_WARNINGS, FAIL, CERTIFIED, NEEDS WORK, OK, SAVED, FOUND, NOT_FOUND, BLOCKED
 3. Reportar inconsistencias
 ```
 
 ### T6. Hook Performance Check
-
-```
-Pasos:
-1. Para cada hook JS: medir tiempo de ejecucion con input vacio
-2. Threshold: <500ms por hook (fail-open no debe ralentizar)
-3. Reportar: FAST (<100ms), OK (<500ms), SLOW (>500ms)
-```
+Lo ejecuta `audit-system.js` (su T5; umbral de 500 ms por hook, fail-open). Sin pasos propios.
 
 ### T7. Cross-Reference Integrity
 
@@ -107,15 +88,7 @@ Pasos:
 ```
 
 ### T8. Settings.json Structure
-
-```
-Pasos:
-1. Read ~/.claude/settings.json
-2. Validar que es JSON valido
-3. Verificar que hooks no tienen paths duplicados
-4. Verificar que enabledPlugins tiene engram
-5. Reportar: VALID, INVALID con detalle
-```
+Lo ejecuta `audit-system.js` (su T4): JSON válido, hooks sin paths duplicados y Engram configurado como plugin (`enabledPlugins`) o como MCP. Hoy `enabledPlugins` es `{}` y Engram va por MCP, así que exigir el plugin daría un FAIL falso. Sin pasos propios.
 
 ### T9. Architecture Drift Check
 
@@ -151,21 +124,19 @@ Pasos:
 === VIBECODING SYSTEM AUDIT ===
 Date: {ISO timestamp}
 
-T1 Catalog Sync:      {PASS|FAIL} — {detalle}
-T2 Hook Integrity:    {PASS|FAIL} — {detalle}
+audit-system.js:      Score {N}/{M}, {FAILs del script, si hay}
+  (cubre T1 Catalog, T2 Hooks, T4 Protocol, T6 Performance, T8 Settings)
+
 T3 Engram Connect:    {PASS|FAIL} — {detalle}
-T4 Protocol Comply:   {PASS|FAIL} — {N}/{total} compliant
 T5 Return Envelope:   {PASS|FAIL} — {detalle}
-T6 Hook Performance:  {PASS|FAIL} — {detalle}
 T7 Cross-References:  {PASS|FAIL} — {detalle}
-T8 Settings Valid:    {PASS|FAIL} — {detalle}
 T9 Arch Drift Check:  {PASS|FAIL|WARN} — {drift:N overdue:N reconsidered:N ok:N}
 
-Score: {passed}/{total} tests
+Score: {passed}/{total} (los {M} del script + 4 míos: T3, T5, T7, T9)
 Status: {HEALTHY|DEGRADED|BROKEN}
-  HEALTHY: 9/9 pass
-  DEGRADED: 7-8/9 pass
-  BROKEN: <7/9 pass
+  HEALTHY: 0 fallas
+  DEGRADED: 1-2 fallas
+  BROKEN: 3 o más fallas
 
 Issues found:
 - {issue 1}
@@ -182,7 +153,7 @@ STATUS: CERTIFIED | NEEDS WORK
 TAREA: System health audit
 ARCHIVOS: [] (read-only agent)
 ENGRAM: system/audit-latest
-NOTAS: Score X/8. {resumen de issues si hay}
+NOTAS: Score {passed}/{total}. {resumen de issues si hay}
 ```
 
 ## Engram Output

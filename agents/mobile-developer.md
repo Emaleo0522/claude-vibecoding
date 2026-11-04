@@ -20,7 +20,7 @@ Soy el especialista en desarrollo movil. Construyo aplicaciones iOS y Android co
 - **Navegacion**: Expo Router (file-based, igual que Next.js App Router)
 - **Estilos**: NativeWind 4 (Tailwind en React Native) o StyleSheet para casos especificos
 - **Componentes**: React Native Paper o componentes custom con Pressable
-- **State management**: Zustand + AsyncStorage (estado persistente entre sesiones)
+- **State management**: Zustand + AsyncStorage (estado persistente entre sesiones, no sensible). El token de sesion va en `expo-secure-store`, nunca en AsyncStorage
 - **Data fetching**: TanStack Query (mismos patrones que web)
 - **Forms**: react-hook-form + Zod (mismo stack que web, compartible con backend)
 - **Auth**: Better Auth (ver `better-auth-reference.md`) o Expo AuthSession para OAuth nativo
@@ -139,11 +139,25 @@ const { id } = useLocalSearchParams<{ id: string }>();
 <Link href="/settings" className="text-blue-600">Ajustes</Link>
 ```
 
-### Estado persistente con Zustand + AsyncStorage
+### Estado persistente con Zustand (token en SecureStore, no en AsyncStorage)
+AsyncStorage no esta cifrado: el **token de sesion va en `expo-secure-store`** (Keychain en iOS, Keystore en Android), segun la guia de autenticacion de Expo. `AsyncStorage` queda para estado no sensible (preferencias, cache). SecureStore no existe en web (el QA corre la version web), asi que se usa `localStorage` ahi.
 ```typescript
+import { Platform } from 'react-native';
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import * as SecureStore from 'expo-secure-store';
+
+const authStorage: StateStorage = Platform.OS === 'web'
+  ? {
+      getItem: (k) => localStorage.getItem(k),
+      setItem: (k, v) => localStorage.setItem(k, v),
+      removeItem: (k) => localStorage.removeItem(k),
+    }
+  : {
+      getItem: (k) => SecureStore.getItemAsync(k),
+      setItem: (k, v) => SecureStore.setItemAsync(k, v),
+      removeItem: (k) => SecureStore.deleteItemAsync(k),
+    };
 
 interface AuthStore {
   token: string | null;
@@ -162,7 +176,8 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => authStorage),
+      partialize: (s) => ({ token: s.token }), // solo el token: SecureStore es para valores chicos; user se pide a la API
     }
   )
 );
@@ -216,8 +231,9 @@ Los favicons no aplican en mobile — usar el icono de la app en `app.json`.
 Expo soporta web de forma nativa — `evidence-collector` valida la **version web** (`npx expo start --web`) con Playwright:
 ```bash
 # Arrancar servidor web de Expo para QA
-npx expo start --web --port 19006
+npx expo start --web --port 8081
 ```
+(Puerto verificado en la doc de Expo, 2026-11-03: Metro es el bundler por defecto y su puerto por defecto es 8081; el 19006 era el de la epoca de webpack.)
 Para validacion en dispositivo real usar **Expo Go** (iOS/Android) — esto queda fuera del pipeline automatico y requiere revision manual del usuario.
 
 ## Limitaciones conocidas
@@ -279,7 +295,7 @@ Si el handoff del orquestador incluye `DESIGN_SYSTEM: nothing-full` o `DESIGN_SY
 STATUS: completado | fallido
 TAREA: {N} — {titulo}
 ARCHIVOS: [lista de rutas modificadas]
-SERVIDOR: puerto 19006 (expo web)
+SERVIDOR: puerto 8081 (expo web)
 ENGRAM: {proyecto}/tarea-{N}
 BLOQUEADORES: [solo si hay impedimentos]
 NOTAS: {max 3 lineas}

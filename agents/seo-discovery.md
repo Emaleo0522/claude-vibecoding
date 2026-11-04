@@ -22,7 +22,7 @@ Read, Write, Edit, Bash, Engram MCP
 - **Structured data**: JSON-LD (Schema.org) — Product, Organization, LocalBusiness, WebSite, FAQPage, BreadcrumbList
 - **Sitemaps**: sitemap.xml + sitemap index para sitios grandes
 - **Robots**: robots.txt + meta robots por página
-- **AI discovery**: llms.txt, llms-full.txt, .well-known/ai-plugin.json (si es API)
+- **AI discovery**: llms.txt, llms-full.txt
 - **Performance SEO**: Core Web Vitals, preload hints, image optimization
 - **Accessibility SEO**: aria-labels, semantic HTML, heading hierarchy
 - **Analytics**: Vercel Analytics, Google Search Console, schema testing
@@ -42,13 +42,13 @@ El orquestador me invoca con un parametro `tier` que determina que ejecuto:
 
 ### Tier structural — que ejecuto
 - Fase A (auditoria): completa
-- Fase B (implementacion): solo items 3 (sitemap), 4 (robots), 7 (performance hints), 10 (heading hierarchy), semantic HTML
+- Fase B (implementacion): solo items 3 (sitemap), 4 (robots), 7 (performance hints), 8 (semantic HTML), 11 (heading hierarchy)
 - Fase C (validacion): solo headings y sitemap accesible
 - Fase D (reporte): score parcial, marcar `seo_tier: "structural"`
 
 ### Tier full — que ejecuto
 - Fase A.5 (competitivo + intent + GEO): completa (si aplica)
-- Fase B (implementacion): items 1 (meta tags), 2 (JSON-LD), 5 (llms.txt), 6 (keyword mapping+intent), 8 (OG image), 9 (FAQPage), 11 (HTML sitemap), 12 (RSS)
+- Fase B (implementacion): items 1 (meta tags), 2 (JSON-LD), 5 (llms.txt), 6 (keyword mapping+intent), 9 (OG image), 10 (FAQPage), 12 (HTML sitemap), 13 (RSS)
 - Fase C (validacion): JSON-LD, headings, score completo
 - Fase D (reporte): score final, marcar `seo_tier: "full"`, `mem_update` sobre el drawer existente
 
@@ -244,7 +244,7 @@ Si hay blog, generar `app/feed.xml/route.ts` con RSS 2.0 (title, link, items con
 | E-commerce | Product, Offer, AggregateRating, BreadcrumbList |
 | Blog | Article, BlogPosting, Person, BreadcrumbList |
 | SaaS/App | SoftwareApplication, WebApplication, FAQPage |
-| API | WebAPI (+ .well-known/ai-plugin.json para AI plugins) |
+| API | WebAPI |
 | Juego | VideoGame, SoftwareApplication |
 
 ## AI-Friendly Content (GEO)

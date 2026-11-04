@@ -23,12 +23,27 @@ Analizar cada componente del proyecto con STRIDE (Spoofing, Tampering, Repudiati
 ```
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
-X-XSS-Protection: 1; mode=block
 Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-Content-Security-Policy: default-src 'self'; script-src 'self'
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: camera=(), microphone=(), geolocation=()
 ```
+`X-XSS-Protection` ya no se usa (obsoleto, los navegadores modernos lo ignoran): no incluirlo.
+
+**CSP: dos plantillas, elegir según el stack.** `'strict-dynamic'` desactiva `'self'` para los scripts, y un nonce solo existe si hay un servidor que lo genere en cada respuesta. Por eso la plantilla nonce deja en blanco un sitio estático.
+
+(a) **Sitio estático o SPA** (Vite, Astro, HTML plano, Next con `output: 'export'`): sin servidor que genere nonces.
+```
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+```
+Si hay scripts inline (por ejemplo el de tema claro/oscuro), agregar su hash: `script-src 'self' 'sha256-...'` (el navegador muestra el hash exacto en la consola cuando lo bloquea). Si hay estilos inline inevitables, `style-src 'self' 'unsafe-inline'` solo para estilos, nunca para scripts. En Vercel va en `vercel.json` `headers` (ver `deployer.md` § "Sitio estático en Vercel").
+
+(b) **Next con render dinámico** (App Router sin export estático): nonce por request más `'strict-dynamic'`.
+```
+Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; style-src 'self' 'nonce-{nonce}'; img-src 'self' blob: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+```
+Se genera en el archivo de request de Next: `proxy.ts` en Next 16+, `middleware.ts` en Next 15. El nonce exige render dinámico en cada página (una página estática o con ISR no recibe nonce y queda bloqueada). En desarrollo hace falta agregar `'unsafe-eval'` a `script-src`; en producción no. Es la base que documenta Next.js (verificada con Context7, 2026-11-03).
+
+En las dos: ajustar a los orígenes reales del proyecto (Google Fonts, CDN de Three.js, analytics) y **probar primero como `Content-Security-Policy-Report-Only`**, revisar la consola y recién después pasar a `Content-Security-Policy`. Una CSP estricta sin probar rompe la app.
 
 ### 3. Checklist OWASP Top 10
 Para el proyecto específico, marco cuáles aplican y cómo mitigar:
@@ -76,13 +91,22 @@ npx lockfile-lint --allowed-hosts npm --allowed-schemes https: --type npm --path
 Bloquea lockfiles envenenados que apuntan a hosts maliciosos. Agregar al checklist de Fase 4.
 
 #### CI/CD hardening (recomendación para orquestador)
-Recomendar al orquestador que git-agent configure:
+Recomendar al orquestador que el agente `git` configure:
 - **GitHub Actions pinning a SHA** (tags son mutables, SHAs inmutables): `uses: actions/checkout@8e8c483...`
-- **CodeQL SAST** (`github/codeql-action/analyze@v3`) para detección automática de SQL injection, XSS, path traversal
+- **CodeQL SAST** (`github/codeql-action/analyze@v4`, v4.39.2 vigente según `gh api repos/github/codeql-action/releases` el 2026-11-03; v3 sigue publicándose pero es la línea vieja) para detección automática de SQL injection, XSS, path traversal
 No es responsabilidad de este agente implementarlo — solo documentar la recomendación en el threat model.
 
 #### Source maps en producción — verificar NO accesibles
 Verificar que `*.map` files no sean accesibles via HTTP en el deploy de producción. Un source map expuesto revela todo el código fuente original. Agregar al checklist de verificación.
+
+### 5b. Plata, wallet y economía de juego; código generado por IA
+
+Aplica si el proyecto mueve valor (pagos, wallet, USDt, créditos, energía, premios) o tiene economía de juego: es ítem de riesgo 2 de CLAUDE.md. Va al `security-spec`.
+- **El servidor es la autoridad**: el cliente solo pide acciones; saldos, precios, recompensas y resultados se calculan y validan en el servidor. Nunca confiar en montos, puntajes ni estado que vengan del cliente.
+- **Idempotencia**: cada pago, retiro o acreditación lleva clave de idempotencia y se procesa una sola vez (webhooks: verificar firma y deduplicar por id de evento). Operaciones de saldo atómicas (transacción o lock) contra doble gasto y carreras.
+- **Anti-cheat**: validar cada acción contra las reglas (cooldowns, límites por tiempo, rangos plausibles), rate limiting por usuario e IP, log de auditoría de todo movimiento de valor, y simulación determinista compartida cuando se pueda.
+- **Nunca claves en el cliente**: ni claves privadas de wallet, ni API keys de exchange o de pagos, ni secretos detrás de `NEXT_PUBLIC_`/`VITE_`/`EXPO_PUBLIC_`. Si una clave se filtra, rotarla en el proveedor (borrarla del código no alcanza).
+- **Código generado por IA**: Supabase con RLS activo en toda tabla (nada de `USING (true)`); `service_role` jamás alcanzable desde el cliente; permisos sobre `app_metadata`, no `user_metadata` (lo edita el usuario); prompt injection: texto del usuario nunca concatenado al system prompt, sobre todo si esa llamada al modelo tiene tools.
 
 ### 6. Server hardening — SOLO si deploy = VPS (condicional)
 

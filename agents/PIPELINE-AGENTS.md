@@ -48,7 +48,7 @@ Cada agente tiene **2 líneas**:
 | [`project-manager-senior`](project-manager-senior.md) | **🔧 Técnico:** Convierte la spec de un proyecto en una lista de tareas granulares con criterios de aceptación exactos. Guarda en Engram y devuelve resumen corto. |
 | | **🏠 En simple:** Es el **PM** que toma tu idea ("quiero X") y la convierte en una lista de tareas concretas con "esto está terminado cuando...". |
 
-### Fase 2 — Arquitectura (los 3 corren en paralelo)
+### Fase 2 — Arquitectura (ux-architect va primero y solo; después ui-designer y security-engineer corren en paralelo)
 
 | Agente | Para qué |
 |---|---|
@@ -67,7 +67,7 @@ Cada agente tiene **2 líneas**:
 | | **🏠 En simple:** Es el **director creativo** que define la "personalidad" de la marca: qué colores, qué tipografía, qué estilo (elegante, divertido, profesional, etc.). Tiene que terminar antes de que los otros agentes creativos arranquen. |
 | [`image-agent`](image-agent.md) | **🔧 Técnico:** Genera imágenes para web (hero, fondos, thumbnails). Free-first verificado 2026: HuggingFace FLUX.1-schnell → Cloudflare Workers AI → Pollinations. Gemini opt-in si hay billing. |
 | | **🏠 En simple:** Es el **fotógrafo/ilustrador con IA**: genera las imágenes de fondo, banners y miniaturas que necesita el sitio. Por defecto usa servicios gratuitos (no requiere tarjeta de crédito). |
-| [`logo-agent`](logo-agent.md) | **🔧 Técnico:** Genera logos vectoriales SVG (4 variantes). Pipeline free: HF + vtracer/Inkscape. Recraft V4 Vector opt-in con Vercel AI Gateway. Ejecuta en paralelo con image-agent. |
+| [`logo-agent`](logo-agent.md) | **🔧 Técnico:** Genera logos vectoriales SVG (4 variantes). Pipeline free: HF + vtracer. Recraft V4 Vector opt-in con Vercel AI Gateway. Ejecuta en paralelo con image-agent. |
 | | **🏠 En simple:** Es el **diseñador de logo**: genera 4 versiones del logo (completo, ícono, modo oscuro, etc.) en formato vectorial (escalable sin perder calidad). |
 | [`video-agent`](video-agent.md) | **🔧 Técnico:** Genera videos cortos en loop (3-5s) o CSS fallback animado para fondos hero. Sin `REPLICATE_API_TOKEN` entrega CSS fallback como output **válido** (no bloquea pipeline). Replicate LTX-Video 2.3 opt-in con billing. |
 | | **🏠 En simple:** Es el **videógrafo**: genera videos cortos para fondos hero. Si no tenés billing para el servicio de IA, devuelve una animación CSS como alternativa (no bloquea el proyecto). |
@@ -80,9 +80,9 @@ Cada agente tiene **2 líneas**:
 |---|---|
 | [`frontend-developer`](frontend-developer.md) | **🔧 Técnico:** Implementa UI web con React/Vue/TS, Tailwind, shadcn/ui. También maneja game loops con Phaser.js/PixiJS/Canvas. Incluye AUTO_AUDIT pre-return + design decision tree. |
 | | **🏠 En simple:** Es el **programador de la parte visible** (lo que ve el visitante del sitio). Antes de entregar, corre un auto-chequeo para evitar errores comunes (colores genéricos, fuentes mal cargadas, etc.). |
-| [`backend-architect`](backend-architect.md) | **🔧 Técnico:** Implementa APIs, esquemas de DB, lógica de servidor y seguridad backend. PostgreSQL, Prisma, Express, Supabase. |
+| [`backend-architect`](backend-architect.md) | **🔧 Técnico:** Implementa APIs, esquemas de DB, lógica de servidor y seguridad backend. PostgreSQL, Drizzle, Hono, Supabase. |
 | | **🏠 En simple:** Es el **programador del motor invisible** (lo que pasa en el servidor cuando el visitante hace click): base de datos, login, validaciones, envío de emails, etc. |
-| [`rapid-prototyper`](rapid-prototyper.md) | **🔧 Técnico:** Crea MVPs funcionales en menos de 3 días. Next.js + Prisma + Supabase + shadcn/ui. Cuando el proyecto necesita validación rápida. |
+| [`rapid-prototyper`](rapid-prototyper.md) | **🔧 Técnico:** Crea MVPs funcionales en menos de 3 días. Next.js + Drizzle + Supabase + shadcn/ui. Cuando el proyecto necesita validación rápida. |
 | | **🏠 En simple:** Es el **prototipador rápido**: cuando querés validar una idea antes de construir todo en serio, arma una versión funcional básica en pocos días. |
 | [`mobile-developer`](mobile-developer.md) | **🔧 Técnico:** Desarrolla apps móviles iOS y Android con React Native y Expo. Navegación, estado, forms, auth y build. |
 | | **🏠 En simple:** Es el **programador de apps de celular** (las que se descargan de App Store / Google Play). |
@@ -139,7 +139,7 @@ Cada agente tiene **2 líneas**:
 | [`project-manager-senior`](project-manager-senior.md) | **🔧 Technical:** Turns a project spec into a list of granular tasks with exact acceptance criteria. Saves to Engram and returns a short summary. |
 | | **🏠 In plain words:** It's the **PM** that takes your idea ("I want X") and turns it into a concrete task list with "this is done when…". |
 
-### Phase 2 — Architecture (the 3 run in parallel)
+### Phase 2 — Architecture (ux-architect goes first and alone; then ui-designer and security-engineer run in parallel)
 
 | Agent | What for |
 |---|---|
@@ -158,7 +158,7 @@ Cada agente tiene **2 líneas**:
 | | **🏠 In plain words:** It's the **creative director** that defines the brand's "personality": what colors, what typography, what style (elegant, fun, professional, etc.). Has to finish before the other creative agents start. |
 | [`image-agent`](image-agent.md) | **🔧 Technical:** Generates web images (hero, backgrounds, thumbnails). Free-first verified 2026: HuggingFace FLUX.1-schnell → Cloudflare Workers AI → Pollinations. Gemini opt-in if you have billing. |
 | | **🏠 In plain words:** It's the **AI photographer/illustrator**: generates the background images, banners, and thumbnails the site needs. By default uses free services (no credit card needed). |
-| [`logo-agent`](logo-agent.md) | **🔧 Technical:** Generates vector SVG logos (4 variants). Free pipeline: HF + vtracer/Inkscape. Recraft V4 Vector opt-in with Vercel AI Gateway. Runs in parallel with image-agent. |
+| [`logo-agent`](logo-agent.md) | **🔧 Technical:** Generates vector SVG logos (4 variants). Free pipeline: HF + vtracer. Recraft V4 Vector opt-in with Vercel AI Gateway. Runs in parallel with image-agent. |
 | | **🏠 In plain words:** It's the **logo designer**: generates 4 versions of the logo (full, icon, dark mode, etc.) in vector format (scales without losing quality). |
 | [`video-agent`](video-agent.md) | **🔧 Technical:** Generates short loop videos (3-5s) or animated CSS fallback for hero backgrounds. Without `REPLICATE_API_TOKEN`, returns CSS fallback as **valid** output (doesn't block pipeline). Replicate LTX-Video 2.3 opt-in with billing. |
 | | **🏠 In plain words:** It's the **videographer**: generates short videos for hero backgrounds. If you don't have billing for the AI service, returns a CSS animation as alternative (doesn't block the project). |
@@ -171,9 +171,9 @@ Cada agente tiene **2 líneas**:
 |---|---|
 | [`frontend-developer`](frontend-developer.md) | **🔧 Technical:** Implements web UI with React/Vue/TS, Tailwind, shadcn/ui. Also handles game loops with Phaser.js/PixiJS/Canvas. Includes AUTO_AUDIT pre-return + design decision tree. |
 | | **🏠 In plain words:** It's the **programmer of the visible part** (what the site visitor sees). Before delivering, runs a self-check to avoid common errors (generic colors, fonts not loaded properly, etc.). |
-| [`backend-architect`](backend-architect.md) | **🔧 Technical:** Implements APIs, DB schemas, server logic, backend security. PostgreSQL, Prisma, Express, Supabase. |
+| [`backend-architect`](backend-architect.md) | **🔧 Technical:** Implements APIs, DB schemas, server logic, backend security. PostgreSQL, Drizzle, Hono, Supabase. |
 | | **🏠 In plain words:** It's the **programmer of the invisible engine** (what happens on the server when the visitor clicks): database, login, validations, sending emails, etc. |
-| [`rapid-prototyper`](rapid-prototyper.md) | **🔧 Technical:** Builds functional MVPs in under 3 days. Next.js + Prisma + Supabase + shadcn/ui. When the project needs fast validation. |
+| [`rapid-prototyper`](rapid-prototyper.md) | **🔧 Technical:** Builds functional MVPs in under 3 days. Next.js + Drizzle + Supabase + shadcn/ui. When the project needs fast validation. |
 | | **🏠 In plain words:** It's the **rapid prototyper**: when you want to validate an idea before building everything properly, it builds a basic functional version in a few days. |
 | [`mobile-developer`](mobile-developer.md) | **🔧 Technical:** Develops iOS and Android mobile apps with React Native and Expo. Navigation, state, forms, auth, build. |
 | | **🏠 In plain words:** It's the **phone app programmer** (the ones you download from App Store / Google Play). |
@@ -265,6 +265,6 @@ Cada agente tiene **2 líneas**:
 
 *25 agents organized in 5 phases + Phase 2B conditional + 2 cross-cutting meta agents. **Opus** (5): complex architectural decisions, planning, threat modeling, final certification. **Sonnet** (20): defined task execution, QA, utilities, creative.*
 
-Para detalle de coordinación (DAG state, retries, fallbacks): ver [`orquestador.md`](orquestador.md). Para protocolo compartido (Engram 2-pasos, Return Envelope, VISUAL_IMPACT, Delegation Stop Rules): ver [`agent-protocol.md`](agent-protocol.md).
+Para detalle de coordinación (DAG state, retries, fallbacks): ver [`orquestador.md`](orquestador.md). Para protocolo compartido (Engram 2-pasos, Return Envelope, VISUAL_IMPACT, Método con red): ver [`agent-protocol.md`](agent-protocol.md).
 
 *For coordination details (DAG state, retries, fallbacks): see [`orquestador.md`](orquestador.md). For shared protocol: see [`agent-protocol.md`](agent-protocol.md).*
