@@ -353,8 +353,8 @@ devuelve versión, protocolo, versión de Blender y si hay conexión.
   Decirle al usuario, textual:
 
   > El servidor del MCP de la comunidad no responde. Fijate que Blender esté
-  > abierto. Si lo está, apretá `N` en el viewport, pestaña **BlenderMCP**, y
-  > apretá **Connect to Claude**.
+  > abierto. Si lo está, apretá `N` en el viewport, pestaña **MCP for Blender**, y
+  > apretá **Connect to MCP server**.
 
 Motivo: aunque el autostart está configurado, si se abrió un `.blend` viejo
 guardado antes del 2026-08-19 ese archivo trae la propiedad apagada y no arranca.
@@ -362,7 +362,7 @@ Sin el chequeo, el síntoma es un error de conexión en medio de una tarea larga
 que es peor que avisar al principio.
 
 **Si el archivo abierto es viejo**, además del Connect conviene tildar las casillas
-del panel BlenderMCP (Poly Haven, Hunyuan3D) porque también viajan dentro del
+del panel MCP for Blender (Poly Haven, Hunyuan3D) porque también viajan dentro del
 `.blend`.
 
 **Si algo falla, mirar en este orden:** que Blender esté abierto; que los dos

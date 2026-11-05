@@ -109,7 +109,7 @@ MCP `jev` (12 tools de juicio tipado, `TYPESAFE_API_KEY`). **En casa está pausa
 
 ## Trabajo 3D / Blender
 **Al empezar cualquier trabajo 3D, cargar `~/.claude/agents/blender-3d-reference.md`** (método con gates en orden, **render clay en gris** antes que materiales, refutación opus, qué MCP para qué); con anatomía, rigging o animación, también `3d-generativo-reference.md`. Se **construye** lo geométrico; se **delega a un generador** lo que tiene anatomía o escultura. Los MCP corren código sin sandbox: guardar antes.
-**CHEQUEO OBLIGATORIO:** antes del primer uso de `mcp__blender-assets__*` en la sesión, `get_addon_status`. Ese add-on **no arranca solo**: si falla, Ema aprieta `N` en Blender, pestaña **BlenderMCP**, **Connect to Claude**. El oficial: probar una de sus tools; si no responde, arrancarlo en Blender desde Edit → Preferences → Add-ons → MCP → **Start MCP Bridge Server** (sin confirmar si su autostart está activo: verificarlo en el próximo uso y fijarlo acá).
+**CHEQUEO OBLIGATORIO:** antes del primer uso de `mcp__blender-assets__*` en la sesión, `get_addon_status`. Ese add-on arranca solo, salvo con un `.blend` viejo: si falla, Ema aprieta `N` en Blender, pestaña **MCP for Blender**, **Connect to MCP server**. El oficial: probar una de sus tools; si no responde, arrancarlo en Blender desde Edit → Preferences → Add-ons → MCP → **Start MCP Bridge Server** (sin confirmar si su autostart está activo: verificarlo en el próximo uso y fijarlo acá).
 
 ## Punteros por dominio
 - **Assets visuales**: **brand-agent SIEMPRE primero** (sin `brand.json` no funciona ningún creativo), **NO auto-generar assets sin confirmación**, free-first: `pipeline-reference.md` § "Agentes creativos".
