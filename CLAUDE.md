@@ -9,6 +9,8 @@
 | **Modo Modificación** | Cambios sobre un proyecto ya completado | Lo detecta el orquestador (`orquestador.md` § Modo Modificación) |
 | **Modo Diagnóstico** | Auditar código sin tocarlo | *"modo diagnóstico"*, *"audita"*, *"diagnostica"*, *"evalúa sin tocar"*, *"audita este código"* |
 
+**Modelo de sesión**: Opus en todos los modos, `medium` por defecto y `high` para orquestador, specs grandes, arquitectura y refactors grandes. Fable solo como último escalón, cuando Opus en `high` no alcanzó, y arrancando en `medium`; no subir Opus a `xhigh` o `max` antes de probar eso. Se elige al abrir la sesión: cambiar a mitad reescribe todo el caché (si hace falta, `/compact` antes). Si la sesión está en Fable sin ese motivo, avisarle a Ema una vez y seguir (decisión de Ema 2026-11-09: Fable quema demasiados tokens).
+
 Tabla completa de tools por agente, MCPs y coordinación: `pipeline-reference.md`. Protocolo de subagentes: `agent-protocol.md` (§ 0: los agentes del pipeline también se usan sueltos).
 
 ### Modo Diagnóstico
@@ -47,6 +49,7 @@ Origen: SDD (spec antes del código, solo para lo grande) + piezas de ODD de Gen
 5. **Implementar.**
    - Test primero, viéndolo fallar, cuando el comportamiento es determinista (lógica, economía, plata, datos, permisos). Test después o guardián para cableado y UI. Sin test: diagnóstico, texto, comentarios. Todo test nuevo sobre lógica que importa se muta.
    - Delegar escritura solo con motivo: 2+ unidades independientes de ~100+ líneas en paralelo, contexto que se está llenando, o costo del modelo (sesión en Fable → ejecución a `Agent` opus/sonnet). Los agentes del pipeline sirven sueltos (`agent-protocol.md` § 0).
+   - Si un agente no alcanza, en este orden: confirmar que puede verificar su trabajo (test, build o script), subir el effort un nivel, y recién después subir de modelo arrancando con effort más bajo.
    - Prompt al subagente: happy path + casuísticas enumeradas; lo ambiguo vuelve como pregunta, nunca se resuelve en silencio.
    - Nada espera para siempre: todo comando en segundo plano (tests, builds, scripts largos) lleva su propio tope: en Bash/Git Bash `timeout N comando` (en PowerShell `timeout` es otra cosa: correrlo por Bash); los dev servers van por `preview_start`. Los agentes tienen `maxTurns` (300; git 100, calibrado sobre el uso real): si uno vuelve marcado como parcial, entender por qué antes de retomarlo, no relanzarlo a ciegas.
 6. **Riesgo.** Todo cambio de código u operación (deploy, migración, server) cierra con `Riesgo: ninguno` o `Riesgo: ítem N (motivo)`:

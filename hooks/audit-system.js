@@ -41,7 +41,8 @@ for (const [name, dir] of [['CLAUDE_DIR', CLAUDE_DIR], ['AGENTS_DIR', AGENTS_DIR
 
 // Reference files (not agents)
 const REFERENCE_SUFFIXES = ['-reference.md'];
-const NON_AGENT_FILES = ['agent-protocol.md', 'AGENTS.md', 'PIPELINE-AGENTS.md'];
+// Explore.md pisa al Explore integrado (modelo barato); no es entidad del pipeline.
+const NON_AGENT_FILES = ['agent-protocol.md', 'AGENTS.md', 'PIPELINE-AGENTS.md', 'Explore.md'];
 // Agents from satellite projects (live in ~/.claude/agents/ but NOT in claude-vibecoding repo).
 // Each one is owned by its own repo (see obs claude-vibecoding/meta/satellite-projects-vs-main-system-namespace).
 // Skipping them avoids false positives in T1 (Extra), T3 (no protocol ref), T9 (missing from tools table).
