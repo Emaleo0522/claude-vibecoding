@@ -67,7 +67,7 @@ cd claude-vibecoding
 bash install/linux.sh
 ```
 
-El script instala los 25 agentes + 24 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 13 hooks + 6 utilities manuales, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
+El script instala los 25 agentes + 28 referencias técnicas (incluida `external-skills-reference` para el ecosistema `npx skills add`) + 1 índice central (`AGENTS.md`), los 13 hooks + 6 utilities manuales, el `CLAUDE.md` global, y configura git/GitHub/Vercel. Te va preguntando los datos que necesita (tu nombre, email, usuario de GitHub). **Reiniciá Claude Code** cuando termine y ya estás listo.
 
 ### Windows (Claude Desktop) — 20-30 minutos guiados
 
@@ -92,7 +92,7 @@ Si te animás a portarlo, abrí un issue o PR contando qué runtime estás usand
 ### Verificación post-instalación
 
 ```bash
-# Agentes (debería ser 52 o más: 25 agentes + 24 referencias técnicas + agent-protocol.md + AGENTS.md + PIPELINE-AGENTS.md)
+# Agentes (debería ser 57 o más: 25 agentes + 28 referencias técnicas + agent-protocol.md + AGENTS.md + PIPELINE-AGENTS.md + Explore.md)
 ls ~/.claude/agents/*.md | wc -l
 
 # Hooks (debería ser 20: 13 reactivos + 7 utilidades/scripts .js/.sh)
@@ -284,7 +284,7 @@ Para developers que quieran ir más allá:
 | Archivo | Para qué |
 |---|---|
 | [`agents/PIPELINE-AGENTS.md`](agents/PIPELINE-AGENTS.md) | **Tabla de los 25 agentes** organizada por fase del pipeline con descripción 1-línea de cada uno + link al `.md` completo. Bilingüe (es+en). Referencia para humanos, no se carga al boot |
-| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 24 referencias técnicas con triggers de carga y skip conditions. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
+| [`agents/AGENTS.md`](agents/AGENTS.md) | Índice central de las 28 referencias técnicas con triggers de carga y skip conditions. El orquestador lo consulta en Fase 1 Paso 0b para decidir qué refs aplicar por proyecto (evita carga indiscriminada) |
 | [`agents/orquestador.md`](agents/orquestador.md) | Comportamiento completo del orquestador: detección de modos, pipeline detallado, DAG State, fallbacks |
 | [`agents/agent-protocol.md`](agents/agent-protocol.md) | Protocolo compartido entre subagentes: Engram (2 pasos), Return Envelope, VISUAL_IMPACT, pipeline vs uso suelto (§ 0), Stop Rules del pipeline, reglas universales |
 | [`agents/pipeline-reference.md`](agents/pipeline-reference.md) | Detalles de cada fase, tools por agente, stack adaptable, Design Intelligence Engine |
@@ -304,7 +304,7 @@ Para developers que quieran ir más allá:
 
 ```
 ~/.claude/
-├── agents/            # 25 agentes + 24 referencias + AGENTS.md + agent-protocol.md + PIPELINE-AGENTS.md = 49 archivos .md
+├── agents/            # 25 agentes + 28 referencias + AGENTS.md + agent-protocol.md + PIPELINE-AGENTS.md + Explore.md = 57 archivos .md
 ├── design-data/       # Design Intelligence Engine (search.js + 8 CSVs)
 ├── hooks/             # 13 hooks reactivos + 6 utilidades manuales + 1 script .sh extra (bloqueos, warnings, sync, healthcheck, drift-check)
 ├── mcp.registry.json  # inventario legible de MCPs (leído por mcp-registry.js y healthcheck.js)
